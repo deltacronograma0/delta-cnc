@@ -29,12 +29,12 @@
 
       <div class="flex items-center gap-3">
         <div id="userBadge" class="hidden items-center gap-2 bg-slate-800 px-3 py-1.5 rounded-full text-xs border border-slate-700 text-amber-400 font-semibold">
-          <i class="fa-solid fa-user-shield"></i> <span id="userNameDisplay">Editor</span>
+          <i class="fa-solid fa-user-shield"></i> <span id="userNameDisplay">Utilizador</span>
           <button onclick="logout()" class="text-rose-400 hover:text-rose-300 ml-1" title="Sair"><i class="fa-solid fa-right-from-bracket"></i></button>
         </div>
 
         <button onclick="openLoginModal()" id="btnLoginNav" class="bg-indigo-600 hover:bg-indigo-700 text-white px-3.5 py-1.5 rounded-xl text-xs font-bold transition shadow">
-          <i class="fa-solid fa-lock mr-1"></i> Área Restrita
+          <i class="fa-solid fa-lock mr-1"></i> Entrar
         </button>
 
         <button onclick="openConfigModal()" class="bg-slate-800 hover:bg-slate-700 text-slate-200 p-2.5 rounded-xl text-sm border border-slate-700 transition" title="Definições e Backup">
@@ -57,6 +57,10 @@
         </button>
         <button onclick="switchTab('podio')" id="tab-podio" class="tab-btn px-4 py-3 border-b-2 border-transparent text-slate-400 hover:text-slate-200 font-semibold flex items-center gap-2 whitespace-nowrap">
           <i class="fa-solid fa-trophy text-amber-400"></i> Destaques & Pódio
+        </button>
+        <!-- ABA DE UTILIZADORES EXCLUSIVA PARA ADMIN -->
+        <button onclick="switchTab('utilizadores')" id="tab-utilizadores" class="tab-btn admin-only hidden px-4 py-3 border-b-2 border-transparent text-slate-400 hover:text-slate-200 font-semibold flex items-center gap-2 whitespace-nowrap">
+          <i class="fa-solid fa-users-gear text-indigo-400"></i> Gestão de Utilizadores
         </button>
       </div>
     </nav>
@@ -150,7 +154,6 @@
 
     <!-- SEÇÃO: DASHBOARD & ANUAL -->
     <section id="sec-dashboard" class="hidden space-y-6">
-      <!-- HEADER DASHBOARD COM SELETOR DE MÊS/ANO -->
       <div class="bg-gradient-to-r from-slate-900 via-slate-800 to-indigo-950 p-6 rounded-3xl shadow-xl text-white flex flex-wrap justify-between items-center gap-4">
         <div>
           <h2 class="text-xl font-black flex items-center gap-2"><i class="fa-solid fa-chart-pie text-amber-400"></i> Painel Analítico de Produção</h2>
@@ -188,7 +191,7 @@
         </div>
       </div>
 
-      <!-- DETALHAMENTO POR EQUIPA (MÁQUINAS, DATAS E OS FIXADA) -->
+      <!-- DETALHAMENTO POR EQUIPA -->
       <div class="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm space-y-6">
         <div class="flex items-center justify-between border-b pb-4">
           <div>
@@ -247,16 +250,46 @@
       </div>
     </section>
 
+    <!-- SEÇÃO: GESTÃO DE UTILIZADORES (EXCLUSIVA ADMINISTRADOR) -->
+    <section id="sec-utilizadores" class="hidden space-y-6">
+      <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200 flex justify-between items-center">
+        <div>
+          <h2 class="text-lg font-extrabold text-slate-900"><i class="fa-solid fa-users-gear text-indigo-600 mr-2"></i>Gestão de Utilizadores e Editores</h2>
+          <p class="text-xs text-slate-500">Adicione e remova contas de acesso para os editores do sistema</p>
+        </div>
+        <button onclick="openAddUserModal()" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-4 py-2.5 rounded-xl text-sm shadow transition">
+          <i class="fa-solid fa-user-plus"></i> Novo Editor
+        </button>
+      </div>
+
+      <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+        <table class="w-full text-left text-sm text-slate-600">
+          <thead class="bg-slate-900 text-slate-200 font-bold uppercase text-xs tracking-wider">
+            <tr>
+              <th class="p-3.5">E-mail</th>
+              <th class="p-3.5">Perfil</th>
+              <th class="p-3.5 text-center">Ações</th>
+            </tr>
+          </thead>
+          <tbody id="usersTableBody" class="divide-y divide-slate-100 font-medium"></tbody>
+        </table>
+      </div>
+    </section>
+
   </main>
 
-  <!-- MODAL: LOGIN -->
+  <!-- MODAL: LOGIN COM E-MAIL E SENHA -->
   <div id="modalLogin" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm hidden flex items-center justify-center p-4 z-50">
     <div class="bg-white rounded-3xl max-w-sm w-full p-6 shadow-2xl space-y-4 border">
       <div class="flex justify-between items-center border-b pb-3">
-        <h3 class="font-bold text-slate-900 text-base"><i class="fa-solid fa-lock text-indigo-600 mr-2"></i>Login de Editor</h3>
+        <h3 class="font-bold text-slate-900 text-base"><i class="fa-solid fa-lock text-indigo-600 mr-2"></i>Iniciar Sessão</h3>
         <button onclick="closeLoginModal()" class="text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark text-lg"></i></button>
       </div>
       <form onsubmit="handleLogin(event)" class="space-y-3">
+        <div>
+          <label class="block text-xs font-bold text-slate-700 mb-1">E-mail</label>
+          <input type="email" id="loginEmailInput" required placeholder="ex: editor@delta.com" class="w-full border rounded-xl p-2.5 text-sm focus:outline-none focus:border-indigo-600">
+        </div>
         <div>
           <label class="block text-xs font-bold text-slate-700 mb-1">Senha</label>
           <input type="password" id="loginPasswordInput" required placeholder="Digite a senha..." class="w-full border rounded-xl p-2.5 text-sm focus:outline-none focus:border-indigo-600">
@@ -264,6 +297,30 @@
         <div class="flex justify-end gap-2 pt-2">
           <button type="button" onclick="closeLoginModal()" class="px-4 py-2 border rounded-xl text-xs font-semibold text-slate-600">Cancelar</button>
           <button type="submit" class="bg-indigo-600 text-white font-bold px-4 py-2 rounded-xl text-xs shadow">Entrar</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL: ADICIONAR UTILIZADOR (ADMIN) -->
+  <div id="modalAddUser" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm hidden flex items-center justify-center p-4 z-50">
+    <div class="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl space-y-4 border">
+      <div class="flex justify-between items-center border-b pb-3">
+        <h3 class="font-bold text-slate-900 text-base"><i class="fa-solid fa-user-plus text-indigo-600 mr-2"></i>Registar Novo Editor</h3>
+        <button onclick="closeAddUserModal()" class="text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark text-lg"></i></button>
+      </div>
+      <form onsubmit="submitUserForm(event)" class="space-y-3">
+        <div>
+          <label class="block text-xs font-bold text-slate-700 mb-1">E-mail</label>
+          <input type="email" id="newUserEmail" required placeholder="editor@delta.com" class="w-full border rounded-xl p-2.5 text-sm">
+        </div>
+        <div>
+          <label class="block text-xs font-bold text-slate-700 mb-1">Senha</label>
+          <input type="password" id="newUserPassword" required placeholder="Defina uma senha..." class="w-full border rounded-xl p-2.5 text-sm">
+        </div>
+        <div class="flex justify-end gap-2 pt-2">
+          <button type="button" onclick="closeAddUserModal()" class="px-4 py-2 border rounded-xl text-xs font-semibold text-slate-600">Cancelar</button>
+          <button type="submit" class="bg-indigo-600 text-white font-bold px-4 py-2 rounded-xl text-xs shadow">Guardar Utilizador</button>
         </div>
       </form>
     </div>
@@ -401,7 +458,13 @@
 
   <script>
     let geminiApiKey = localStorage.getItem('DELTA_GEMINI_KEY') || '';
-    let isEditor = localStorage.getItem('DELTA_IS_EDITOR') === 'true';
+    let currentUser = JSON.parse(localStorage.getItem('DELTA_CURRENT_USER')) || null; // { email, role }
+    
+    // Lista de Utilizadores (Admin + Editores)
+    let usersData = JSON.parse(localStorage.getItem('DELTA_USERS_DATA')) || [
+      { email: 'admin@delta.com', password: 'delta2026', role: 'admin' }
+    ];
+
     let appData = JSON.parse(localStorage.getItem('DELTA_MACHINES_DATA')) || [];
     let teamsData = JSON.parse(localStorage.getItem('DELTA_TEAMS_DATA')) || [
       { name: 'Equipa Alfa', tags: ['Alta Performance', 'Linha Intermediária'] },
@@ -421,6 +484,7 @@
       updateUserUI();
       renderTable();
       renderTeams();
+      renderUsers();
       updateDashboard();
       updatePodio();
     });
@@ -428,6 +492,7 @@
     function saveData() { 
       localStorage.setItem('DELTA_MACHINES_DATA', JSON.stringify(appData));
       localStorage.setItem('DELTA_TEAMS_DATA', JSON.stringify(teamsData));
+      localStorage.setItem('DELTA_USERS_DATA', JSON.stringify(usersData));
     }
 
     function getAutomaticStatus(item) {
@@ -439,18 +504,27 @@
     function updateUserUI() {
       const editorElements = document.querySelectorAll('.editor-only');
       const editorCols = document.querySelectorAll('.editor-col');
+      const adminElements = document.querySelectorAll('.admin-only');
       const userBadge = document.getElementById('userBadge');
       const btnLoginNav = document.getElementById('btnLoginNav');
 
-      if (isEditor) {
+      if (currentUser) {
         editorElements.forEach(el => el.classList.remove('hidden'));
         editorCols.forEach(el => el.classList.remove('hidden'));
         userBadge.classList.remove('hidden');
         userBadge.classList.add('flex');
         btnLoginNav.classList.add('hidden');
+        document.getElementById('userNameDisplay').innerText = currentUser.email;
+
+        if (currentUser.role === 'admin') {
+          adminElements.forEach(el => el.classList.remove('hidden'));
+        } else {
+          adminElements.forEach(el => el.classList.add('hidden'));
+        }
       } else {
         editorElements.forEach(el => el.classList.add('hidden'));
         editorCols.forEach(el => el.classList.add('hidden'));
+        adminElements.forEach(el => el.classList.add('hidden'));
         userBadge.classList.add('hidden');
         userBadge.classList.remove('flex');
         btnLoginNav.classList.remove('hidden');
@@ -459,24 +533,92 @@
 
     function openLoginModal() { document.getElementById('modalLogin').classList.remove('hidden'); }
     function closeLoginModal() { document.getElementById('modalLogin').classList.add('hidden'); }
+    
     function handleLogin(e) {
       e.preventDefault();
-      if (document.getElementById('loginPasswordInput').value === 'delta2026') {
-        isEditor = true;
-        localStorage.setItem('DELTA_IS_EDITOR', 'true');
+      const email = document.getElementById('loginEmailInput').value.trim();
+      const pass = document.getElementById('loginPasswordInput').value;
+
+      const found = usersData.find(u => u.email.toLowerCase() === email.toLowerCase() && u.password === pass);
+      if (found) {
+        currentUser = { email: found.email, role: found.role };
+        localStorage.setItem('DELTA_CURRENT_USER', JSON.stringify(currentUser));
         closeLoginModal();
         updateUserUI();
         renderTable();
         renderTeams();
-        alert('Sessão iniciada!');
-      } else { alert('Senha incorreta!'); }
+        renderUsers();
+        alert(`Sessão iniciada como ${found.role.toUpperCase()}!`);
+      } else {
+        alert('E-mail ou senha incorretos!');
+      }
     }
+
     function logout() {
-      isEditor = false;
-      localStorage.setItem('DELTA_IS_EDITOR', 'false');
+      currentUser = null;
+      localStorage.removeItem('DELTA_CURRENT_USER');
       updateUserUI();
       renderTable();
       renderTeams();
+      switchTab('acompanhamento');
+      alert('Sessão encerrada.');
+    }
+
+    // GESTÃO DE UTILIZADORES (APENAS ADMIN)
+    function openAddUserModal() {
+      document.getElementById('newUserEmail').value = '';
+      document.getElementById('newUserPassword').value = '';
+      document.getElementById('modalAddUser').classList.remove('hidden');
+    }
+    function closeAddUserModal() { document.getElementById('modalAddUser').classList.add('hidden'); }
+
+    function submitUserForm(e) {
+      e.preventDefault();
+      const email = document.getElementById('newUserEmail').value.trim();
+      const password = document.getElementById('newUserPassword').value;
+
+      if (usersData.some(u => u.email.toLowerCase() === email.toLowerCase())) {
+        alert('Este e-mail já está registado.');
+        return;
+      }
+
+      usersData.push({ email, password, role: 'editor' });
+      saveData();
+      renderUsers();
+      closeAddUserModal();
+      alert('Editor registado com sucesso!');
+    }
+
+    function deleteUser(email) {
+      if (email === 'admin@delta.com') {
+        alert('Não é permitido remover o Administrador principal.');
+        return;
+      }
+      if (confirm(`Deseja remover o acesso do editor ${email}?`)) {
+        usersData = usersData.filter(u => u.email !== email);
+        saveData();
+        renderUsers();
+        alert('Utilizador removido.');
+      }
+    }
+
+    function renderUsers() {
+      const tbody = document.getElementById('usersTableBody');
+      if (!tbody) return;
+      let html = '';
+      usersData.forEach(u => {
+        let badge = u.role === 'admin' ? '<span class="bg-amber-100 text-amber-800 px-2.5 py-0.5 rounded-full text-xs font-bold">Administrador</span>' : '<span class="bg-blue-100 text-blue-800 px-2.5 py-0.5 rounded-full text-xs font-bold">Editor</span>';
+        let actionBtn = u.role !== 'admin' ? `<button onclick="deleteUser('${u.email}')" class="text-rose-600 hover:text-rose-800 font-bold text-xs"><i class="fa-solid fa-trash mr-1"></i> Remover</button>` : '<span class="text-xs text-slate-400">Protegido</span>';
+
+        html += `
+          <tr class="hover:bg-slate-50 border-b">
+            <td class="p-3.5 font-bold text-slate-900">${u.email}</td>
+            <td class="p-3.5">${badge}</td>
+            <td class="p-3.5 text-center">${actionBtn}</td>
+          </tr>
+        `;
+      });
+      tbody.innerHTML = html;
     }
 
     function openConfigModal() { document.getElementById('geminiApiKeyInput').value = geminiApiKey; document.getElementById('modalConfig').classList.remove('hidden'); }
@@ -490,7 +632,7 @@
     }
 
     function exportBackup() {
-      const backupObj = { machines: appData, teams: teamsData, date: new Date().toISOString() };
+      const backupObj = { machines: appData, teams: teamsData, users: usersData, date: new Date().toISOString() };
       const blob = new Blob([JSON.stringify(backupObj, null, 2)], { type: 'application/json' });
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
@@ -508,16 +650,18 @@
           const parsed = JSON.parse(event.target.result);
           if (parsed.machines) appData = parsed.machines;
           if (parsed.teams) teamsData = parsed.teams;
+          if (parsed.users) usersData = parsed.users;
           saveData();
           renderTable();
           renderTeams();
-          alert('Backup restaurado com sucesso! Dados seguros.');
+          renderUsers();
+          alert('Backup restaurado com sucesso!');
         } catch(err) { alert('Ficheiro de backup inválido.'); }
       };
       reader.readAsText(file);
     }
 
-    // GESTÃO DE EQUIPAS (NOVO: EDITAR E APAGAR)
+    // GESTÃO DE EQUIPAS
     function openAddTeamModal(index = -1) {
       document.getElementById('editTeamIndex').value = index;
       if (index > -1) {
@@ -543,7 +687,6 @@
       if (index > -1) {
         const oldName = teamsData[index].name;
         teamsData[index] = { name, tags };
-        // Atualizar também nas máquinas existentes se o nome mudou
         if (oldName !== name) {
           appData.forEach(m => { if (m.equipe === oldName) m.equipe = name; });
         }
@@ -577,7 +720,7 @@
       let html = '';
       teamsData.forEach((t, idx) => {
         let tagsHtml = t.tags.map(tag => `<span class="bg-indigo-50 text-indigo-700 px-2.5 py-1 rounded-full text-xs font-semibold">${tag}</span>`).join(' ');
-        let actions = isEditor ? `
+        let actions = currentUser ? `
           <div class="flex gap-2 pt-2 border-t mt-2">
             <button onclick="openAddTeamModal(${idx})" class="flex-1 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold py-1.5 rounded-xl text-xs"><i class="fa-solid fa-pen mr-1"></i> Editar</button>
             <button onclick="deleteTeam(${idx})" class="flex-1 bg-rose-50 hover:bg-rose-100 text-rose-700 font-bold py-1.5 rounded-xl text-xs"><i class="fa-solid fa-trash mr-1"></i> Apagar</button>
@@ -764,8 +907,8 @@
         const autoStatus = getAutomaticStatus(item);
         let statusBg = autoStatus === 'Entregue' ? 'bg-emerald-100 text-emerald-800' : (autoStatus === 'Em andamento' ? 'bg-blue-100 text-blue-800' : 'bg-amber-100 text-amber-800');
         let pdfLink = item.pdfData ? `<a href="${item.pdfData}" target="_blank" download="OS-${item.cliente}.pdf" class="text-indigo-600 bg-indigo-50 px-2.5 py-1 rounded-lg text-xs font-bold border"><i class="fa-solid fa-file-pdf"></i> OS</a>` : `-`;
-        let selectCell = isEditor ? `<td class="p-3.5 text-center editor-col"><input type="checkbox" class="row-checkbox" value="${item.id}"></td>` : '';
-        let actionCell = isEditor ? `<td class="p-3.5 text-center editor-col"><button onclick="openAddMachineModal('${item.id}')" class="text-indigo-600 hover:text-indigo-800 p-1.5"><i class="fa-solid fa-pen"></i></button></td>` : '';
+        let selectCell = currentUser ? `<td class="p-3.5 text-center editor-col"><input type="checkbox" class="row-checkbox" value="${item.id}"></td>` : '';
+        let actionCell = currentUser ? `<td class="p-3.5 text-center editor-col"><button onclick="openAddMachineModal('${item.id}')" class="text-indigo-600 hover:text-indigo-800 p-1.5"><i class="fa-solid fa-pen"></i></button></td>` : '';
 
         html += `
           <tr class="hover:bg-slate-50 border-b">
@@ -787,7 +930,6 @@
       updatePodio();
     }
 
-    // DASHBOARD REFORMULADO COM LISTAGEM DETALHADA POR EQUIPA E OS FIXADAS
     function updateDashboard() {
       const selectedMonth = parseInt(document.getElementById('dashMonth').value);
       const selectedYear = parseInt(document.getElementById('dashYear').value);
