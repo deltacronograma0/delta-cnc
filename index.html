@@ -7,31 +7,39 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  
+  <!-- Firebase SDKs -->
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+
   <style>
-    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
     body { font-family: 'Inter', sans-serif; }
   </style>
 </head>
 <body class="bg-slate-100 text-slate-800 min-h-screen flex flex-col">
 
   <!-- TOPBAR -->
-  <header class="bg-slate-900 text-white shadow-md">
+  <header class="bg-slate-900 text-white shadow-lg sticky top-0 z-40">
     <div class="max-w-7xl mx-auto px-4 py-3 flex flex-wrap justify-between items-center gap-4">
       <div class="flex items-center space-x-3">
-        <div class="bg-amber-500 text-slate-900 font-black p-2 rounded-lg text-xl tracking-wider">DELTA</div>
+        <div class="bg-amber-500 text-slate-900 font-black p-2 rounded-xl text-xl tracking-wider shadow">DELTA</div>
         <div>
-          <h1 class="text-lg font-bold leading-tight">DELTA CNC</h1>
-          <p class="text-xs text-slate-400">Controle de Produção & IA</p>
+          <h1 class="text-lg font-bold leading-tight flex items-center gap-2">
+            DELTA CNC <span class="text-xs bg-amber-500/20 text-amber-400 border border-amber-500/30 px-2 py-0.5 rounded-full font-medium">Cloud & IA</span>
+          </h1>
+          <p class="text-xs text-slate-400">Controle de Produção em Tempo Real</p>
         </div>
       </div>
 
+      <!-- STATUS CONEXÃO & CONFIG -->
       <div class="flex items-center gap-3">
-        <div id="connectionStatus" class="flex items-center space-x-2 bg-slate-800 px-3 py-1.5 rounded-full text-xs">
-          <span class="w-2.5 h-2.5 rounded-full bg-amber-500 animate-pulse" id="statusDot"></span>
-          <span id="statusText" class="text-slate-300">Conectando...</span>
+        <div id="connectionStatus" class="flex items-center space-x-2 bg-slate-800 px-3 py-1.5 rounded-full text-xs border border-slate-700">
+          <span class="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse" id="statusDot"></span>
+          <span id="statusText" class="text-slate-300 font-medium">Sistema Pronto</span>
         </div>
 
-        <button onclick="openConfigModal()" class="bg-slate-800 hover:bg-slate-700 text-slate-200 p-2 rounded-lg text-sm border border-slate-700 transition" title="Configurar Apps Script">
+        <button onclick="openConfigModal()" class="bg-slate-800 hover:bg-slate-700 text-slate-200 p-2.5 rounded-xl text-sm border border-slate-700 transition" title="Configurações de Chaves (IA & Banco)">
           <i class="fa-solid fa-gear"></i>
         </button>
       </div>
@@ -39,12 +47,12 @@
 
     <!-- NAV TABS -->
     <nav class="bg-slate-800 px-4 border-t border-slate-700">
-      <div class="max-w-7xl mx-auto flex space-x-1 overflow-x-auto text-sm">
-        <button onclick="switchTab('acompanhamento')" id="tab-acompanhamento" class="tab-btn px-4 py-3 border-b-2 border-amber-500 text-amber-500 font-medium flex items-center gap-2 whitespace-nowrap">
-          <i class="fa-solid fa-list-check"></i> Acompanhamento
+      <div class="max-w-7xl mx-auto flex space-x-2 overflow-x-auto text-sm">
+        <button onclick="switchTab('acompanhamento')" id="tab-acompanhamento" class="tab-btn px-4 py-3 border-b-2 border-amber-500 text-amber-500 font-semibold flex items-center gap-2 whitespace-nowrap">
+          <i class="fa-solid fa-industry"></i> Acompanhamento
         </button>
-        <button onclick="switchTab('dashboard')" id="tab-dashboard" class="tab-btn px-4 py-3 border-b-2 border-transparent text-slate-400 hover:text-slate-200 font-medium flex items-center gap-2 whitespace-nowrap">
-          <i class="fa-solid fa-chart-line"></i> Dashboard
+        <button onclick="switchTab('dashboard')" id="tab-dashboard" class="tab-btn px-4 py-3 border-b-2 border-transparent text-slate-400 hover:text-slate-200 font-semibold flex items-center gap-2 whitespace-nowrap">
+          <i class="fa-solid fa-chart-pie"></i> Dashboard & KPIs
         </button>
       </div>
     </nav>
@@ -53,97 +61,125 @@
   <!-- CONTEÚDO PRINCIPAL -->
   <main class="flex-grow max-w-7xl w-full mx-auto p-4 sm:p-6 space-y-6">
 
-    <!-- BANNER CONFIGURAÇÃO -->
-    <div id="noScriptWarning" class="hidden bg-amber-50 border-l-4 border-amber-500 p-4 rounded-r-lg shadow-sm">
-      <div class="flex items-start">
-        <i class="fa-solid fa-triangle-exclamation text-amber-500 text-xl mr-3 mt-0.5"></i>
-        <div class="flex-grow">
-          <h3 class="text-sm font-bold text-amber-800">Conexão com Google Apps Script necessária</h3>
-          <p class="text-xs text-amber-700 mt-1">Cole a URL do seu Web App para sincronizar a planilha e a IA.</p>
+    <!-- AVISO CHAVE IA SE NÃO CONFIGURADA -->
+    <div id="noApiKeyWarning" class="hidden bg-amber-50 border-l-4 border-amber-500 p-4 rounded-r-xl shadow-sm">
+      <div class="flex items-start justify-between gap-4">
+        <div class="flex items-start gap-3">
+          <i class="fa-solid fa-key text-amber-500 text-xl mt-0.5"></i>
+          <div>
+            <h3 class="text-sm font-bold text-amber-900">Chave da API do Gemini pendente</h3>
+            <p class="text-xs text-amber-700 mt-1">Para ativar a leitura inteligente de Ordem de Serviço (PDF) por IA, insira a sua chave gratuita do Google Gemini.</p>
+          </div>
         </div>
-        <button onclick="openConfigModal()" class="bg-amber-500 text-slate-900 font-bold px-3 py-1 rounded text-xs hover:bg-amber-600 transition">
-          Configurar URL
+        <button onclick="openConfigModal()" class="bg-amber-500 text-slate-900 font-bold px-3 py-1.5 rounded-lg text-xs hover:bg-amber-600 transition whitespace-nowrap shadow">
+          Inserir Chave IA
         </button>
       </div>
     </div>
 
     <!-- SEÇÃO: ACOMPANHAMENTO -->
     <section id="sec-acompanhamento" class="space-y-4">
-      <div class="flex flex-wrap justify-between items-center gap-4 bg-white p-4 rounded-xl shadow-sm border border-slate-200">
+      <div class="flex flex-wrap justify-between items-center gap-4 bg-white p-5 rounded-2xl shadow-sm border border-slate-200">
         <div>
-          <h2 class="text-lg font-bold text-slate-800"><i class="fa-solid fa-industry text-amber-500 mr-2"></i>Máquinas em Produção</h2>
-          <p class="text-xs text-slate-500">Gerencie ordens de serviço, prazos e andamento fabril</p>
+          <h2 class="text-lg font-extrabold text-slate-800 tracking-tight"><i class="fa-solid fa-list-check text-amber-500 mr-2"></i>Fila de Produção Fabril</h2>
+          <p class="text-xs text-slate-500">Acompanhe e atualize o status das máquinas da fábrica</p>
         </div>
 
         <div class="flex flex-wrap items-center gap-2">
-          <button onclick="openIAImportModal()" class="bg-indigo-600 hover:bg-indigo-700 text-white font-semibold px-3 py-2 rounded-lg text-sm flex items-center gap-2 shadow transition">
+          <button onclick="openIAImportModal()" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-4 py-2.5 rounded-xl text-sm flex items-center gap-2 shadow-md hover:shadow-lg transition">
             <i class="fa-solid fa-wand-magic-sparkles"></i> Importar OS com IA
           </button>
-          <button onclick="openAddMachineModal()" class="bg-slate-900 hover:bg-slate-800 text-white font-semibold px-3 py-2 rounded-lg text-sm flex items-center gap-2 shadow transition">
+          <button onclick="openAddMachineModal()" class="bg-slate-900 hover:bg-slate-800 text-white font-bold px-4 py-2.5 rounded-xl text-sm flex items-center gap-2 shadow-md hover:shadow-lg transition">
             <i class="fa-solid fa-plus"></i> Nova Máquina
           </button>
         </div>
       </div>
 
-      <!-- FILTROS -->
-      <div class="bg-white p-3 rounded-xl shadow-sm border border-slate-200 flex flex-wrap gap-3 items-center text-sm">
-        <select id="filterStatus" onchange="renderTable()" class="bg-slate-50 border border-slate-300 rounded-lg px-3 py-1.5 focus:outline-none focus:border-amber-500">
+      <!-- FILTROS DE BUSCA E STATUS -->
+      <div class="bg-white p-3.5 rounded-2xl shadow-sm border border-slate-200 flex flex-wrap gap-3 items-center text-sm">
+        <select id="filterStatus" onchange="renderTable()" class="bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 focus:outline-none focus:border-amber-500 text-slate-700 font-medium">
           <option value="">Todos os Status</option>
-          <option value="Aguardando produção">Aguardando produção</option>
-          <option value="Em andamento">Em andamento</option>
+          <option value="Aguardando produção">Aguardando Produção</option>
+          <option value="Em andamento">Em Andamento</option>
           <option value="Entregue">Entregue</option>
           <option value="Atraso">Atraso</option>
         </select>
 
-        <input type="text" id="filterSearch" oninput="renderTable()" placeholder="Buscar cliente, máquina..." class="bg-slate-50 border border-slate-300 rounded-lg px-3 py-1.5 flex-grow focus:outline-none focus:border-amber-500">
+        <select id="filterLinha" onchange="renderTable()" class="bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 focus:outline-none focus:border-amber-500 text-slate-700 font-medium">
+          <option value="">Todas as Linhas</option>
+          <option value="Linha Leve">Linha Leve</option>
+          <option value="Linha Intermediária">Linha Intermediária</option>
+          <option value="Linha Pesada">Linha Pesada</option>
+        </select>
+
+        <div class="relative flex-grow">
+          <i class="fa-solid fa-magnifying-glass absolute left-3 top-3 text-slate-400 text-xs"></i>
+          <input type="text" id="filterSearch" oninput="renderTable()" placeholder="Buscar por cliente, modelo ou equipe..." class="w-full bg-slate-50 border border-slate-300 rounded-xl pl-9 pr-3 py-2 focus:outline-none focus:border-amber-500 text-slate-700">
+        </div>
       </div>
 
       <!-- TABELA PRINCIPAL -->
-      <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-x-auto">
-        <table class="w-full text-left text-sm text-slate-600">
-          <thead class="bg-slate-50 text-slate-700 font-semibold border-b border-slate-200 uppercase text-xs">
-            <tr>
-              <th class="p-3">Equipe</th>
-              <th class="p-3">Cliente</th>
-              <th class="p-3">Máquina</th>
-              <th class="p-3">Linha</th>
-              <th class="p-3">Início</th>
-              <th class="p-3">Previsão</th>
-              <th class="p-3">Status</th>
-              <th class="p-3">Entrega Real</th>
-              <th class="p-3 text-center">OS</th>
-            </tr>
-          </thead>
-          <tbody id="tableBody" class="divide-y divide-slate-100">
-            <tr>
-              <td colspan="9" class="p-8 text-center text-slate-400">
-                <i class="fa-solid fa-spinner fa-spin text-2xl mb-2"></i>
-                <p>Carregando dados da produção...</p>
-              </td>
-            </tr>
-          </tbody>
-        </table>
+      <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+        <div class="overflow-x-auto">
+          <table class="w-full text-left text-sm text-slate-600">
+            <thead class="bg-slate-900 text-slate-200 font-bold uppercase text-xs tracking-wider">
+              <tr>
+                <th class="p-3.5">Equipe</th>
+                <th class="p-3.5">Cliente</th>
+                <th class="p-3.5">Máquina / Modelo</th>
+                <th class="p-3.5">Linha</th>
+                <th class="p-3.5">Início</th>
+                <th class="p-3.5">Previsão</th>
+                <th class="p-3.5">Status</th>
+                <th class="p-3.5 text-center">Ações</th>
+              </tr>
+            </thead>
+            <tbody id="tableBody" class="divide-y divide-slate-100 font-medium">
+              <tr>
+                <td colspan="8" class="p-12 text-center text-slate-400">
+                  <i class="fa-solid fa-spinner fa-spin text-3xl mb-3 text-amber-500 block"></i>
+                  Carregando dados da produção...
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
       </div>
     </section>
 
     <!-- SEÇÃO: DASHBOARD -->
     <section id="sec-dashboard" class="hidden space-y-6">
       <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
-          <div class="text-xs text-slate-500 font-medium">Total de Máquinas</div>
-          <div id="kpiTotal" class="text-2xl font-bold text-slate-800 mt-1">0</div>
+        <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex items-center justify-between">
+          <div>
+            <div class="text-xs text-slate-500 font-semibold uppercase tracking-wider">Total em Fila</div>
+            <div id="kpiTotal" class="text-3xl font-black text-slate-900 mt-1">0</div>
+          </div>
+          <div class="bg-slate-100 p-3.5 rounded-2xl text-slate-700 text-xl"><i class="fa-solid fa-cubes"></i></div>
         </div>
-        <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
-          <div class="text-xs text-slate-500 font-medium">Em Andamento</div>
-          <div id="kpiAndamento" class="text-2xl font-bold text-blue-600 mt-1">0</div>
+
+        <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex items-center justify-between">
+          <div>
+            <div class="text-xs text-blue-600 font-semibold uppercase tracking-wider">Em Andamento</div>
+            <div id="kpiAndamento" class="text-3xl font-black text-blue-600 mt-1">0</div>
+          </div>
+          <div class="bg-blue-50 p-3.5 rounded-2xl text-blue-600 text-xl"><i class="fa-solid fa-gears animate-spin"></i></div>
         </div>
-        <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
-          <div class="text-xs text-slate-500 font-medium">Entregues</div>
-          <div id="kpiEntregues" class="text-2xl font-bold text-emerald-600 mt-1">0</div>
+
+        <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex items-center justify-between">
+          <div>
+            <div class="text-xs text-emerald-600 font-semibold uppercase tracking-wider">Entregues</div>
+            <div id="kpiEntregues" class="text-3xl font-black text-emerald-600 mt-1">0</div>
+          </div>
+          <div class="bg-emerald-50 p-3.5 rounded-2xl text-emerald-600 text-xl"><i class="fa-solid fa-circle-check"></i></div>
         </div>
-        <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
-          <div class="text-xs text-slate-500 font-medium">Taxa de Conclusão</div>
-          <div id="kpiTaxa" class="text-2xl font-bold text-amber-500 mt-1">0%</div>
+
+        <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex items-center justify-between">
+          <div>
+            <div class="text-xs text-amber-600 font-semibold uppercase tracking-wider">Conclusão</div>
+            <div id="kpiTaxa" class="text-3xl font-black text-amber-500 mt-1">0%</div>
+          </div>
+          <div class="bg-amber-50 p-3.5 rounded-2xl text-amber-500 text-xl"><i class="fa-solid fa-chart-line"></i></div>
         </div>
       </div>
     </section>
@@ -152,55 +188,55 @@
 
   <!-- MODAL: NOVA MÁQUINA -->
   <div id="modalAddMachine" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm hidden flex items-center justify-center p-4 z-50">
-    <div class="bg-white rounded-2xl max-w-lg w-full p-6 shadow-2xl space-y-4">
-      <div class="flex justify-between items-center border-b pb-3">
-        <h3 class="font-bold text-slate-800 text-lg"><i class="fa-solid fa-plus text-amber-500 mr-2"></i>Nova Máquina</h3>
-        <button onclick="closeAddMachineModal()" class="text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark text-lg"></i></button>
+    <div class="bg-white rounded-3xl max-w-lg w-full p-6 shadow-2xl space-y-4 border border-slate-100">
+      <div class="flex justify-between items-center border-b border-slate-100 pb-4">
+        <h3 class="font-extrabold text-slate-900 text-lg flex items-center gap-2"><i class="fa-solid fa-circle-plus text-amber-500"></i> Cadastrar Nova Máquina</h3>
+        <button onclick="closeAddMachineModal()" class="text-slate-400 hover:text-slate-600 p-1"><i class="fa-solid fa-xmark text-lg"></i></button>
       </div>
-      <form id="formAddMachine" onsubmit="submitNewMachine(event)" class="space-y-3 text-sm">
+      <form id="formAddMachine" onsubmit="submitNewMachine(event)" class="space-y-3.5 text-sm">
         <div>
-          <label class="block text-xs font-semibold text-slate-600 mb-1">Equipe / Identificador</label>
-          <input type="text" id="addEquipe" required placeholder="Ex: L10-1" class="w-full border rounded-lg p-2">
+          <label class="block text-xs font-bold text-slate-700 mb-1 uppercase tracking-wider">Equipe / Tag</label>
+          <input type="text" id="addEquipe" required placeholder="Ex: Equipe Alpha - L10" class="w-full border border-slate-300 rounded-xl p-2.5 focus:border-amber-500 focus:outline-none">
         </div>
         <div>
-          <label class="block text-xs font-semibold text-slate-600 mb-1">Cliente</label>
-          <input type="text" id="addCliente" required placeholder="Nome do cliente" class="w-full border rounded-lg p-2">
+          <label class="block text-xs font-bold text-slate-700 mb-1 uppercase tracking-wider">Cliente / Razão Social</label>
+          <input type="text" id="addCliente" required placeholder="Nome do cliente" class="w-full border border-slate-300 rounded-xl p-2.5 focus:border-amber-500 focus:outline-none">
         </div>
         <div>
-          <label class="block text-xs font-semibold text-slate-600 mb-1">Máquina</label>
-          <input type="text" id="addMaquina" required placeholder="Ex: Router D3020 8CV" class="w-full border rounded-lg p-2">
+          <label class="block text-xs font-bold text-slate-700 mb-1 uppercase tracking-wider">Descrição da Máquina</label>
+          <input type="text" id="addMaquina" required placeholder="Ex: Router CNC D3020 8CV Spindle" class="w-full border border-slate-300 rounded-xl p-2.5 focus:border-amber-500 focus:outline-none">
         </div>
         <div class="grid grid-cols-2 gap-3">
           <div>
-            <label class="block text-xs font-semibold text-slate-600 mb-1">Linha</label>
-            <select id="addLinha" class="w-full border rounded-lg p-2">
+            <label class="block text-xs font-bold text-slate-700 mb-1 uppercase tracking-wider">Linha</label>
+            <select id="addLinha" class="w-full border border-slate-300 rounded-xl p-2.5 focus:border-amber-500 focus:outline-none font-medium">
               <option value="Linha Leve">Linha Leve</option>
               <option value="Linha Intermediária">Linha Intermediária</option>
               <option value="Linha Pesada">Linha Pesada</option>
             </select>
           </div>
           <div>
-            <label class="block text-xs font-semibold text-slate-600 mb-1">Status</label>
-            <select id="addStatus" class="w-full border rounded-lg p-2">
-              <option value="Aguardando produção">Aguardando produção</option>
-              <option value="Em andamento">Em andamento</option>
+            <label class="block text-xs font-bold text-slate-700 mb-1 uppercase tracking-wider">Status Inicial</label>
+            <select id="addStatus" class="w-full border border-slate-300 rounded-xl p-2.5 focus:border-amber-500 focus:outline-none font-medium">
+              <option value="Aguardando produção">Aguardando Produção</option>
+              <option value="Em andamento">Em Andamento</option>
               <option value="Entregue">Entregue</option>
             </select>
           </div>
         </div>
         <div class="grid grid-cols-2 gap-3">
           <div>
-            <label class="block text-xs font-semibold text-slate-600 mb-1">Data Início</label>
-            <input type="date" id="addInicio" class="w-full border rounded-lg p-2">
+            <label class="block text-xs font-bold text-slate-700 mb-1 uppercase tracking-wider">Data de Início</label>
+            <input type="date" id="addInicio" class="w-full border border-slate-300 rounded-xl p-2.5 focus:border-amber-500 focus:outline-none">
           </div>
           <div>
-            <label class="block text-xs font-semibold text-slate-600 mb-1">Previsão</label>
-            <input type="date" id="addPrevisao" class="w-full border rounded-lg p-2">
+            <label class="block text-xs font-bold text-slate-700 mb-1 uppercase tracking-wider">Previsão de Entrega</label>
+            <input type="date" id="addPrevisao" class="w-full border border-slate-300 rounded-xl p-2.5 focus:border-amber-500 focus:outline-none">
           </div>
         </div>
-        <div class="flex justify-end gap-2 pt-3">
-          <button type="button" onclick="closeAddMachineModal()" class="px-4 py-2 border rounded-lg text-slate-600">Cancelar</button>
-          <button type="submit" id="btnSaveMachine" class="bg-amber-500 hover:bg-amber-600 text-slate-900 font-bold px-4 py-2 rounded-lg transition">Salvar Máquina</button>
+        <div class="flex justify-end gap-2 pt-4 border-t border-slate-100">
+          <button type="button" onclick="closeAddMachineModal()" class="px-5 py-2.5 border border-slate-300 rounded-xl text-slate-600 font-semibold hover:bg-slate-50 transition">Cancelar</button>
+          <button type="submit" id="btnSaveMachine" class="bg-amber-500 hover:bg-amber-600 text-slate-900 font-bold px-5 py-2.5 rounded-xl shadow transition">Salvar Máquina</button>
         </div>
       </form>
     </div>
@@ -208,55 +244,85 @@
 
   <!-- MODAL: IMPORTAR COM IA -->
   <div id="modalIAImport" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm hidden flex items-center justify-center p-4 z-50">
-    <div class="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl space-y-4">
-      <div class="flex justify-between items-center border-b pb-3">
-        <h3 class="font-bold text-slate-800 text-lg"><i class="fa-solid fa-wand-magic-sparkles text-indigo-600 mr-2"></i>Importar OS com IA</h3>
-        <button onclick="closeIAImportModal()" class="text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark text-lg"></i></button>
+    <div class="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl space-y-4 border border-slate-100">
+      <div class="flex justify-between items-center border-b border-slate-100 pb-3">
+        <h3 class="font-extrabold text-slate-900 text-lg flex items-center gap-2"><i class="fa-solid fa-wand-magic-sparkles text-indigo-600"></i> Leitor Inteligente de OS</h3>
+        <button onclick="closeIAImportModal()" class="text-slate-400 hover:text-slate-600 p-1"><i class="fa-solid fa-xmark text-lg"></i></button>
       </div>
-      <p class="text-xs text-slate-500">Selecione o arquivo PDF da Ordem de Serviço para extrair dados automaticamente através da IA do Gemini.</p>
+      <p class="text-xs text-slate-500 leading-relaxed">Envie o arquivo PDF da Ordem de Serviço. A IA do Gemini irá ler o documento e cadastrar automaticamente o cliente, linha e especificações da máquina na fábrica.</p>
       
-      <input type="file" id="pdfFileInput" accept="application/pdf" class="w-full border rounded-lg p-2 text-xs">
+      <div class="border-2 border-dashed border-indigo-200 rounded-2xl p-4 text-center bg-indigo-50/50 hover:bg-indigo-50 transition cursor-pointer" onclick="document.getElementById('pdfFileInput').click()">
+        <i class="fa-solid fa-file-pdf text-3xl text-indigo-600 mb-2 block"></i>
+        <span class="text-xs font-bold text-indigo-900 block" id="fileNameDisplay">Clique aqui para selecionar a OS (PDF)</span>
+        <input type="file" id="pdfFileInput" accept="application/pdf" class="hidden" onchange="updateFileNameDisplay(this)">
+      </div>
 
-      <div id="iaLoading" class="hidden text-center py-3 text-indigo-600 text-xs font-semibold">
-        <i class="fa-solid fa-spinner fa-spin text-xl mb-1 block"></i>
-        Processando documento PDF com a IA do Gemini...
+      <div id="iaLoading" class="hidden text-center py-4 bg-indigo-50 rounded-2xl border border-indigo-100">
+        <i class="fa-solid fa-spinner fa-spin text-2xl text-indigo-600 mb-2 block"></i>
+        <span class="text-xs font-bold text-indigo-900 block">Lendo Ordem de Serviço com Gemini IA...</span>
+        <span class="text-[10px] text-indigo-600">Aguarde alguns segundos</span>
       </div>
 
       <div class="flex justify-end gap-2 pt-2">
-        <button onclick="closeIAImportModal()" class="px-4 py-2 border rounded-lg text-xs text-slate-600">Cancelar</button>
-        <button onclick="processIAImport()" id="btnProcessIA" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-4 py-2 rounded-lg text-xs transition">Processar OS com IA</button>
+        <button onclick="closeIAImportModal()" class="px-4 py-2 rounded-xl text-xs font-semibold text-slate-600 border border-slate-300">Cancelar</button>
+        <button onclick="processIAImport()" id="btnProcessIA" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-5 py-2.5 rounded-xl text-xs shadow transition flex items-center gap-2">
+          <i class="fa-solid fa-bolt"></i> Extrair & Cadastrar OS
+        </button>
       </div>
     </div>
   </div>
 
-  <!-- MODAL: CONFIGURAÇÃO DE URL -->
+  <!-- MODAL: CONFIGURAÇÕES DA API GEMINI IA -->
   <div id="modalConfig" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm hidden flex items-center justify-center p-4 z-50">
-    <div class="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl space-y-4">
-      <div class="flex justify-between items-center">
-        <h3 class="font-bold text-slate-800 text-lg"><i class="fa-solid fa-link text-amber-500 mr-2"></i>Conexão Apps Script</h3>
-        <button onclick="closeConfigModal()" class="text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark text-lg"></i></button>
+    <div class="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl space-y-4 border border-slate-100">
+      <div class="flex justify-between items-center border-b border-slate-100 pb-3">
+        <h3 class="font-bold text-slate-900 text-lg flex items-center gap-2"><i class="fa-solid fa-key text-amber-500"></i> Configurar Chave Gemini IA</h3>
+        <button onclick="closeConfigModal()" class="text-slate-400 hover:text-slate-600 p-1"><i class="fa-solid fa-xmark text-lg"></i></button>
       </div>
-      <input type="url" id="scriptUrlInput" placeholder="https://script.google.com/macros/s/.../exec" class="w-full border rounded-lg p-2.5 text-sm">
-      <div class="flex justify-end gap-2 pt-2">
-        <button onclick="saveScriptUrl()" class="bg-amber-500 hover:bg-amber-600 text-slate-900 font-bold px-4 py-2 rounded-lg text-sm transition">Salvar Conexão</button>
+      <p class="text-xs text-slate-500 leading-relaxed">Insira a sua chave gratuita da API do Gemini para permitir que o leitor de OS por IA funcione diretamente do seu navegador.</p>
+
+      <div>
+        <label class="block text-xs font-bold text-slate-700 mb-1 uppercase tracking-wider">Chave API Gemini</label>
+        <input type="password" id="geminiApiKeyInput" placeholder="AIzaSy..." class="w-full border border-slate-300 rounded-xl p-2.5 text-sm focus:border-amber-500 focus:outline-none">
+      </div>
+
+      <div class="flex justify-between items-center pt-2">
+        <a href="https://aistudio.google.com/app/apikey" target="_blank" class="text-xs text-indigo-600 hover:underline font-semibold flex items-center gap-1">
+          <i class="fa-solid fa-external-link text-[10px]"></i> Gerar chave gratuita no Google
+        </a>
+        <button onclick="saveApiKey()" class="bg-amber-500 hover:bg-amber-600 text-slate-900 font-bold px-4 py-2 rounded-xl text-xs transition shadow">
+          Salvar Chave
+        </button>
       </div>
     </div>
   </div>
 
   <script>
-    let scriptUrl = localStorage.getItem('DELTA_SCRIPT_URL') || '';
-    let appData = [];
+    let geminiApiKey = localStorage.getItem('DELTA_GEMINI_KEY') || '';
+    let appData = JSON.parse(localStorage.getItem('DELTA_MACHINES_DATA')) || [];
 
+    // CARREGAMENTO INICIAL COM DADOS EXEMO DE SUPORTE SE VAZIO
     window.addEventListener('DOMContentLoaded', () => {
-      if (!scriptUrl) {
-        document.getElementById('noScriptWarning').classList.remove('hidden');
-      } else {
-        fetchProductionData();
+      if (!geminiApiKey) {
+        document.getElementById('noApiKeyWarning').classList.remove('hidden');
       }
+      if (appData.length === 0) {
+        appData = [
+          { id: '1', equipe: 'L10-1', cliente: 'ZT SILVA DE BARROS LTDA', maquina: 'Fiber Desktop 50W', linha: 'Linha Leve', inicio: '2026-09-08', previsao: '2026-09-28', status: 'Em andamento' },
+          { id: '2', equipe: 'L9-2', cliente: 'CLEVERSON Revenda', maquina: 'Fiber Desktop 30W', linha: 'Linha Leve', inicio: '2026-09-08', previsao: '2026-09-25', status: 'Aguardando produção' }
+        ];
+        saveData();
+      }
+      renderTable();
+      updateKPIs();
     });
 
+    function saveData() {
+      localStorage.setItem('DELTA_MACHINES_DATA', JSON.stringify(appData));
+    }
+
     function openConfigModal() {
-      document.getElementById('scriptUrlInput').value = scriptUrl;
+      document.getElementById('geminiApiKeyInput').value = geminiApiKey;
       document.getElementById('modalConfig').classList.remove('hidden');
     }
     function closeConfigModal() { document.getElementById('modalConfig').classList.add('hidden'); }
@@ -267,96 +333,80 @@
     function openIAImportModal() { document.getElementById('modalIAImport').classList.remove('hidden'); }
     function closeIAImportModal() { document.getElementById('modalIAImport').classList.add('hidden'); }
 
-    function saveScriptUrl() {
-      const url = document.getElementById('scriptUrlInput').value.trim();
-      if (!url) return alert('Insira uma URL válida!');
-      localStorage.setItem('DELTA_SCRIPT_URL', url);
-      scriptUrl = url;
+    function updateFileNameDisplay(input) {
+      if (input.files.length) {
+        document.getElementById('fileNameDisplay').innerText = input.files[0].name;
+      }
+    }
+
+    function saveApiKey() {
+      const key = document.getElementById('geminiApiKeyInput').value.trim();
+      if (!key) return alert('Por favor, insira uma chave válida!');
+      localStorage.setItem('DELTA_GEMINI_KEY', key);
+      geminiApiKey = key;
       closeConfigModal();
-      document.getElementById('noScriptWarning').classList.add('hidden');
-      fetchProductionData();
-    }
-
-    function fetchProductionData() {
-      if (!scriptUrl) return;
-      document.getElementById('statusText').innerText = 'Carregando...';
-      
-      fetch(scriptUrl)
-        .then(res => res.json())
-        .then(data => {
-          document.getElementById('statusText').innerText = 'Conectado';
-          document.getElementById('statusDot').className = 'w-2.5 h-2.5 rounded-full bg-emerald-500';
-          if (data.data) {
-            appData = data.data;
-            renderTable();
-            updateKPIs();
-          }
-        })
-        .catch(() => {
-          document.getElementById('statusText').innerText = 'Erro Conexão';
-          document.getElementById('statusDot').className = 'w-2.5 h-2.5 rounded-full bg-rose-500';
-        });
-    }
-
-    function decodeText(txt) {
-      if (!txt) return '-';
-      try { return decodeURIComponent(escape(txt)); } catch(e) { return txt; }
+      document.getElementById('noApiKeyWarning').classList.add('hidden');
+      alert('Chave da API do Gemini salva com sucesso!');
     }
 
     function renderTable() {
       const tbody = document.getElementById('tableBody');
       const filterStatus = document.getElementById('filterStatus').value.toLowerCase();
+      const filterLinha = document.getElementById('filterLinha').value.toLowerCase();
       const filterSearch = document.getElementById('filterSearch').value.toLowerCase();
 
-      if (!appData.length || appData.length <= 1) {
-        tbody.innerHTML = `<tr><td colspan="9" class="p-8 text-center text-slate-400">Nenhum registro encontrado na planilha.</td></tr>`;
+      let filtered = appData.filter(item => {
+        if (filterStatus && !item.status.toLowerCase().includes(filterStatus)) return false;
+        if (filterLinha && !item.linha.toLowerCase().includes(filterLinha)) return false;
+        if (filterSearch && !item.cliente.toLowerCase().includes(filterSearch) && !item.maquina.toLowerCase().includes(filterSearch) && !item.equipe.toLowerCase().includes(filterSearch)) return false;
+        return true;
+      });
+
+      if (!filtered.length) {
+        tbody.innerHTML = `<tr><td colspan="8" class="p-8 text-center text-slate-400 font-medium">Nenhuma máquina encontrada.</td></tr>`;
         return;
       }
 
       let html = '';
-      for (let i = 1; i < appData.length; i++) {
-        const row = appData[i];
-        const equipe = decodeText(row[0]);
-        const cliente = decodeText(row[3] || row[1]);
-        const maquina = decodeText(row[5] || row[2]);
-        const linha = decodeText(row[4]);
-        const status = decodeText(row[7] || 'Aguardando produção');
-
-        if (filterStatus && !status.toLowerCase().includes(filterStatus)) continue;
-        if (filterSearch && !cliente.toLowerCase().includes(filterSearch) && !maquina.toLowerCase().includes(filterSearch)) continue;
+      filtered.forEach((item, index) => {
+        let statusBg = 'bg-amber-100 text-amber-800 border-amber-200';
+        if (item.status === 'Em andamento') statusBg = 'bg-blue-100 text-blue-800 border-blue-200';
+        if (item.status === 'Entregue') statusBg = 'bg-emerald-100 text-emerald-800 border-emerald-200';
 
         html += `
-          <tr class="hover:bg-slate-50 transition">
-            <td class="p-3 font-medium text-slate-800">${equipe}</td>
-            <td class="p-3">${cliente}</td>
-            <td class="p-3 font-semibold text-slate-700">${maquina}</td>
-            <td class="p-3"><span class="bg-slate-100 text-slate-600 px-2 py-0.5 rounded text-xs">${linha}</span></td>
-            <td class="p-3 text-xs">${row[1] || '-'}</td>
-            <td class="p-3 text-xs">${row[2] || '-'}</td>
-            <td class="p-3"><span class="bg-amber-100 text-amber-800 px-2.5 py-1 rounded-full text-xs font-semibold">${status}</span></td>
-            <td class="p-3 text-xs">${row[10] || '-'}</td>
-            <td class="p-3 text-center">${row[6] ? `<a href="${row[6]}" target="_blank" class="text-indigo-600 hover:text-indigo-800"><i class="fa-solid fa-file-pdf text-base"></i></a>` : '-'}</td>
+          <tr class="hover:bg-slate-50 transition border-b border-slate-100">
+            <td class="p-3.5 font-bold text-slate-900">${item.equipe}</td>
+            <td class="p-3.5 font-semibold text-slate-800">${item.cliente}</td>
+            <td class="p-3.5 text-slate-700">${item.maquina}</td>
+            <td class="p-3.5"><span class="bg-slate-100 border border-slate-200 text-slate-600 px-2.5 py-1 rounded-lg text-xs font-semibold">${item.linha}</span></td>
+            <td class="p-3.5 text-xs text-slate-500">${item.inicio || '-'}</td>
+            <td class="p-3.5 text-xs text-slate-500">${item.previsao || '-'}</td>
+            <td class="p-3.5"><span class="${statusBg} border px-3 py-1 rounded-full text-xs font-bold inline-block">${item.status}</span></td>
+            <td class="p-3.5 text-center">
+              <button onclick="deleteMachine('${item.id}')" class="text-rose-500 hover:text-rose-700 p-1.5 rounded-lg hover:bg-rose-50 transition" title="Excluir"><i class="fa-solid fa-trash-can"></i></button>
+            </td>
           </tr>
         `;
-      }
-      tbody.innerHTML = html || `<tr><td colspan="9" class="p-8 text-center text-slate-400">Nenhum registro corresponde aos filtros.</td></tr>`;
+      });
+      tbody.innerHTML = html;
     }
 
     function updateKPIs() {
-      const total = appData.length > 1 ? appData.length - 1 : 0;
+      const total = appData.length;
+      const andamento = appData.filter(i => i.status === 'Em andamento').length;
+      const entregues = appData.filter(i => i.status === 'Entregue').length;
+      const taxa = total > 0 ? Math.round((entregues / total) * 100) : 0;
+
       document.getElementById('kpiTotal').innerText = total;
+      document.getElementById('kpiAndamento').innerText = andamento;
+      document.getElementById('kpiEntregues').innerText = entregues;
+      document.getElementById('kpiTaxa').innerText = `${taxa}%`;
     }
 
     function submitNewMachine(e) {
       e.preventDefault();
-      if (!scriptUrl) return alert('Configure a URL do Apps Script primeiro!');
-
-      const btn = document.getElementById('btnSaveMachine');
-      btn.disabled = true;
-      btn.innerText = 'Salvando...';
-
-      const payload = {
-        action: 'addMachine',
+      const newObj = {
+        id: Date.now().toString(),
         equipe: document.getElementById('addEquipe').value,
         cliente: document.getElementById('addCliente').value,
         maquina: document.getElementById('addMaquina').value,
@@ -366,69 +416,91 @@
         previsao: document.getElementById('addPrevisao').value
       };
 
-      fetch(scriptUrl, {
-        method: 'POST',
-        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-        body: JSON.stringify(payload)
-      })
-      .then(res => res.json())
-      .then(res => {
-        btn.disabled = false;
-        btn.innerText = 'Salvar Máquina';
-        closeAddMachineModal();
-        alert('Máquina gravada com sucesso!');
-        fetchProductionData();
-      })
-      .catch(() => {
-        btn.disabled = false;
-        btn.innerText = 'Salvar Máquina';
-        alert('Registro enviado para a planilha.');
-        closeAddMachineModal();
-        fetchProductionData();
-      });
+      appData.unshift(newObj);
+      saveData();
+      renderTable();
+      updateKPIs();
+      closeAddMachineModal();
+      document.getElementById('formAddMachine').reset();
     }
 
-    function processIAImport() {
+    function deleteMachine(id) {
+      if (confirm('Deseja remover esta máquina da fila de produção?')) {
+        appData = appData.filter(item => item.id !== id);
+        saveData();
+        renderTable();
+        updateKPIs();
+      }
+    }
+
+    async function processIAImport() {
+      if (!geminiApiKey) {
+        alert('Configure primeiro a sua chave gratuita do Gemini em Configurações (ícone de engrenagem)!');
+        return openConfigModal();
+      }
+
       const fileInput = document.getElementById('pdfFileInput');
-      if (!fileInput.files.length) return alert('Selecione um arquivo PDF!');
+      if (!fileInput.files.length) return alert('Por favor, selecione um arquivo PDF de Ordem de Serviço!');
 
       const file = fileInput.files[0];
-      const reader = new FileReader();
-
       document.getElementById('iaLoading').classList.remove('hidden');
       document.getElementById('btnProcessIA').disabled = true;
 
-      reader.onload = function(e) {
-        const base64Data = e.target.result.split(',')[1];
-        const payload = {
-          action: 'extractOS',
-          fileData: base64Data,
-          fileName: file.name
+      try {
+        const base64Data = await fileToBase64(file);
+        
+        // CHAMADA DIRETA PARA A API GEMINI IA
+        const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${geminiApiKey}`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            contents: [{
+              parts: [
+                { text: "Extraia os dados desta Ordem de Serviço em formato JSON estrito com os campos: cliente, maquina, linha (Leve, Intermediária ou Pesada), inicio (YYYY-MM-DD), previsao (YYYY-MM-DD)." },
+                { inline_data: { mime_type: "application/pdf", data: base64Data } }
+              ]
+            }]
+          })
+        });
+
+        const result = await response.json();
+        const extractedText = result.candidates[0].content.parts[0].text;
+        const cleanJson = extractedText.replace(/```json/g, '').replace(/```/g, '').trim();
+        const parsed = JSON.parse(cleanJson);
+
+        const newMachine = {
+          id: Date.now().toString(),
+          equipe: 'OS-IA',
+          cliente: parsed.cliente || 'Cliente OS',
+          maquina: parsed.maquina || 'Máquina CNC',
+          linha: parsed.linha || 'Linha Intermediária',
+          status: 'Aguardando produção',
+          inicio: parsed.inicio || new Date().toISOString().split('T')[0],
+          previsao: parsed.previsao || ''
         };
 
-        fetch(scriptUrl, {
-          method: 'POST',
-          headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-          body: JSON.stringify(payload)
-        })
-        .then(res => res.json())
-        .then(res => {
-          document.getElementById('iaLoading').classList.add('hidden');
-          document.getElementById('btnProcessIA').disabled = false;
-          closeIAImportModal();
-          alert('Ordem de serviço processada e salva com sucesso via IA!');
-          fetchProductionData();
-        })
-        .catch(() => {
-          document.getElementById('iaLoading').classList.add('hidden');
-          document.getElementById('btnProcessIA').disabled = false;
-          closeIAImportModal();
-          alert('OS enviada e processada com sucesso!');
-          fetchProductionData();
-        });
-      };
+        appData.unshift(newMachine);
+        saveData();
+        renderTable();
+        updateKPIs();
+        closeIAImportModal();
+        alert('Ordem de Serviço lida com sucesso pela IA do Gemini!');
 
-      reader.readAsDataURL(file);
+      } catch (err) {
+        alert('Erro ao processar PDF por IA. Verifique se a sua Chave API do Gemini está correta.');
+      } finally {
+        document.getElementById('iaLoading').classList.add('hidden');
+        document.getElementById('btnProcessIA').disabled = false;
+      }
+    }
+
+    function fileToBase64(file) {
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result.split(',')[1]);
+        reader.onerror = error => reject(error);
+        reader.readAsDataURL(file);
+      });
     }
 
     function switchTab(tab) {
