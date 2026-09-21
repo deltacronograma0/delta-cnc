@@ -139,6 +139,10 @@
             <button onclick="openAddMachineModal()" class="editor-only hidden bg-indigo-600 hover:bg-indigo-500 text-white font-bold px-4 py-2.5 rounded-xl text-xs flex items-center gap-2 shadow transition">
               <i class="fa-solid fa-plus"></i> Adicionar Máquina
             </button>
+            <!-- BOTÃO NOVO: IMPORTAR VÁRIAS OS -->
+            <button onclick="openBatchImportModal()" class="editor-only hidden bg-amber-600 hover:bg-amber-500 text-slate-950 font-bold px-4 py-2.5 rounded-xl text-xs flex items-center gap-2 shadow transition">
+              <i class="fa-solid fa-wand-magic-sparkles"></i> Importar várias OS (IA)
+            </button>
             <button id="btnDeleteSelected" onclick="deleteSelectedMachines()" class="hidden bg-rose-950/80 hover:bg-rose-900 text-rose-300 font-bold px-4 py-2.5 rounded-xl text-xs flex items-center gap-2 border border-rose-800 transition">
               <i class="fa-solid fa-trash-can"></i> Excluir Selecionados (<span id="selectedCountBadge">0</span>)
             </button>
@@ -387,6 +391,33 @@
           <button type="submit" class="bg-indigo-600 hover:bg-indigo-500 text-white font-bold px-4 py-2 rounded-xl text-xs shadow">Guardar Utilizador</button>
         </div>
       </form>
+    </div>
+  </div>
+
+  <!-- MODAL: IMPORTAÇÃO EM LOTE DE OS (IA) -->
+  <div id="modalBatchImport" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm hidden flex items-center justify-center p-4 z-50">
+    <div class="bg-[#121c3b] rounded-3xl max-w-lg w-full p-6 shadow-2xl space-y-4 border border-slate-800 text-slate-200">
+      <div class="flex justify-between items-center border-b border-slate-800 pb-3">
+        <h3 class="font-extrabold text-white text-sm"><i class="fa-solid fa-wand-magic-sparkles text-amber-400 mr-2"></i>Importar Várias OS (Leitura por IA)</h3>
+        <button onclick="closeBatchImportModal()" class="text-slate-400 hover:text-slate-200"><i class="fa-solid fa-xmark text-base"></i></button>
+      </div>
+      <div class="space-y-3 text-xs">
+        <p class="text-slate-400 leading-relaxed">Selecione vários ficheiros PDF de Ordens de Serviço (OS). A Inteligência Artificial irá ler os documentos, extrair os dados e preencher automaticamente a planilha.</p>
+        
+        <div>
+          <label class="block font-bold text-slate-300 mb-1 uppercase text-[11px]">Ficheiros PDF de OS (Múltiplos)</label>
+          <input type="file" id="batchPdfFiles" multiple accept="application/pdf" class="w-full text-xs border border-slate-700 rounded-xl p-2.5 bg-[#0b1329] text-slate-300">
+        </div>
+
+        <div id="batchStatusLog" class="hidden bg-[#0b1329] border border-slate-800 p-3 rounded-xl max-h-40 overflow-y-auto text-[11px] font-mono text-indigo-300 space-y-1"></div>
+
+        <div class="flex justify-end gap-2 pt-3 border-t border-slate-800">
+          <button type="button" onclick="closeBatchImportModal()" class="px-4 py-2 border border-slate-700 rounded-xl text-slate-300 font-semibold">Cancelar</button>
+          <button type="button" id="btnRunBatchImport" onclick="processBatchImport()" class="bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold px-4 py-2 rounded-xl shadow flex items-center gap-2">
+            <i class="fa-solid fa-microchip"></i> Processar com IA
+          </button>
+        </div>
+      </div>
     </div>
   </div>
 
@@ -656,6 +687,123 @@
       localStorage.setItem('DELTA_GEMINI_KEY', geminiApiKey);
       closeConfigModal();
       document.getElementById('noConfigWarning').classList.add('hidden');
+    }
+
+    // FUNÇÕES RECONSTRUÍDAS: IMPORTAÇÃO EM LOTE COM LEITURA LOCAL DE PDF E IA
+    function openBatchImportModal() {
+      const activeKey = localStorage.getItem('DELTA_GEMINI_KEY') || geminiApiKey;
+      if (!activeKey) {
+        alert('Por favor, configure sua chave da API do Gemini nas Definições antes de usar a leitura automática por IA.');
+        openConfigModal();
+        return;
+      }
+      document.getElementById('batchPdfFiles').value = '';
+      document.getElementById('batchStatusLog').classList.add('hidden');
+      document.getElementById('batchStatusLog').innerHTML = '';
+      document.getElementById('modalBatchImport').classList.remove('hidden');
+    }
+    
+    function closeBatchImportModal() { 
+      document.getElementById('modalBatchImport').classList.add('hidden'); 
+    }
+
+    async function extractTextFromPdfFile(file) {
+      const arrayBuffer = await file.arrayBuffer();
+      const loadingTask = pdfjsLib.getDocument({ data: arrayBuffer });
+      const pdfDoc = await loadingTask.promise;
+      let fullText = "";
+      for (let i = 1; i <= pdfDoc.numPages; i++) {
+        const page = await pdfDoc.getPage(i);
+        const textContent = await page.getTextContent();
+        const pageText = textContent.items.map(item => item.str).join(" ");
+        fullText += pageText + "\n";
+      }
+      return fullText;
+    }
+
+    async function processBatchImport() {
+      const fileInput = document.getElementById('batchPdfFiles');
+      const logBox = document.getElementById('batchStatusLog');
+      const activeKey = localStorage.getItem('DELTA_GEMINI_KEY') || geminiApiKey;
+
+      if (!fileInput.files || fileInput.files.length === 0) {
+        alert('Selecione pelo menos um ficheiro PDF.');
+        return;
+      }
+
+      logBox.classList.remove('hidden');
+      logBox.innerHTML = `<div>A iniciar leitura em lote de ${fileInput.files.length} ficheiro(s)...</div>`;
+      
+      let importedCount = 0;
+      for (let i = 0; i < fileInput.files.length; i++) {
+        const file = fileInput.files[i];
+        logBox.innerHTML += `<div>[${i+1}/${fileInput.files.length}] A processar ${file.name}...</div>`;
+        try {
+          const pdfText = await extractTextFromPdfFile(file);
+          const base64Data = await fileToDataUrl(file);
+          
+          if (!pdfText || pdfText.trim() === "") {
+            throw new Error("PDF sem texto legível");
+          }
+
+          const extractedData = await callGeminiWithText(pdfText, activeKey);
+          
+          if (extractedData) {
+            const newMachine = {
+              id: Date.now().toString() + Math.random().toString(36).substring(2,5),
+              equipe: extractedData.equipe || teamsData[0]?.name || '—',
+              cliente: extractedData.cliente || 'CLIENTE NÃO IDENTIFICADO',
+              maquina: extractedData.maquina || 'Máquina padrão',
+              linha: extractedData.linha || 'Leve',
+              inicio: extractedData.inicio || new Date().toISOString().split('T')[0],
+              previsao: extractedData.previsao || '',
+              entregaReal: '',
+              obs: extractedData.obs || 'Importado via IA',
+              pdfData: base64Data
+            };
+            appData.unshift(newMachine);
+            importedCount++;
+            logBox.innerHTML += `<div class="text-emerald-400">-> Sucesso: ${newMachine.cliente}</div>`;
+          }
+        } catch (err) {
+          console.error(err);
+          logBox.innerHTML += `<div class="text-rose-400">-> Erro ao processar ${file.name}</div>`;
+        }
+      }
+
+      saveData();
+      renderTable();
+      logBox.innerHTML += `<div class="font-bold text-white pt-2">Importação concluída! ${importedCount} OS adicionadas.</div>`;
+    }
+
+    async function callGeminiWithText(pdfText, apiKey) {
+      const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
+      const promptText = `Analise este texto de uma Ordem de Serviço (OS) e retorne estritamente um objeto JSON puro (sem markdown, sem crases) com estas chaves exatas:
+      {
+        "cliente": "Nome do cliente ou empresa",
+        "maquina": "Modelo da máquina",
+        "linha": "Leve, Intermediária ou Pesada",
+        "equipe": "Nome da equipe se houver",
+        "inicio": "YYYY-MM-DD se houver",
+        "previsao": "YYYY-MM-DD se houver",
+        "obs": "Resumo breve"
+      }
+      
+      Texto da OS:
+      ${pdfText}`;
+
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ contents: [{ parts: [{ text: promptText }] }] })
+      });
+
+      if (!response.ok) throw new Error('Erro na API do Gemini');
+      const data = await response.json();
+      const textResponse = data.candidates[0].content.parts[0].text;
+      
+      let cleanJson = textResponse.replace(/```json/g, '').replace(/```/g, '').trim();
+      return JSON.parse(cleanJson);
     }
 
     function exportBackup() {
