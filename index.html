@@ -767,7 +767,7 @@
           }
         } catch (err) {
           console.error(err);
-          logBox.innerHTML += `<div class="text-rose-400">-> Erro ao processar ${file.name}: ${err.message}</div>`;
+          logBox.innerHTML += `<div class="text-rose-400">-> Erro ao processar ${file.name}</div>`;
         }
       }
 
@@ -802,4 +802,413 @@
       const data = await response.json();
       const textResponse = data.candidates[0].content.parts[0].text;
       
-      let cleanJson = textResponse.replace(/```json/g, '').replace(/
+      let cleanJson = textResponse.replace(/```json/g, '').replace(/```/g, '').trim();
+      return JSON.parse(cleanJson);
+    }
+
+    function exportBackup() {
+      const backupObj = { machines: appData, teams: teamsData, users: usersData };
+      const blob = new Blob([JSON.stringify(backupObj, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `delta-backup.json`;
+      a.click();
+    }
+
+    function importBackup(e) {
+      const file = e.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        const parsed = JSON.parse(event.target.result);
+        if (parsed.machines) appData = parsed.machines;
+        if (parsed.teams) teamsData = parsed.teams;
+        if (parsed.users) usersData = parsed.users;
+        saveData();
+        renderTable();
+        renderTeams();
+        renderUsers();
+      };
+      reader.readAsText(file);
+    }
+
+    function exportCSV() {
+      let csv = 'Equipe,Cliente,Maquina,Linha,Inicio,Previsao,EntregaReal,Status,Obs\n';
+      appData.forEach(m => {
+        csv += `"${m.equipe}","${m.cliente}","${m.maquina}","${m.linha}","${m.inicio}","${m.previsao}","${m.entregaReal}","${getAutomaticStatus(m)}","${m.obs}"\n`;
+      });
+      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'producao-delta.csv';
+      a.click();
+    }
+
+    function openAddTeamModal(index = -1) {
+      document.getElementById('editTeamIndex').value = index;
+      if (index > -1) {
+        document.getElementById('teamNameInput').value = teamsData[index].name;
+        document.getElementById('teamTagsInput').value = teamsData[index].tags.join(', ');
+      } else {
+        document.getElementById('teamNameInput').value = '';
+        document.getElementById('teamTagsInput').value = '';
+      }
+      document.getElementById('modalAddTeam').classList.remove('hidden');
+    }
+    function closeAddTeamModal() { document.getElementById('modalAddTeam').classList.add('hidden'); }
+    
+    function submitTeamForm(e) {
+      e.preventDefault();
+      const index = parseInt(document.getElementById('editTeamIndex').value);
+      const name = document.getElementById('teamNameInput').value.trim();
+      const tags = document.getElementById('teamTagsInput').value.split(',').map(t => t.trim()).filter(t => t);
+      if (index > -1) {
+        teamsData[index] = { name, tags };
+      } else {
+        teamsData.push({ name, tags });
+      }
+      saveData();
+      renderTeams();
+      renderTable();
+      closeAddTeamModal();
+    }
+
+    function deleteTeam(index) {
+      teamsData.splice(index, 1);
+      saveData();
+      renderTeams();
+    }
+
+    function renderTeams() {
+      const container = document.getElementById('teamsGrid');
+      let html = '';
+      teamsData.forEach((t, idx) => {
+        let tagsHtml = t.tags.map(tag => `<span class="bg-indigo-950 text-indigo-300 px-2.5 py-1 rounded-full text-[10px] font-semibold border border-indigo-900/50">${tag}</span>`).join(' ');
+        let actions = `
+          <div class="flex gap-2 pt-2 border-t border-slate-800 mt-2">
+            <button onclick="openAddTeamModal(${idx})" class="flex-1 bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold py-1.5 rounded-xl text-xs"><i class="fa-solid fa-pen mr-1"></i> Editar</button>
+            <button onclick="deleteTeam(${idx})" class="flex-1 bg-rose-950/50 hover:bg-rose-900/50 text-rose-300 font-bold py-1.5 rounded-xl text-xs"><i class="fa-solid fa-trash mr-1"></i> Apagar</button>
+          </div>
+        `;
+
+        html += `
+          <div class="bg-[#121c3b] p-5 rounded-3xl border border-slate-800 shadow-sm space-y-3">
+            <h3 class="font-extrabold text-white text-sm flex items-center gap-1.5"><i class="fa-solid fa-shield-halved text-indigo-400"></i>${t.name}</h3>
+            <div class="flex flex-wrap gap-1.5">${tagsHtml}</div>
+            ${actions}
+          </div>
+        `;
+      });
+      container.innerHTML = html;
+
+      let selectHtml = '<option value="">Todas as equipes</option>';
+      teamsData.forEach(t => selectHtml += `<option value="${t.name}">${t.name}</option>`);
+      document.getElementById('filterEquipe').innerHTML = selectHtml;
+
+      let modalSelectHtml = '';
+      teamsData.forEach(t => modalSelectHtml += `<option value="${t.name}">${t.name}</option>`);
+      document.getElementById('addEquipe').innerHTML = modalSelectHtml;
+    }
+
+    function openAddMachineModal(id = null) {
+      renderTeams();
+      if (id) {
+        const item = appData.find(i => i.id === id);
+        if (!item) return;
+        document.getElementById('editMachineId').value = item.id;
+        document.getElementById('addEquipe').value = item.equipe;
+        document.getElementById('addCliente').value = item.cliente;
+        document.getElementById('addMaquina').value = item.maquina;
+        document.getElementById('addLinha').value = item.linha;
+        document.getElementById('addInicio').value = item.inicio;
+        document.getElementById('addPrevisao').value = item.previsao;
+        document.getElementById('addEntregaReal').value = item.entregaReal;
+        document.getElementById('addObs').value = item.obs || '';
+      } else {
+        document.getElementById('editMachineId').value = '';
+        document.getElementById('formAddMachine').reset();
+      }
+      document.getElementById('modalAddMachine').classList.remove('hidden');
+    }
+    function closeAddMachineModal() { document.getElementById('modalAddMachine').classList.add('hidden'); }
+
+    async function submitMachineForm(e) {
+      e.preventDefault();
+      const id = document.getElementById('editMachineId').value;
+      const fileInput = document.getElementById('addPdfFile');
+      let pdfData = '';
+      if (fileInput.files.length > 0) pdfData = await fileToDataUrl(fileInput.files[0]);
+
+      const payload = {
+        id: id || Date.now().toString(),
+        equipe: document.getElementById('addEquipe').value,
+        cliente: document.getElementById('addCliente').value,
+        maquina: document.getElementById('addMaquina').value,
+        linha: document.getElementById('addLinha').value,
+        inicio: document.getElementById('addInicio').value,
+        previsao: document.getElementById('addPrevisao').value,
+        entregaReal: document.getElementById('addEntregaReal').value,
+        obs: document.getElementById('addObs').value,
+        pdfData: pdfData
+      };
+
+      if (id) {
+        appData = appData.map(i => i.id === id ? { ...i, ...payload, pdfData: pdfData || i.pdfData } : i);
+      } else {
+        appData.unshift(payload);
+      }
+      saveData();
+      renderTable();
+      closeAddMachineModal();
+    }
+
+    function resetFilters() {
+      document.getElementById('filterSearch').value = '';
+      document.getElementById('filterStatus').value = '';
+      document.getElementById('filterEquipe').value = '';
+      document.getElementById('filterLinha').value = '';
+      document.getElementById('tableMonth').value = 'all';
+      document.getElementById('tableYear').value = '2026';
+      renderTable();
+    }
+
+    function toggleSelectAll(master) {
+      document.querySelectorAll('.row-checkbox').forEach(cb => {
+        cb.checked = master.checked;
+      });
+      updateSelectedCount();
+    }
+
+    function updateSelectedCount() {
+      const checkedBoxes = document.querySelectorAll('.row-checkbox:checked');
+      const count = checkedBoxes.length;
+      const btn = document.getElementById('btnDeleteSelected');
+      const countBadge = document.getElementById('selectedCountBadge');
+      
+      if (countBadge) countBadge.innerText = count;
+      if (btn) {
+        if (count > 0) {
+          btn.classList.remove('hidden');
+        } else {
+          btn.classList.add('hidden');
+        }
+      }
+    }
+
+    function viewPdf(base64Data) {
+      if (!base64Data) return;
+      try {
+        const arr = base64Data.split(',');
+        const mime = arr[0].match(/:(.*?);/)[1];
+        const bstr = atob(arr[1]);
+        let n = bstr.length;
+        const u8arr = new Uint8Array(n);
+        while (n--) {
+          u8arr[n] = bstr.charCodeAt(n);
+        }
+        const blob = new Blob([u8arr], { type: mime });
+        const blobUrl = URL.createObjectURL(blob);
+        window.open(blobUrl, '_blank');
+      } catch (err) {
+        console.error("Erro ao abrir PDF:", err);
+        alert("Não foi possível exibir o PDF.");
+      }
+    }
+
+    function deleteSelectedMachines() {
+      const checkedBoxes = document.querySelectorAll('.row-checkbox:checked');
+      if (checkedBoxes.length === 0) return;
+      if (!confirm(`Tem certeza que deseja excluir ${checkedBoxes.length} máquina(s) selecionada(s)?`)) return;
+
+      const idsToDelete = Array.from(checkedBoxes).map(cb => cb.value);
+      appData = appData.filter(item => !idsToDelete.includes(item.id));
+      saveData();
+      renderTable();
+    }
+
+    function renderTable() {
+      const tbody = document.getElementById('tableBody');
+      const filterStatus = document.getElementById('filterStatus').value.toLowerCase();
+      const filterEquipe = document.getElementById('filterEquipe').value.toLowerCase();
+      const filterLinha = document.getElementById('filterLinha').value.toLowerCase();
+      const filterSearch = document.getElementById('filterSearch').value.toLowerCase();
+      
+      const tMonth = document.getElementById('tableMonth').value;
+      const tYear = document.getElementById('tableYear').value;
+
+      let filtered = appData.filter(item => {
+        if (tMonth !== 'all') {
+          const d = item.inicio ? new Date(item.inicio) : null;
+          if (!d || isNaN(d)) return false;
+          if (d.getMonth() !== parseInt(tMonth) || d.getFullYear() !== parseInt(tYear)) return false;
+        }
+
+        const autoStatus = getAutomaticStatus(item).toLowerCase();
+        if (filterStatus && autoStatus !== filterStatus) return false;
+        if (filterEquipe && item.equipe.toLowerCase() !== filterEquipe) return false;
+        if (filterLinha && !item.linha.toLowerCase().includes(filterLinha)) return false;
+        if (filterSearch && !item.cliente.toLowerCase().includes(filterSearch) && !item.maquina.toLowerCase().includes(filterSearch) && !item.obs.toLowerCase().includes(filterSearch) && !item.equipe.toLowerCase().includes(filterSearch)) return false;
+        return true;
+      });
+
+      document.getElementById('countBadge').innerText = appData.length;
+      document.getElementById('totalRegistrosBadge').innerText = `Total: ${appData.length} registros`;
+      document.getElementById('tableCountSummary').innerText = `Mostrando ${filtered.length} de ${appData.length} máquinas`;
+
+      const selectAllCb = document.getElementById('selectAllCheckbox');
+      if (selectAllCb) selectAllCb.checked = false;
+      updateSelectedCount();
+
+      if (!filtered.length) {
+        tbody.innerHTML = `<tr><td colspan="12" class="p-8 text-center text-slate-500">Nenhum registo encontrado.</td></tr>`;
+        return;
+      }
+
+      let html = '';
+      filtered.forEach(item => {
+        const autoStatus = getAutomaticStatus(item);
+        let statusBg = autoStatus === 'Entregue' ? 'bg-emerald-950 text-emerald-400 border border-emerald-500/30' : (autoStatus === 'Em andamento' ? 'bg-blue-950 text-blue-400 border border-blue-500/30' : 'bg-slate-800 text-slate-300 border border-slate-700');
+        
+        let pdfLink = item.pdfData ? `<button onclick="viewPdf('${item.pdfData}')" class="text-indigo-400 bg-indigo-950/50 px-2 py-1 rounded text-[11px] font-bold border border-indigo-900/50 hover:bg-indigo-900 transition"><i class="fa-solid fa-file-pdf"></i> OS</button>` : `-`;
+        let selectCell = `<td class="p-3 text-center editor-col"><input type="checkbox" class="row-checkbox rounded bg-slate-900 border-slate-700" value="${item.id}" onchange="updateSelectedCount()"></td>`;
+        let actionCell = `<td class="p-3 text-center editor-col"><button onclick="openAddMachineModal('${item.id}')" class="text-indigo-400 hover:text-indigo-300 p-1"><i class="fa-solid fa-pen"></i></button></td>`;
+
+        html += `
+          <tr class="hover:bg-[#15224a] transition border-b border-slate-800/60">
+            ${selectCell}
+            <td class="p-3 font-bold text-white">${item.equipe}</td>
+            <td class="p-3 font-semibold text-slate-200">${item.cliente}</td>
+            <td class="p-3 text-slate-300 font-medium">${item.maquina}</td>
+            <td class="p-3"><span class="bg-[#0b1329] text-slate-300 border border-slate-700 px-2 py-0.5 rounded text-[10px]">${item.linha}</span></td>
+            <td class="p-3 text-slate-400">${item.inicio || '—'}</td>
+            <td class="p-3 text-slate-400">${item.previsao || '—'}</td>
+            <td class="p-3 text-slate-400">${item.entregaReal || '—'}</td>
+            <td class="p-3"><span class="${statusBg} px-2.5 py-0.5 rounded-full text-[10px] font-bold inline-block">${autoStatus}</span></td>
+            <td class="p-3 text-slate-400 truncate max-w-[150px]">${item.obs || '—'}</td>
+            <td class="p-3 text-center">${pdfLink}</td>
+            ${actionCell}
+          </tr>
+        `;
+      });
+      tbody.innerHTML = html;
+      updateDashboard();
+      updatePodio();
+    }
+
+    function updateDashboard() {
+      const selectedMonth = parseInt(document.getElementById('dashMonth').value);
+      const selectedYear = parseInt(document.getElementById('dashYear').value);
+
+      const monthData = appData.filter(item => {
+        const d = item.inicio ? new Date(item.inicio) : null;
+        if (!d) return false;
+        return d.getMonth() === selectedMonth && d.getFullYear() === selectedYear;
+      });
+
+      const total = monthData.length;
+      const andamento = monthData.filter(i => getAutomaticStatus(i) === 'Em andamento').length;
+      const entregues = monthData.filter(i => getAutomaticStatus(i) === 'Entregue').length;
+      const taxa = total > 0 ? Math.round((entregues / total) * 100) : 0;
+
+      document.getElementById('kpiTotal').innerText = total;
+      document.getElementById('kpiAndamento').innerText = andamento;
+      document.getElementById('kpiEntregues').innerText = entregues;
+      document.getElementById('kpiTaxa').innerText = `${taxa}%`;
+
+      let teamsMap = {};
+      teamsData.forEach(t => teamsMap[t.name] = []);
+      monthData.forEach(item => {
+        if (!teamsMap[item.equipe]) teamsMap[item.equipe] = [];
+        teamsMap[item.equipe].push(item);
+      });
+
+      let teamsHtml = '';
+      for (const [teamName, machines] of Object.entries(teamsMap)) {
+        let machineListHtml = '';
+        if (machines.length === 0) {
+          machineListHtml = `<p class="text-xs text-slate-500 italic py-2">Nenhuma máquina registada.</p>`;
+        } else {
+          machines.forEach(m => {
+            const status = getAutomaticStatus(m);
+            const statusColor = status === 'Entregue' ? 'text-emerald-400 bg-emerald-950/40 border border-emerald-500/20' : (status === 'Em andamento' ? 'text-blue-400 bg-blue-950/40 border border-blue-500/20' : 'text-slate-400 bg-slate-800');
+            const pdfBtn = m.pdfData ? `<button onclick="viewPdf('${m.pdfData}')" class="bg-indigo-600 hover:bg-indigo-500 text-white px-2.5 py-1 rounded-lg text-[10px] font-bold"><i class="fa-solid fa-file-pdf"></i> OS</button>` : '';
+
+            machineListHtml += `
+              <div class="bg-[#0b1329] border border-slate-800 p-3 rounded-2xl space-y-2">
+                <div class="flex justify-between items-start gap-2">
+                  <div>
+                    <span class="text-xs font-bold text-white">${m.maquina}</span>
+                    <p class="text-[10px] text-slate-400">Cliente: <strong class="text-slate-200">${m.cliente}</strong></p>
+                  </div>
+                  <span class="text-[10px] font-bold px-2 py-0.5 rounded-full ${statusColor}">${status}</span>
+                </div>
+                <div class="flex justify-between items-center text-[10px] text-slate-400 pt-1">
+                  <span>Início: ${m.inicio || '-'} | Entrega: ${m.entregaReal || 'Pendente'}</span>
+                  ${pdfBtn}
+                </div>
+              </div>
+            `;
+          });
+        }
+
+        teamsHtml += `
+          <div class="bg-[#0b1329] border border-slate-800 p-5 rounded-3xl space-y-3">
+            <div class="flex justify-between items-center border-b border-slate-800 pb-2">
+              <h4 class="font-extrabold text-white text-xs flex items-center gap-2"><i class="fa-solid fa-shield text-indigo-400"></i> ${teamName}</h4>
+              <span class="text-[10px] bg-slate-800 text-slate-300 font-bold px-2 py-0.5 rounded-full">${machines.length} máq.</span>
+            </div>
+            <div class="space-y-2 max-h-64 overflow-y-auto pr-1">${machineListHtml}</div>
+          </div>
+        `;
+      }
+      document.getElementById('teamsMonthlyContainer').innerHTML = teamsHtml;
+      renderAnnualChart(selectedYear);
+    }
+
+    function renderAnnualChart(year) {
+      const months = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
+      let counts = new Array(12).fill(0);
+      appData.forEach(item => {
+        const d = item.inicio ? new Date(item.inicio) : null;
+        if (d && d.getFullYear() === year) counts[d.getMonth()]++;
+      });
+      const ctx = document.getElementById('annualChart').getContext('2d');
+      if (annualChartInstance) annualChartInstance.destroy();
+      annualChartInstance = new Chart(ctx, {
+        type: 'bar',
+        data: { labels: months, datasets: [{ label: 'Máquinas Iniciadas', data: counts, backgroundColor: '#3b82f6', borderRadius: 6 }] },
+        options: { responsive: true, maintainAspectRatio: false, scales: { x: { ticks: { color: '#94a3b8' }, grid: { color: '#1e293b' } }, y: { ticks: { color: '#94a3b8' }, grid: { color: '#1e293b' } } }, plugins: { legend: { labels: { color: '#cbd5e1' } } } }
+      });
+    }
+
+    function updatePodio() {
+      let teamDeliveries = {};
+      appData.forEach(item => {
+        if (getAutomaticStatus(item) === 'Entregue') teamDeliveries[item.equipe] = (teamDeliveries[item.equipe] || 0) + 1;
+      });
+      let sorted = Object.entries(teamDeliveries).sort((a, b) => b[1] - a[1]);
+      document.getElementById('podio1').innerText = sorted[0] ? `${sorted[0][0]} (${sorted[0][1]} entregas)` : 'Sem entregas';
+      document.getElementById('podio2').innerText = sorted[1] ? `${sorted[1][0]} (${sorted[1][1]} entregas)` : '—';
+      document.getElementById('podio3').innerText = sorted[2] ? `${sorted[2][0]} (${sorted[2][1]} entregas)` : '—';
+    }
+
+    function fileToDataUrl(file) {
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result);
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+      });
+    }
+
+    function switchTab(tab) {
+      document.querySelectorAll('main > section').forEach(s => s.classList.add('hidden'));
+      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('border-indigo-500', 'text-indigo-400'));
+      document.getElementById(`sec-${tab}`).classList.remove('hidden');
+      document.getElementById(`tab-${tab}`).classList.add('border-indigo-500', 'text-indigo-400');
+    }
+  </script>
+</body>
+</html>
