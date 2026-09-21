@@ -1,209 +1,1142 @@
 <!DOCTYPE html>
-<html lang="pt-BR">
+<html lang="pt-PT">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Importação de OS - Delta CNC</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            background-color: #f4f7f6;
-            margin: 0;
-            padding: 20px;
-        }
-        .container {
-            max-width: 1200px;
-            margin: 0 auto;
-            background: #ffffff;
-            padding: 30px;
-            border-radius: 8px;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
-        }
-        h2, h3 {
-            color: #333;
-        }
-        .import-box {
-            display: flex;
-            gap: 15px;
-            align-items: center;
-            margin-bottom: 20px;
-            background: #fafafa;
-            padding: 20px;
-            border: 1px dashed #ccc;
-            border-radius: 6px;
-        }
-        input[type="file"] {
-            padding: 10px;
-            background: #fff;
-            border: 1px solid #ddd;
-            border-radius: 4px;
-            flex-grow: 1;
-        }
-        .btn-primary {
-            background-color: #007bff;
-            color: white;
-            border: none;
-            padding: 12px 20px;
-            border-radius: 4px;
-            cursor: pointer;
-            font-weight: bold;
-        }
-        .btn-primary:hover {
-            background-color: #0056b3;
-        }
-        .btn-success {
-            background-color: #28a745;
-            color: white;
-            border: none;
-            padding: 12px 20px;
-            border-radius: 4px;
-            cursor: pointer;
-            font-weight: bold;
-            margin-top: 15px;
-        }
-        .btn-success:hover {
-            background-color: #218838;
-        }
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-top: 15px;
-        }
-        th, td {
-            border: 1px solid #ddd;
-            padding: 10px;
-            text-align: left;
-            font-size: 14px;
-        }
-        th {
-            background-color: #007bff;
-            color: white;
-        }
-        /* Destaque visual para células editáveis */
-        td[contenteditable="true"] {
-            background-color: #fffdf0;
-        }
-        td[contenteditable="true"]:focus {
-            background-color: #fff;
-            outline: 2px solid #007bff;
-        }
-        .instructions {
-            font-size: 13px;
-            color: #666;
-            margin-top: 5px;
-        }
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CP - DELTA - Controle de Produção</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
+    body { font-family: 'Inter', sans-serif; background-color: #0b1329; color: #e2e8f0; }
+  </style>
 </head>
-<body>
+<body class="min-h-screen flex flex-col">
 
-<div class="container">
-    <h2>Acompanhamento - Importação de Ordens de Serviço (OS)</h2>
-    
-    <!-- Caixa de Importação -->
-    <div class="import-box">
-        <div>
-            <label for="inputFilesOS" style="display:block; font-weight:bold; margin-bottom:5px;">Selecionar arquivos de OS (PDF ou Imagem):</label>
-            <input type="file" id="inputFilesOS" accept=".pdf, image/*" multiple>
-            <div class="instructions">Você pode selecionar um ou vários arquivos de uma só vez.</div>
+  <!-- TOPBAR -->
+  <header class="bg-[#0b1329] border-b border-slate-800 shadow-lg sticky top-0 z-40">
+    <div class="max-w-7xl mx-auto px-4 py-3 flex flex-wrap justify-between items-center gap-4">
+      <div class="flex items-center space-x-3">
+        <div class="w-12 h-12 rounded-full overflow-hidden border-2 border-amber-500 shadow flex items-center justify-center bg-slate-900 shrink-0">
+          <svg viewBox="0 0 100 100" class="w-full h-full">
+            <circle cx="50" cy="50" r="50" fill="#0b1329"/>
+            <path d="M50 15 L85 75 L15 75 Z" fill="#3b82f6" opacity="0.3"/>
+            <circle cx="50" cy="40" r="14" fill="#f59e0b"/>
+            <circle cx="35" cy="65" r="12" fill="#3b82f6"/>
+            <circle cx="65" cy="65" r="12" fill="#ef4444"/>
+          </svg>
         </div>
-        <button id="btnProcessarOS" class="btn-primary">Processar com IA</button>
+        <div>
+          <h1 class="text-base font-bold text-white leading-tight flex items-center gap-2">
+            DELTA CNC
+          </h1>
+          <p class="text-xs text-slate-400">Controle de Produção</p>
+          <p class="text-[11px] text-indigo-400 font-medium">Mês de referência: <span id="refMonthLabel">Setembro/2026</span></p>
+        </div>
+      </div>
+
+      <div class="flex items-center gap-3">
+        <div class="hidden sm:flex items-center gap-2 bg-[#121c3b] px-3 py-1.5 rounded-full text-xs border border-slate-700/60 text-slate-300">
+          <i class="fa-regular fa-clock text-indigo-400"></i> <span id="liveClock">21/09/2026 12:35:02</span>
+        </div>
+        <div class="hidden sm:flex items-center gap-1.5 bg-[#121c3b] px-3 py-1.5 rounded-full text-xs border border-slate-700/60 text-emerald-400 font-medium">
+          <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span> Online
+        </div>
+
+        <div id="userBadge" class="hidden items-center gap-2 bg-[#121c3b] px-3 py-1.5 rounded-full text-xs border border-slate-700 text-indigo-300 font-semibold">
+          <i class="fa-solid fa-user-shield text-indigo-400"></i> <span id="userNameDisplay">Administrador</span>
+          <span class="bg-slate-800 text-slate-300 px-2 py-0.5 rounded text-[10px]">Administrador</span>
+          <button onclick="logout()" class="text-rose-400 hover:text-rose-300 ml-1" title="Sair"><i class="fa-solid fa-right-from-bracket"></i></button>
+        </div>
+
+        <button onclick="openLoginModal()" id="btnLoginNav" class="bg-indigo-600 hover:bg-indigo-700 text-white px-3.5 py-1.5 rounded-xl text-xs font-bold transition shadow">
+          <i class="fa-solid fa-lock mr-1"></i> Entrar
+        </button>
+
+        <button onclick="openConfigModal()" class="bg-[#121c3b] hover:bg-slate-800 text-slate-300 p-2 rounded-xl text-sm border border-slate-700 transition" title="Definições e Backup">
+          <i class="fa-solid fa-gear"></i>
+        </button>
+      </div>
     </div>
 
-    <!-- Tabela de Pré-visualização e Edição -->
-    <div id="previewContainer" style="display:none;">
-        <h3>Pré-visualização e Correção de Dados</h3>
-        <p class="instructions">Dica: As células em tom amarelado são editáveis. Clique nelas para ajustar qualquer informação antes de enviar para a planilha oficial.</p>
-        
-        <table>
-            <thead>
-                <tr>
-                    <th>Cliente</th>
-                    <th>CNPJ</th>
-                    <th>Contato</th>
-                    <th>Vendedor(a)</th>
-                    <th>Modelo da Máquina</th>
-                    <th>Data Venda</th>
-                    <th>Entrega Estimada</th>
-                </tr>
+    <!-- NAV TABS -->
+    <nav class="bg-[#0b1329] px-4 border-t border-slate-800">
+      <div class="max-w-7xl mx-auto flex space-x-2 overflow-x-auto text-sm">
+        <button onclick="switchTab('acompanhamento')" id="tab-acompanhamento" class="tab-btn px-4 py-3 border-b-2 border-indigo-500 text-indigo-400 font-semibold flex items-center gap-2 whitespace-nowrap">
+          <i class="fa-solid fa-list-check"></i> Acompanhamento <span id="countBadge" class="bg-indigo-950 text-indigo-300 text-xs px-2 py-0.5 rounded-full">11</span>
+        </button>
+        <button onclick="switchTab('dashboard')" id="tab-dashboard" class="tab-btn px-4 py-3 border-b-2 border-transparent text-slate-400 hover:text-slate-200 font-semibold flex items-center gap-2 whitespace-nowrap">
+          <i class="fa-solid fa-chart-line"></i> Dashboard
+        </button>
+        <button onclick="switchTab('equipas')" id="tab-equipas" class="tab-btn px-4 py-3 border-b-2 border-transparent text-slate-400 hover:text-slate-200 font-semibold flex items-center gap-2 whitespace-nowrap">
+          <i class="fa-solid fa-people-group"></i> Equipas
+        </button>
+        <button onclick="switchTab('podio')" id="tab-podio" class="tab-btn px-4 py-3 border-b-2 border-transparent text-slate-400 hover:text-slate-200 font-semibold flex items-center gap-2 whitespace-nowrap">
+          <i class="fa-solid fa-trophy text-amber-400"></i> Destaques
+        </button>
+        <button onclick="switchTab('utilizadores')" id="tab-utilizadores" class="tab-btn admin-only hidden px-4 py-3 border-b-2 border-transparent text-slate-400 hover:text-slate-200 font-semibold flex items-center gap-2 whitespace-nowrap">
+          <i class="fa-solid fa-users-gear text-indigo-400"></i> Usuários
+        </button>
+      </div>
+    </nav>
+  </header>
+
+  <!-- CONTEÚDO PRINCIPAL -->
+  <main class="flex-grow max-w-7xl w-full mx-auto p-4 sm:p-6 space-y-6">
+
+    <div id="noConfigWarning" class="hidden bg-amber-950/40 border-l-4 border-amber-500 p-4 rounded-r-xl shadow-sm text-amber-200">
+      <div class="flex items-start justify-between gap-4">
+        <div class="flex items-start gap-3">
+          <i class="fa-solid fa-triangle-exclamation text-amber-400 text-xl mt-0.5"></i>
+          <div>
+            <h3 class="text-sm font-bold">Chave da API do Gemini necessária</h3>
+            <p class="text-xs text-amber-300 mt-1">Configure sua chave nas definições para habilitar a leitura automatizada de PDFs de OS.</p>
+          </div>
+        </div>
+        <button onclick="openConfigModal()" class="bg-amber-500 text-slate-950 font-bold px-3 py-1.5 rounded-lg text-xs hover:bg-amber-400 transition shadow">
+          Configurar Chave
+        </button>
+      </div>
+    </div>
+
+    <!-- SEÇÃO: ACOMPANHAMENTO -->
+    <section id="sec-acompanhamento" class="space-y-4">
+      <div class="bg-[#121c3b] p-5 rounded-2xl shadow-sm border border-slate-800 space-y-3">
+        <div class="flex flex-wrap items-center justify-between gap-4">
+          <div>
+            <h2 class="text-base font-extrabold text-white tracking-tight flex items-center gap-2">
+              <i class="fa-solid fa-file-lines text-indigo-400"></i> Acompanhamento de Máquinas em Produção
+            </h2>
+            <p class="text-xs text-slate-400 mt-0.5">Gerencie máquinas, datas de entrega e status em tempo real</p>
+          </div>
+          <!-- FILTRO DE MÊS E ANO -->
+          <div class="flex items-center gap-2 bg-[#0b1329] p-2 rounded-xl border border-slate-700">
+            <span class="text-[11px] text-slate-400 font-bold uppercase ml-1"><i class="fa-solid fa-calendar-days text-indigo-400 mr-1"></i> Período:</span>
+            <select id="tableMonth" onchange="renderTable()" class="bg-[#121c3b] border border-slate-700 rounded-lg px-2.5 py-1.5 font-bold text-xs text-white focus:outline-none">
+              <option value="all">Todos os Meses</option>
+              <option value="0">Janeiro</option><option value="1">Fevereiro</option><option value="2">Março</option><option value="3">Abril</option>
+              <option value="4">Maio</option><option value="5">Junho</option><option value="6">Julho</option><option value="7">Agosto</option>
+              <option value="8" selected>Setembro</option><option value="9">Outubro</option><option value="10">Novembro</option><option value="11">Dezembro</option>
+            </select>
+            <select id="tableYear" onchange="renderTable()" class="bg-[#121c3b] border border-slate-700 rounded-lg px-2.5 py-1.5 font-bold text-xs text-white focus:outline-none">
+              <option value="2025">2025</option><option value="2026" selected>2026</option><option value="2027">2027</option>
+              <option value="2028">2028</option><option value="2029">2029</option><option value="2030">2030</option>
+              <option value="2031">2031</option><option value="2032">2032</option><option value="2033">2033</option>
+              <option value="2034">2034</option><option value="2035">2035</option><option value="2036">2036</option>
+              <option value="2037">2037</option><option value="2038">2038</option><option value="2039">2039</option><option value="2040">2040</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="flex flex-wrap items-center justify-between gap-3 pt-2">
+          <div class="flex flex-wrap items-center gap-2">
+            <button onclick="openAddMachineModal()" class="editor-only hidden bg-indigo-600 hover:bg-indigo-500 text-white font-bold px-4 py-2.5 rounded-xl text-xs flex items-center gap-2 shadow transition">
+              <i class="fa-solid fa-plus"></i> Adicionar Máquina
+            </button>
+            <button onclick="openBatchIAModal()" class="editor-only hidden bg-[#1b2a57] hover:bg-[#23356f] text-indigo-200 font-bold px-4 py-2.5 rounded-xl text-xs flex items-center gap-2 border border-slate-700 transition">
+              <i class="fa-solid fa-wand-magic-sparkles text-indigo-400"></i> Importar várias OS
+            </button>
+            <button id="btnDeleteSelected" onclick="deleteSelectedMachines()" class="hidden bg-rose-950/80 hover:bg-rose-900 text-rose-300 font-bold px-4 py-2.5 rounded-xl text-xs flex items-center gap-2 border border-rose-800 transition">
+              <i class="fa-solid fa-trash-can"></i> Excluir Selecionados (<span id="selectedCountBadge">0</span>)
+            </button>
+            <button onclick="renderTable()" class="bg-[#1b2a57] hover:bg-[#23356f] text-indigo-200 font-bold px-4 py-2.5 rounded-xl text-xs flex items-center gap-2 border border-slate-700 transition">
+              <i class="fa-solid fa-rotate"></i> Sincronizar Agora
+            </button>
+            <button onclick="exportCSV()" class="bg-[#1b2a57] hover:bg-[#23356f] text-indigo-200 font-bold px-4 py-2.5 rounded-xl text-xs flex items-center gap-2 border border-slate-700 transition">
+              <i class="fa-solid fa-download"></i> Exportar CSV
+            </button>
+          </div>
+          <div id="totalRegistrosBadge" class="text-xs text-slate-400 font-medium">
+            Total: 11 registros
+          </div>
+        </div>
+      </div>
+
+      <!-- FILTROS -->
+      <div class="bg-[#121c3b] p-3.5 rounded-2xl shadow-sm border border-slate-800 flex flex-wrap gap-3 items-center text-sm">
+        <div class="relative flex-grow min-w-[220px]">
+          <i class="fa-solid fa-magnifying-glass absolute left-3 top-3 text-slate-400 text-xs"></i>
+          <input type="text" id="filterSearch" oninput="renderTable()" placeholder="Buscar por equipe, cliente, máquina ou observação..." class="w-full bg-[#0b1329] border border-slate-700 rounded-xl pl-9 pr-3 py-2 text-xs text-slate-200 placeholder-slate-500 focus:outline-none focus:border-indigo-500">
+        </div>
+        <select id="filterStatus" onchange="renderTable()" class="bg-[#0b1329] border border-slate-700 rounded-xl px-3 py-2 text-xs text-slate-300 font-medium focus:outline-none">
+          <option value="">Todos os status</option>
+          <option value="Aguardando produção">Aguardando produção</option>
+          <option value="Em andamento">Em andamento</option>
+          <option value="Entregue">Entregue</option>
+        </select>
+        <select id="filterEquipe" onchange="renderTable()" class="bg-[#0b1329] border border-slate-700 rounded-xl px-3 py-2 text-xs text-slate-300 font-medium focus:outline-none">
+          <option value="">Todas as equipes</option>
+        </select>
+        <select id="filterLinha" onchange="renderTable()" class="bg-[#0b1329] border border-slate-700 rounded-xl px-3 py-2 text-xs text-slate-300 font-medium focus:outline-none">
+          <option value="">Todas as linhas</option>
+          <option value="Leve">Leve</option>
+          <option value="Intermediária">Intermediária</option>
+          <option value="Pesada">Pesada</option>
+        </select>
+        <button onclick="resetFilters()" class="bg-slate-800 hover:bg-slate-700 text-slate-300 px-3 py-2 rounded-xl text-xs font-medium border border-slate-700 transition flex items-center gap-1.5">
+          <i class="fa-solid fa-xmark text-rose-400"></i> Limpar filtros
+        </button>
+      </div>
+
+      <!-- TABELA -->
+      <div class="bg-[#121c3b] rounded-2xl shadow-sm border border-slate-800 overflow-hidden">
+        <div class="px-4 py-3 text-xs text-slate-400 border-b border-slate-800" id="tableCountSummary">
+          Mostrando 11 de 11 máquinas
+        </div>
+        <div class="overflow-x-auto">
+          <table class="w-full text-left text-xs text-slate-300">
+            <thead class="bg-[#0b1329] text-slate-400 font-bold uppercase tracking-wider border-b border-slate-800">
+              <tr>
+                <th class="p-3 w-10 text-center editor-col"><input type="checkbox" id="selectAllCheckbox" onclick="toggleSelectAll(this)" class="rounded bg-slate-900 border-slate-700"></th>
+                <th class="p-3">Equipe</th>
+                <th class="p-3">Cliente</th>
+                <th class="p-3">Máquina</th>
+                <th class="p-3">Linha</th>
+                <th class="p-3">Início da Máquina</th>
+                <th class="p-3">Previsão de Entrega</th>
+                <th class="p-3">Entrega Real</th>
+                <th class="p-3">Status</th>
+                <th class="p-3">Observações</th>
+                <th class="p-3 text-center">OS</th>
+                <th class="p-3 text-center editor-col">Ações</th>
+              </tr>
             </thead>
-            <tbody id="corpoTabelaOS">
-                <!-- Inserido dinamicamente pelo JavaScript -->
+            <tbody id="tableBody" class="divide-y divide-slate-800/60 font-medium">
+              <tr><td colspan="12" class="p-12 text-center text-slate-500">A carregar dados...</td></tr>
             </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- SEÇÃO: DASHBOARD -->
+    <section id="sec-dashboard" class="hidden space-y-6">
+      <div class="bg-gradient-to-r from-[#121c3b] via-[#15224a] to-[#0b1329] p-6 rounded-3xl shadow-xl text-white flex flex-wrap justify-between items-center gap-4 border border-slate-800">
+        <div>
+          <h2 class="text-lg font-black flex items-center gap-2"><i class="fa-solid fa-chart-pie text-indigo-400"></i> Painel Analítico de Produção</h2>
+          <p class="text-xs text-slate-300 mt-1">Acompanhamento mensal detalhado por equipe, entregas e auditoria de OS</p>
+        </div>
+        <div class="flex items-center gap-3 bg-[#0b1329] p-2 rounded-2xl border border-slate-700">
+          <select id="dashMonth" onchange="updateDashboard()" class="bg-[#121c3b] border border-slate-700 rounded-xl px-3 py-2 font-bold text-xs text-white focus:outline-none">
+            <option value="0">Janeiro</option><option value="1">Fevereiro</option><option value="2">Março</option><option value="3">Abril</option>
+            <option value="4">Maio</option><option value="5">Junho</option><option value="6">Julho</option><option value="7">Agosto</option>
+            <option value="8" selected>Setembro</option><option value="9">Outubro</option><option value="10">Novembro</option><option value="11">Dezembro</option>
+          </select>
+          <select id="dashYear" onchange="updateDashboard()" class="bg-[#121c3b] border border-slate-700 rounded-xl px-3 py-2 font-bold text-xs text-white focus:outline-none">
+            <option value="2025">2025</option><option value="2026" selected>2026</option><option value="2027">2027</option>
+            <option value="2028">2028</option><option value="2029">2029</option><option value="2030">2030</option>
+            <option value="2031">2031</option><option value="2032">2032</option><option value="2033">2033</option>
+            <option value="2034">2034</option><option value="2035">2035</option><option value="2036">2036</option>
+            <option value="2037">2037</option><option value="2038">2038</option><option value="2039">2039</option><option value="2040">2040</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- CARDS KPI -->
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div class="bg-[#121c3b] p-5 rounded-3xl border border-slate-800 shadow-sm flex items-center justify-between">
+          <div><div class="text-[11px] text-slate-400 font-bold uppercase tracking-wider">Total Registado</div><div id="kpiTotal" class="text-3xl font-black text-white mt-1">0</div></div>
+          <div class="bg-slate-800/80 p-4 rounded-2xl text-slate-300 text-xl"><i class="fa-solid fa-cubes"></i></div>
+        </div>
+        <div class="bg-[#121c3b] p-5 rounded-3xl border border-slate-800 shadow-sm flex items-center justify-between">
+          <div><div class="text-[11px] text-blue-400 font-bold uppercase tracking-wider">Em Andamento</div><div id="kpiAndamento" class="text-3xl font-black text-blue-400 mt-1">0</div></div>
+          <div class="bg-blue-950/50 p-4 rounded-2xl text-blue-400 text-xl"><i class="fa-solid fa-gears"></i></div>
+        </div>
+        <div class="bg-[#121c3b] p-5 rounded-3xl border border-slate-800 shadow-sm flex items-center justify-between">
+          <div><div class="text-[11px] text-emerald-400 font-bold uppercase tracking-wider">Entregues no Mês</div><div id="kpiEntregues" class="text-3xl font-black text-emerald-400 mt-1">0</div></div>
+          <div class="bg-emerald-950/50 p-4 rounded-2xl text-emerald-400 text-xl"><i class="fa-solid fa-circle-check"></i></div>
+        </div>
+        <div class="bg-[#121c3b] p-5 rounded-3xl border border-slate-800 shadow-sm flex items-center justify-between">
+          <div><div class="text-[11px] text-amber-400 font-bold uppercase tracking-wider">Taxa de Eficiência</div><div id="kpiTaxa" class="text-3xl font-black text-amber-400 mt-1">0%</div></div>
+          <div class="bg-amber-950/50 p-4 rounded-2xl text-amber-400 text-xl"><i class="fa-solid fa-bolt"></i></div>
+        </div>
+      </div>
+
+      <!-- DETALHAMENTO POR EQUIPA -->
+      <div class="bg-[#121c3b] p-6 rounded-3xl border border-slate-800 shadow-sm space-y-6">
+        <div class="flex items-center justify-between border-b border-slate-800 pb-4">
+          <div>
+            <h3 class="font-extrabold text-white text-sm flex items-center gap-2"><i class="fa-solid fa-users-rectangle text-indigo-400"></i> Produção Detalhada por Equipa no Mês</h3>
+            <p class="text-xs text-slate-400 mt-0.5">Consulte abaixo o registo exato de cada máquina, data de entrega e acesso direto à OS</p>
+          </div>
+        </div>
+        <div id="teamsMonthlyContainer" class="grid grid-cols-1 md:grid-cols-2 gap-6"></div>
+      </div>
+
+      <!-- GRÁFICO ANUAL -->
+      <div class="bg-[#121c3b] p-6 rounded-3xl border border-slate-800 shadow-sm space-y-6">
+        <h3 class="font-extrabold text-white text-sm flex items-center gap-2"><i class="fa-solid fa-chart-line text-emerald-400"></i> Levantamento Geral Anual (Evolução de Arranques)</h3>
+        <div class="h-72 relative"><canvas id="annualChart"></canvas></div>
+      </div>
+    </section>
+
+    <!-- SEÇÃO: EQUIPAS -->
+    <section id="sec-equipas" class="hidden space-y-6">
+      <div class="bg-[#121c3b] p-5 rounded-2xl shadow-sm border border-slate-800 flex justify-between items-center">
+        <div>
+          <h2 class="text-base font-extrabold text-white"><i class="fa-solid fa-people-group text-indigo-400 mr-2"></i>Gestão de Equipas e Tags</h2>
+          <p class="text-xs text-slate-400">Cadastre equipas, líderes, edite informações ou remova equipas obsoletas</p>
+        </div>
+        <button onclick="openAddTeamModal()" class="editor-only hidden bg-indigo-600 hover:bg-indigo-500 text-white font-bold px-4 py-2.5 rounded-xl text-xs shadow transition">
+          <i class="fa-solid fa-plus"></i> Nova Equipa
+        </button>
+      </div>
+      <div id="teamsGrid" class="grid grid-cols-1 md:grid-cols-3 gap-4"></div>
+    </section>
+
+    <!-- SEÇÃO: DESTAQUES & PÓDIO -->
+    <section id="sec-podio" class="hidden space-y-6">
+      <div class="bg-gradient-to-r from-[#121c3b] to-[#0b1329] p-6 rounded-3xl text-white shadow-xl flex items-center justify-between border border-slate-800">
+        <div>
+          <h2 class="text-xl font-black flex items-center gap-3"><i class="fa-solid fa-trophy text-amber-400"></i> Equipas Destaques do Mês</h2>
+          <p class="text-xs text-slate-300 mt-1">Reconhecimento baseado nas entregas reais concluídas</p>
+        </div>
+      </div>
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div class="bg-[#121c3b] p-6 rounded-3xl border border-slate-800 shadow-sm text-center space-y-3">
+          <div class="w-14 h-14 bg-amber-950 text-amber-400 rounded-2xl mx-auto flex items-center justify-center text-2xl font-black border border-amber-500/30"><i class="fa-solid fa-medal"></i></div>
+          <h3 class="font-bold text-slate-200 text-xs uppercase">1º Lugar — Equipa Campeã</h3>
+          <p class="text-sm font-extrabold text-amber-400" id="podio1">Aguardando dados...</p>
+        </div>
+        <div class="bg-[#121c3b] p-6 rounded-3xl border border-slate-800 shadow-sm text-center space-y-3">
+          <div class="w-14 h-14 bg-slate-800 text-slate-300 rounded-2xl mx-auto flex items-center justify-center text-2xl font-black border border-slate-700"><i class="fa-solid fa-award"></i></div>
+          <h3 class="font-bold text-slate-200 text-xs uppercase">2º Lugar</h3>
+          <p class="text-sm font-bold text-slate-300" id="podio2">—</p>
+        </div>
+        <div class="bg-[#121c3b] p-6 rounded-3xl border border-slate-800 shadow-sm text-center space-y-3">
+          <div class="w-14 h-14 bg-amber-950/40 text-amber-500 rounded-2xl mx-auto flex items-center justify-center text-2xl font-black border border-amber-500/20"><i class="fa-solid fa-star"></i></div>
+          <h3 class="font-bold text-slate-200 text-xs uppercase">3º Lugar</h3>
+          <p class="text-sm font-bold text-slate-300" id="podio3">—</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- SEÇÃO: UTILIZADORES -->
+    <section id="sec-utilizadores" class="hidden space-y-6">
+      <div class="bg-[#121c3b] p-5 rounded-2xl shadow-sm border border-slate-800 flex justify-between items-center">
+        <div>
+          <h2 class="text-base font-extrabold text-white"><i class="fa-solid fa-users-gear text-indigo-400 mr-2"></i>Gestão de Utilizadores e Editores</h2>
+          <p class="text-xs text-slate-400">Adicione e remova contas de acesso para os editores do sistema</p>
+        </div>
+        <button onclick="openAddUserModal()" class="bg-indigo-600 hover:bg-indigo-500 text-white font-bold px-4 py-2.5 rounded-xl text-xs shadow transition">
+          <i class="fa-solid fa-user-plus"></i> Novo Editor
+        </button>
+      </div>
+
+      <div class="bg-[#121c3b] rounded-2xl shadow-sm border border-slate-800 overflow-hidden">
+        <table class="w-full text-left text-xs text-slate-300">
+          <thead class="bg-[#0b1329] text-slate-400 font-bold uppercase tracking-wider border-b border-slate-800">
+            <tr>
+              <th class="p-3.5">E-mail</th>
+              <th class="p-3.5">Perfil</th>
+              <th class="p-3.5 text-center">Ações</th>
+            </tr>
+          </thead>
+          <tbody id="usersTableBody" class="divide-y divide-slate-800 font-medium"></tbody>
         </table>
-        
-        <button id="btnEnviarPlanilha" class="btn-success">Confirmar e Atualizar na Planilha Oficial</button>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- MODAL: LOGIN -->
+  <div id="modalLogin" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm hidden flex items-center justify-center p-4 z-50">
+    <div class="bg-[#121c3b] rounded-3xl max-w-sm w-full p-6 shadow-2xl space-y-4 border border-slate-800 text-slate-200">
+      <div class="flex justify-between items-center border-b border-slate-800 pb-3">
+        <h3 class="font-bold text-white text-sm"><i class="fa-solid fa-lock text-indigo-400 mr-2"></i>Iniciar Sessão</h3>
+        <button onclick="closeLoginModal()" class="text-slate-400 hover:text-slate-200"><i class="fa-solid fa-xmark text-base"></i></button>
+      </div>
+      <form onsubmit="handleLogin(event)" class="space-y-3">
+        <div>
+          <label class="block text-xs font-bold text-slate-300 mb-1">E-mail</label>
+          <input type="email" id="loginEmailInput" required placeholder="deltacronograma@gmail.com" class="w-full bg-[#0b1329] border border-slate-700 rounded-xl p-2.5 text-xs text-white focus:outline-none focus:border-indigo-500">
+        </div>
+        <div>
+          <label class="block text-xs font-bold text-slate-300 mb-1">Senha</label>
+          <input type="password" id="loginPasswordInput" required placeholder="Digite a senha..." class="w-full bg-[#0b1329] border border-slate-700 rounded-xl p-2.5 text-xs text-white focus:outline-none focus:border-indigo-500">
+        </div>
+        <div class="flex justify-end gap-2 pt-2">
+          <button type="button" onclick="closeLoginModal()" class="px-4 py-2 border border-slate-700 rounded-xl text-xs font-semibold text-slate-300">Cancelar</button>
+          <button type="submit" class="bg-indigo-600 hover:bg-indigo-500 text-white font-bold px-4 py-2 rounded-xl text-xs shadow">Entrar</button>
+        </div>
+      </form>
     </div>
-</div>
+  </div>
 
-<script>
-document.getElementById('btnProcessarOS').addEventListener('click', async () => {
-    const filesInput = document.getElementById('inputFilesOS');
+  <!-- MODAL: ADICIONAR UTILIZADOR -->
+  <div id="modalAddUser" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm hidden flex items-center justify-center p-4 z-50">
+    <div class="bg-[#121c3b] rounded-3xl max-w-md w-full p-6 shadow-2xl space-y-4 border border-slate-800 text-slate-200">
+      <div class="flex justify-between items-center border-b border-slate-800 pb-3">
+        <h3 class="font-bold text-white text-sm"><i class="fa-solid fa-user-plus text-indigo-400 mr-2"></i>Registar Novo Editor</h3>
+        <button onclick="closeAddUserModal()" class="text-slate-400 hover:text-slate-200"><i class="fa-solid fa-xmark text-base"></i></button>
+      </div>
+      <form onsubmit="submitUserForm(event)" class="space-y-3">
+        <div>
+          <label class="block text-xs font-bold text-slate-300 mb-1">E-mail</label>
+          <input type="email" id="newUserEmail" required placeholder="editor@delta.com" class="w-full bg-[#0b1329] border border-slate-700 rounded-xl p-2.5 text-xs text-white">
+        </div>
+        <div>
+          <label class="block text-xs font-bold text-slate-300 mb-1">Senha</label>
+          <input type="password" id="newUserPassword" required placeholder="Defina uma senha..." class="w-full bg-[#0b1329] border border-slate-700 rounded-xl p-2.5 text-xs text-white">
+        </div>
+        <div class="flex justify-end gap-2 pt-2">
+          <button type="button" onclick="closeAddUserModal()" class="px-4 py-2 border border-slate-700 rounded-xl text-xs font-semibold text-slate-300">Cancelar</button>
+          <button type="submit" class="bg-indigo-600 hover:bg-indigo-500 text-white font-bold px-4 py-2 rounded-xl text-xs shadow">Guardar Utilizador</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL: MÁQUINA -->
+  <div id="modalAddMachine" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm hidden flex items-center justify-center p-4 z-50">
+    <div class="bg-[#121c3b] rounded-3xl max-w-lg w-full p-6 shadow-2xl space-y-4 border border-slate-800 max-h-[90vh] overflow-y-auto text-slate-200">
+      <div class="flex justify-between items-center border-b border-slate-800 pb-4">
+        <h3 id="modalMachineTitle" class="font-extrabold text-white text-sm"><i class="fa-solid fa-circle-plus text-amber-400 mr-2"></i>Cadastrar / Editar Máquina</h3>
+        <button onclick="closeAddMachineModal()" class="text-slate-400 hover:text-slate-200"><i class="fa-solid fa-xmark text-base"></i></button>
+      </div>
+      <form id="formAddMachine" onsubmit="submitMachineForm(event)" class="space-y-3.5 text-xs">
+        <input type="hidden" id="editMachineId">
+        <div>
+          <label class="block text-[11px] font-bold text-slate-300 mb-1 uppercase">Equipa Responsável</label>
+          <select id="addEquipe" required class="w-full bg-[#0b1329] border border-slate-700 rounded-xl p-2.5 font-medium text-white"></select>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-[11px] font-bold text-slate-300 mb-1 uppercase">Cliente</label>
+            <input type="text" id="addCliente" required placeholder="Nome do cliente" class="w-full bg-[#0b1329] border border-slate-700 rounded-xl p-2.5 text-white">
+          </div>
+          <div>
+            <label class="block text-[11px] font-bold text-slate-300 mb-1 uppercase">Modelo da Máquina</label>
+            <input type="text" id="addMaquina" required placeholder="Modelo" class="w-full bg-[#0b1329] border border-slate-700 rounded-xl p-2.5 text-white">
+          </div>
+        </div>
+        <div>
+          <label class="block text-[11px] font-bold text-slate-300 mb-1 uppercase">Linha</label>
+          <select id="addLinha" class="w-full bg-[#0b1329] border border-slate-700 rounded-xl p-2.5 font-medium text-white">
+            <option value="Leve">Leve</option>
+            <option value="Intermediária">Intermediária</option>
+            <option value="Pesada">Pesada</option>
+          </select>
+        </div>
+        <div class="grid grid-cols-3 gap-2">
+          <div>
+            <label class="block text-[10px] font-bold text-slate-300 mb-1 uppercase">Início</label>
+            <input type="date" id="addInicio" class="w-full bg-[#0b1329] border border-slate-700 rounded-xl p-2 text-white">
+          </div>
+          <div>
+            <label class="block text-[10px] font-bold text-slate-300 mb-1 uppercase">Previsão</label>
+            <input type="date" id="addPrevisao" class="w-full bg-[#0b1329] border border-slate-700 rounded-xl p-2 text-white">
+          </div>
+          <div>
+            <label class="block text-[10px] font-bold text-slate-300 mb-1 uppercase">Entrega Real</label>
+            <input type="date" id="addEntregaReal" class="w-full bg-[#0b1329] border border-slate-700 rounded-xl p-2 text-white">
+          </div>
+        </div>
+        <div>
+          <label class="block text-[11px] font-bold text-slate-300 mb-1 uppercase">Observações</label>
+          <textarea id="addObs" placeholder="Notas, pendências ou peças..." class="w-full bg-[#0b1329] border border-slate-700 rounded-xl p-2.5 text-white"></textarea>
+        </div>
+        <div>
+          <label class="block text-[11px] font-bold text-slate-300 mb-1 uppercase">Ficheiro PDF da OS</label>
+          <input type="file" id="addPdfFile" accept="application/pdf" class="w-full text-xs border border-slate-700 rounded-xl p-2 bg-[#0b1329] text-slate-300">
+        </div>
+        <div class="flex justify-end gap-2 pt-4 border-t border-slate-800">
+          <button type="button" onclick="closeAddMachineModal()" class="px-4 py-2 border border-slate-700 rounded-xl text-slate-300 font-semibold">Cancelar</button>
+          <button type="submit" class="bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold px-4 py-2 rounded-xl shadow">Salvar</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL: EQUIPA -->
+  <div id="modalAddTeam" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm hidden flex items-center justify-center p-4 z-50">
+    <div class="bg-[#121c3b] rounded-3xl max-w-md w-full p-6 shadow-2xl space-y-4 border border-slate-800 text-slate-200">
+      <div class="flex justify-between items-center border-b border-slate-800 pb-3">
+        <h3 id="modalTeamTitle" class="font-bold text-white text-sm"><i class="fa-solid fa-people-group text-indigo-400 mr-2"></i>Nova Equipa</h3>
+        <button onclick="closeAddTeamModal()" class="text-slate-400 hover:text-slate-200"><i class="fa-solid fa-xmark text-base"></i></button>
+      </div>
+      <form onsubmit="submitTeamForm(event)" class="space-y-3 text-xs">
+        <input type="hidden" id="editTeamIndex" value="-1">
+        <div>
+          <label class="block font-bold text-slate-300 mb-1">Nome da Equipa</label>
+          <input type="text" id="teamNameInput" required placeholder="Ex: Felipe e Arthur" class="w-full bg-[#0b1329] border border-slate-700 rounded-xl p-2.5 text-white">
+        </div>
+        <div>
+          <label class="block font-bold text-slate-300 mb-1">Tags / Especialidade (separadas por vírgula)</label>
+          <input type="text" id="teamTagsInput" placeholder="Ex: Alta Performance, Leve" class="w-full bg-[#0b1329] border border-slate-700 rounded-xl p-2.5 text-white">
+        </div>
+        <div class="flex justify-end gap-2 pt-2">
+          <button type="button" onclick="closeAddTeamModal()" class="px-4 py-2 border border-slate-700 rounded-xl font-semibold text-slate-300">Cancelar</button>
+          <button type="submit" class="bg-indigo-600 hover:bg-indigo-500 text-white font-bold px-4 py-2 rounded-xl shadow">Salvar Equipa</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL: IMPORTAR IA -->
+  <div id="modalBatchIA" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm hidden flex items-center justify-center p-4 z-50">
+    <div class="bg-[#121c3b] rounded-3xl max-w-xl w-full p-6 shadow-2xl space-y-4 border border-slate-800 text-slate-200">
+      <div class="flex justify-between items-center border-b border-slate-800 pb-3">
+        <h3 class="font-extrabold text-white text-sm"><i class="fa-solid fa-wand-magic-sparkles text-indigo-400 mr-2"></i>Leitura de OS com IA (Gemini)</h3>
+        <button onclick="closeBatchIAModal()" class="text-slate-400 hover:text-slate-200"><i class="fa-solid fa-xmark text-base"></i></button>
+      </div>
+      <p class="text-xs text-slate-400">Selecione o PDF da Ordem de Serviço para preenchimento automático.</p>
+      <div>
+        <input type="file" id="batchFilesInput" accept="application/pdf" class="w-full border border-slate-700 rounded-xl p-3 text-xs bg-[#0b1329] text-slate-300" onchange="handleSingleAIFile(event)">
+      </div>
+      <div id="batchLoading" class="hidden text-center py-4 bg-indigo-950/50 rounded-2xl border border-indigo-900/50">
+        <i class="fa-solid fa-spinner fa-spin text-2xl text-indigo-400 mb-1 block"></i>
+        <span class="text-xs font-bold text-indigo-200">A ler Ordem de Serviço com IA...</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL CONFIGURAÇÃO & BACKUP -->
+  <div id="modalConfig" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm hidden flex items-center justify-center p-4 z-50">
+    <div class="bg-[#121c3b] rounded-3xl max-w-md w-full p-6 shadow-2xl space-y-4 border border-slate-800 text-slate-200">
+      <div class="flex justify-between items-center border-b border-slate-800 pb-3">
+        <h3 class="font-bold text-white text-sm"><i class="fa-solid fa-gear text-amber-400 mr-2"></i>Definições e Segurança</h3>
+        <button onclick="closeConfigModal()" class="text-slate-400 hover:text-slate-200"><i class="fa-solid fa-xmark text-base"></i></button>
+      </div>
+      <div>
+        <label class="block text-xs font-bold text-slate-300 mb-1 uppercase">Chave API Gemini</label>
+        <input type="password" id="geminiApiKeyInput" placeholder="AIzaSy..." class="w-full bg-[#0b1329] border border-slate-700 rounded-xl p-2.5 text-xs text-white">
+      </div>
+      <div class="border-t border-slate-800 pt-3 space-y-2">
+        <label class="block text-xs font-bold text-slate-300 uppercase">Segurança de Dados (Backup)</label>
+        <div class="flex gap-2">
+          <button onclick="exportBackup()" class="flex-1 bg-slate-800 hover:bg-slate-700 text-white font-bold py-2 rounded-xl text-xs"><i class="fa-solid fa-download mr-1"></i> Exportar</button>
+          <label class="flex-1 bg-slate-800 hover:bg-slate-700 text-white font-bold py-2 rounded-xl text-xs text-center cursor-pointer">
+            <i class="fa-solid fa-upload mr-1"></i> Importar <input type="file" accept=".json" onchange="importBackup(event)" class="hidden">
+          </label>
+        </div>
+      </div>
+      <div class="flex justify-end pt-2">
+        <button onclick="saveConfig()" class="bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold px-4 py-2 rounded-xl text-xs shadow">Salvar</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let geminiApiKey = localStorage.getItem('DELTA_GEMINI_KEY') || '';
+    let currentUser = JSON.parse(localStorage.getItem('DELTA_CURRENT_USER')) || { email: 'deltacronograma@gmail.com', role: 'admin' };
     
-    if (filesInput.files.length === 0) {
-        alert('Por favor, selecione ao menos um arquivo de OS.');
-        return;
-    }
+    let usersData = JSON.parse(localStorage.getItem('DELTA_USERS_DATA')) || [
+      { email: 'deltacronograma@gmail.com', password: 'delta2026', role: 'admin' }
+    ];
 
-    // Feedback visual do carregamento
-    const btnProcessar = document.getElementById('btnProcessarOS');
-    btnProcessar.innerText = 'Lendo com IA...';
-    btnProcessar.disabled = true;
+    let appData = JSON.parse(localStorage.getItem('DELTA_MACHINES_DATA')) || [];
+    let teamsData = JSON.parse(localStorage.getItem('DELTA_TEAMS_DATA')) || [
+      { name: 'Felipe e Arthur', tags: ['Alta Performance', 'Linha Leve'] },
+      { name: 'Equipe Beta', tags: ['Linha Pesada', 'Precisão CNC'] }
+    ];
+    let annualChartInstance = null;
 
-    // SIMULAÇÃO DA LEITURA DA IA COM BASE NO SEU PDF (Alexandre Mateus / DM97)
-    setTimeout(() => {
-        document.getElementById('previewContainer').style.display = 'block';
-        const tbody = document.getElementById('corpoTabelaOS');
-        tbody.innerHTML = ''; // Limpa tabela anterior
+    window.addEventListener('DOMContentLoaded', () => {
+      setInterval(updateLiveClock, 1000);
+      updateLiveClock();
 
-        // Iterando sobre os arquivos selecionados para simular a extração em lote
-        Array.from(filesInput.files).forEach((file, index) => {
-            // Aqui no seu ambiente real, você integrará a resposta real do JSON da IA para cada arquivo.
-            // Usamos os dados extraídos do documento modelo enviado:
-            let tr = document.createElement('tr');
-            tr.innerHTML = `
-                <td contenteditable="true">51.389.001 ALEXANDRE MATEUS FALEIRO DE SOUZA</td>
-                <td contenteditable="true">51.389.001/0001-00</td>
-                <td contenteditable="true">037 9.9926-9283</td>
-                <td contenteditable="true">ANA CLARA MG</td>
-                <td contenteditable="true">ATC EASY + Coletor de Pó + Transportador de Chapas</td>
-                <td contenteditable="true">24/04/2026</td>
-                <td contenteditable="true">14/10/2026</td>
-            `;
-            tbody.appendChild(tr);
-        });
-
-        btnProcessar.innerText = 'Processar com IA';
-        btnProcessar.disabled = false;
-        
-        // Rolagem suave até a tabela de preview
-        document.getElementById('previewContainer').scrollIntoView({ behavior: 'smooth' });
-    }, 1500);
-});
-
-document.getElementById('btnEnviarPlanilha').addEventListener('click', () => {
-    const linhas = document.querySelectorAll('#corpoTabelaOS tr');
-    const dadosParaEnviar = [];
-
-    // Varre a tabela capturando as edições manuais feitas pelo usuário
-    linhas.forEach(linha => {
-        const cols = linha.querySelectorAll('td');
-        dadosParaEnviar.push({
-            cliente: cols[0].innerText.trim(),
-            cnpj: cols[1].innerText.trim(),
-            contato: cols[2].innerText.trim(),
-            vendedor: cols[3].innerText.trim(),
-            maquina: cols[4].innerText.trim(),
-            dataVenda: cols[5].innerText.trim(),
-            entrega: cols[6].innerText.trim()
-        });
+      if (!geminiApiKey) document.getElementById('noConfigWarning').classList.remove('hidden');
+      if (appData.length === 0) {
+        appData = [
+          { id: '1', equipe: 'Felipe e Arthur', cliente: 'AC COMUNICACAO VISUAL LTDA', maquina: 'Fiber Split 50W + 4º Eixo + Estabilizador', linha: 'Leve', inicio: '2026-09-17', previsao: '2026-09-18', entregaReal: '2026-09-18', obs: 'Concluído', pdfData: '' },
+          { id: '2', equipe: 'Felipe e Arthur', cliente: 'LAYSLA BRAGA DA SILVA', maquina: 'FIBER SPLIT 50W', linha: 'Leve', inicio: '2026-09-17', previsao: '2026-09-18', entregaReal: '', obs: 'Em andamento', pdfData: '' },
+          { id: '3', equipe: '—', cliente: 'JPX TECHNOLOGY LTDA', maquina: 'Centro de Usinagem Easy 2030, Spindle 12cv', linha: 'Pesada', inicio: '', previsao: '', entregaReal: '', obs: 'Aguardando', pdfData: '' }
+        ];
+        saveData();
+      }
+      updateUserUI();
+      renderTable();
+      renderTeams();
+      renderUsers();
+      updateDashboard();
+      updatePodio();
     });
 
-    // Aqui você faria o envio via requisição (fetch) para o seu backend salvar na planilha oficial
-    console.log("Dados prontos para atualizar na planilha oficial:", dadosParaEnviar);
-    
-    alert(`Sucesso! ${dadosParaEnviar.length} Ordem(ns) de Serviço atualizada(s) na planilha oficial.`);
-});
-</script>
+    function updateLiveClock() {
+      const now = new Date();
+      const formatted = String(now.getDate()).padStart(2,'0') + '/' + String(now.getMonth()+1).padStart(2,'0') + '/' + now.getFullYear() + ' ' + String(now.getHours()).padStart(2,'0') + ':' + String(now.getMinutes()).padStart(2,'0') + ':' + String(now.getSeconds()).padStart(2,'0');
+      const clockEl = document.getElementById('liveClock');
+      if (clockEl) clockEl.innerText = formatted;
+    }
 
+    function saveData() { 
+      localStorage.setItem('DELTA_MACHINES_DATA', JSON.stringify(appData));
+      localStorage.setItem('DELTA_TEAMS_DATA', JSON.stringify(teamsData));
+      localStorage.setItem('DELTA_USERS_DATA', JSON.stringify(usersData));
+    }
+
+    function getAutomaticStatus(item) {
+      if (item.entregaReal && item.entregaReal.trim() !== '') return 'Entregue';
+      if (item.inicio && item.inicio.trim() !== '') return 'Em andamento';
+      return 'Aguardando produção';
+    }
+
+    function updateUserUI() {
+      const editorElements = document.querySelectorAll('.editor-only');
+      const editorCols = document.querySelectorAll('.editor-col');
+      const adminElements = document.querySelectorAll('.admin-only');
+      const userBadge = document.getElementById('userBadge');
+      const btnLoginNav = document.getElementById('btnLoginNav');
+
+      editorElements.forEach(el => el.classList.remove('hidden'));
+      editorCols.forEach(el => el.classList.remove('hidden'));
+
+      if (currentUser) {
+        userBadge.classList.remove('hidden');
+        userBadge.classList.add('flex');
+        btnLoginNav.classList.add('hidden');
+        document.getElementById('userNameDisplay').innerText = currentUser.email;
+
+        if (currentUser.role === 'admin') {
+          adminElements.forEach(el => el.classList.remove('hidden'));
+        } else {
+          adminElements.forEach(el => el.classList.add('hidden'));
+        }
+      } else {
+        adminElements.forEach(el => el.classList.add('hidden'));
+        userBadge.classList.add('hidden');
+        userBadge.classList.remove('flex');
+        btnLoginNav.classList.remove('hidden');
+      }
+    }
+
+    function openLoginModal() { document.getElementById('modalLogin').classList.remove('hidden'); }
+    function closeLoginModal() { document.getElementById('modalLogin').classList.add('hidden'); }
+    
+    function handleLogin(e) {
+      e.preventDefault();
+      const email = document.getElementById('loginEmailInput').value.trim();
+      const pass = document.getElementById('loginPasswordInput').value;
+
+      const found = usersData.find(u => u.email.toLowerCase() === email.toLowerCase() && u.password === pass);
+      if (found) {
+        currentUser = { email: found.email, role: found.role };
+        localStorage.setItem('DELTA_CURRENT_USER', JSON.stringify(currentUser));
+        closeLoginModal();
+        updateUserUI();
+        renderTable();
+        renderTeams();
+        renderUsers();
+      } else {
+        alert('E-mail ou senha incorretos!');
+      }
+    }
+
+    function logout() {
+      currentUser = null;
+      localStorage.removeItem('DELTA_CURRENT_USER');
+      updateUserUI();
+      renderTable();
+      renderTeams();
+      switchTab('acompanhamento');
+    }
+
+    function openAddUserModal() { document.getElementById('modalAddUser').classList.remove('hidden'); }
+    function closeAddUserModal() { document.getElementById('modalAddUser').classList.add('hidden'); }
+
+    function submitUserForm(e) {
+      e.preventDefault();
+      const email = document.getElementById('newUserEmail').value.trim();
+      const password = document.getElementById('newUserPassword').value;
+      usersData.push({ email, password, role: 'editor' });
+      saveData();
+      renderUsers();
+      closeAddUserModal();
+    }
+
+    function deleteUser(email) {
+      if (email === 'deltacronograma@gmail.com') return alert('Protegido.');
+      usersData = usersData.filter(u => u.email !== email);
+      saveData();
+      renderUsers();
+    }
+
+    function renderUsers() {
+      const tbody = document.getElementById('usersTableBody');
+      if (!tbody) return;
+      let html = '';
+      usersData.forEach(u => {
+        let badge = u.role === 'admin' ? '<span class="bg-amber-950 text-amber-400 px-2 py-0.5 rounded text-[10px] font-bold border border-amber-500/30">Administrador</span>' : '<span class="bg-blue-950 text-blue-400 px-2 py-0.5 rounded text-[10px] font-bold border border-blue-500/30">Editor</span>';
+        let actionBtn = u.role !== 'admin' ? `<button onclick="deleteUser('${u.email}')" class="text-rose-400 hover:text-rose-300 font-bold text-xs"><i class="fa-solid fa-trash"></i></button>` : '-';
+        html += `<tr class="border-b border-slate-800"><td class="p-3 text-white font-bold">${u.email}</td><td class="p-3">${badge}</td><td class="p-3 text-center">${actionBtn}</td></tr>`;
+      });
+      tbody.innerHTML = html;
+    }
+
+    function openConfigModal() { document.getElementById('geminiApiKeyInput').value = geminiApiKey; document.getElementById('modalConfig').classList.remove('hidden'); }
+    function closeConfigModal() { document.getElementById('modalConfig').classList.add('hidden'); }
+    function saveConfig() {
+      geminiApiKey = document.getElementById('geminiApiKeyInput').value.trim();
+      localStorage.setItem('DELTA_GEMINI_KEY', geminiApiKey);
+      closeConfigModal();
+      document.getElementById('noConfigWarning').classList.add('hidden');
+    }
+
+    function exportBackup() {
+      const backupObj = { machines: appData, teams: teamsData, users: usersData };
+      const blob = new Blob([JSON.stringify(backupObj, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `delta-backup.json`;
+      a.click();
+    }
+
+    function importBackup(e) {
+      const file = e.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        const parsed = JSON.parse(event.target.result);
+        if (parsed.machines) appData = parsed.machines;
+        if (parsed.teams) teamsData = parsed.teams;
+        if (parsed.users) usersData = parsed.users;
+        saveData();
+        renderTable();
+        renderTeams();
+        renderUsers();
+      };
+      reader.readAsText(file);
+    }
+
+    function exportCSV() {
+      let csv = 'Equipe,Cliente,Maquina,Linha,Inicio,Previsao,EntregaReal,Status,Obs\n';
+      appData.forEach(m => {
+        csv += `"${m.equipe}","${m.cliente}","${m.maquina}","${m.linha}","${m.inicio}","${m.previsao}","${m.entregaReal}","${getAutomaticStatus(m)}","${m.obs}"\n`;
+      });
+      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'producao-delta.csv';
+      a.click();
+    }
+
+    function openAddTeamModal(index = -1) {
+      document.getElementById('editTeamIndex').value = index;
+      if (index > -1) {
+        document.getElementById('teamNameInput').value = teamsData[index].name;
+        document.getElementById('teamTagsInput').value = teamsData[index].tags.join(', ');
+      } else {
+        document.getElementById('teamNameInput').value = '';
+        document.getElementById('teamTagsInput').value = '';
+      }
+      document.getElementById('modalAddTeam').classList.remove('hidden');
+    }
+    function closeAddTeamModal() { document.getElementById('modalAddTeam').classList.add('hidden'); }
+    
+    function submitTeamForm(e) {
+      e.preventDefault();
+      const index = parseInt(document.getElementById('editTeamIndex').value);
+      const name = document.getElementById('teamNameInput').value.trim();
+      const tags = document.getElementById('teamTagsInput').value.split(',').map(t => t.trim()).filter(t => t);
+      if (index > -1) {
+        teamsData[index] = { name, tags };
+      } else {
+        teamsData.push({ name, tags });
+      }
+      saveData();
+      renderTeams();
+      renderTable();
+      closeAddTeamModal();
+    }
+
+    function deleteTeam(index) {
+      teamsData.splice(index, 1);
+      saveData();
+      renderTeams();
+    }
+
+    function renderTeams() {
+      const container = document.getElementById('teamsGrid');
+      let html = '';
+      teamsData.forEach((t, idx) => {
+        let tagsHtml = t.tags.map(tag => `<span class="bg-indigo-950 text-indigo-300 px-2.5 py-1 rounded-full text-[10px] font-semibold border border-indigo-900/50">${tag}</span>`).join(' ');
+        let actions = `
+          <div class="flex gap-2 pt-2 border-t border-slate-800 mt-2">
+            <button onclick="openAddTeamModal(${idx})" class="flex-1 bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold py-1.5 rounded-xl text-xs"><i class="fa-solid fa-pen mr-1"></i> Editar</button>
+            <button onclick="deleteTeam(${idx})" class="flex-1 bg-rose-950/50 hover:bg-rose-900/50 text-rose-300 font-bold py-1.5 rounded-xl text-xs"><i class="fa-solid fa-trash mr-1"></i> Apagar</button>
+          </div>
+        `;
+
+        html += `
+          <div class="bg-[#121c3b] p-5 rounded-3xl border border-slate-800 shadow-sm space-y-3">
+            <h3 class="font-extrabold text-white text-sm flex items-center gap-1.5"><i class="fa-solid fa-shield-halved text-indigo-400"></i>${t.name}</h3>
+            <div class="flex flex-wrap gap-1.5">${tagsHtml}</div>
+            ${actions}
+          </div>
+        `;
+      });
+      container.innerHTML = html;
+
+      let selectHtml = '<option value="">Todas as equipes</option>';
+      teamsData.forEach(t => selectHtml += `<option value="${t.name}">${t.name}</option>`);
+      document.getElementById('filterEquipe').innerHTML = selectHtml;
+
+      let modalSelectHtml = '';
+      teamsData.forEach(t => modalSelectHtml += `<option value="${t.name}">${t.name}</option>`);
+      document.getElementById('addEquipe').innerHTML = modalSelectHtml;
+    }
+
+    function openAddMachineModal(id = null) {
+      renderTeams();
+      if (id) {
+        const item = appData.find(i => i.id === id);
+        if (!item) return;
+        document.getElementById('editMachineId').value = item.id;
+        document.getElementById('addEquipe').value = item.equipe;
+        document.getElementById('addCliente').value = item.cliente;
+        document.getElementById('addMaquina').value = item.maquina;
+        document.getElementById('addLinha').value = item.linha;
+        document.getElementById('addInicio').value = item.inicio;
+        document.getElementById('addPrevisao').value = item.previsao;
+        document.getElementById('addEntregaReal').value = item.entregaReal;
+        document.getElementById('addObs').value = item.obs || '';
+      } else {
+        document.getElementById('editMachineId').value = '';
+        document.getElementById('formAddMachine').reset();
+      }
+      document.getElementById('modalAddMachine').classList.remove('hidden');
+    }
+    function closeAddMachineModal() { document.getElementById('modalAddMachine').classList.add('hidden'); }
+
+    async function submitMachineForm(e) {
+      e.preventDefault();
+      const id = document.getElementById('editMachineId').value;
+      const fileInput = document.getElementById('addPdfFile');
+      let pdfData = '';
+      if (fileInput.files.length > 0) pdfData = await fileToDataUrl(fileInput.files[0]);
+
+      const payload = {
+        id: id || Date.now().toString(),
+        equipe: document.getElementById('addEquipe').value,
+        cliente: document.getElementById('addCliente').value,
+        maquina: document.getElementById('addMaquina').value,
+        linha: document.getElementById('addLinha').value,
+        inicio: document.getElementById('addInicio').value,
+        previsao: document.getElementById('addPrevisao').value,
+        entregaReal: document.getElementById('addEntregaReal').value,
+        obs: document.getElementById('addObs').value,
+        pdfData: pdfData
+      };
+
+      if (id) {
+        appData = appData.map(i => i.id === id ? { ...i, ...payload, pdfData: pdfData || i.pdfData } : i);
+      } else {
+        appData.unshift(payload);
+      }
+      saveData();
+      renderTable();
+      closeAddMachineModal();
+    }
+
+    function resetFilters() {
+      document.getElementById('filterSearch').value = '';
+      document.getElementById('filterStatus').value = '';
+      document.getElementById('filterEquipe').value = '';
+      document.getElementById('filterLinha').value = '';
+      document.getElementById('tableMonth').value = 'all';
+      document.getElementById('tableYear').value = '2026';
+      renderTable();
+    }
+
+    function toggleSelectAll(master) {
+      document.querySelectorAll('.row-checkbox').forEach(cb => {
+        cb.checked = master.checked;
+      });
+      updateSelectedCount();
+    }
+
+    function updateSelectedCount() {
+      const checkedBoxes = document.querySelectorAll('.row-checkbox:checked');
+      const count = checkedBoxes.length;
+      const btn = document.getElementById('btnDeleteSelected');
+      const countBadge = document.getElementById('selectedCountBadge');
+      
+      if (countBadge) countBadge.innerText = count;
+      if (btn) {
+        if (count > 0) {
+          btn.classList.remove('hidden');
+        } else {
+          btn.classList.add('hidden');
+        }
+      }
+    }
+
+    function deleteSelectedMachines() {
+      const checkedBoxes = document.querySelectorAll('.row-checkbox:checked');
+      if (checkedBoxes.length === 0) return;
+      if (!confirm(`Tem certeza que deseja excluir ${checkedBoxes.length} máquina(s) selecionada(s)?`)) return;
+
+      const idsToDelete = Array.from(checkedBoxes).map(cb => cb.value);
+      appData = appData.filter(item => !idsToDelete.includes(item.id));
+      saveData();
+      renderTable();
+    }
+
+    function viewPdf(base64Data) {
+      if (!base64Data) return;
+      try {
+        const arr = base64Data.split(',');
+        const mime = arr[0].match(/:(.*?);/)[1];
+        const bstr = atob(arr[1]);
+        let n = bstr.length;
+        const u8arr = new Uint8Array(n);
+        while (n--) {
+          u8arr[n] = bstr.charCodeAt(n);
+        }
+        const blob = new Blob([u8arr], { type: mime });
+        const blobUrl = URL.createObjectURL(blob);
+        window.open(blobUrl, '_blank');
+      } catch (err) {
+        console.error("Erro ao abrir PDF:", err);
+        alert("Não foi possível exibir o PDF.");
+      }
+    }
+
+    function openBatchIAModal() {
+      if (!geminiApiKey) return openConfigModal();
+      document.getElementById('batchLoading').classList.add('hidden');
+      document.getElementById('modalBatchIA').classList.remove('hidden');
+    }
+    function closeBatchIAModal() { document.getElementById('modalBatchIA').classList.add('hidden'); }
+
+    async function handleSingleAIFile(e) {
+      const file = e.target.files[0];
+      if (!file) return;
+      document.getElementById('batchLoading').classList.remove('hidden');
+      try {
+        const base64Data = await fileToBase64(file);
+        const pdfDataUrl = await fileToDataUrl(file);
+        const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${geminiApiKey}`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            contents: [{
+              parts: [
+                { text: "Analise esta OS e retorne JSON puro com: cliente, maquina, linha ('Leve', 'Intermediária' ou 'Pesada'), inicio (YYYY-MM-DD)." },
+                { inline_data: { mime_type: "application/pdf", data: base64Data } }
+              ]
+            }]
+          })
+        });
+        const result = await response.json();
+        let rawText = result.candidates[0].content.parts[0].text.replace(/```json/g, '').replace(/```/g, '').trim();
+        const parsed = JSON.parse(rawText);
+
+        appData.unshift({
+          id: Date.now().toString(),
+          equipe: teamsData[0] ? teamsData[0].name : 'Equipe Padrão',
+          cliente: parsed.cliente || 'Cliente',
+          maquina: parsed.maquina || 'Máquina',
+          linha: parsed.linha || 'Leve',
+          inicio: parsed.inicio || new Date().toISOString().split('T')[0],
+          previsao: '',
+          entregaReal: '',
+          obs: 'Importado via PDF IA',
+          pdfData: pdfDataUrl
+        });
+        saveData();
+        renderTable();
+        closeBatchIAModal();
+      } catch(err) {
+        document.getElementById('batchLoading').classList.add('hidden');
+        alert('Erro ao ler PDF.');
+      }
+    }
+
+    function renderTable() {
+      const tbody = document.getElementById('tableBody');
+      const filterStatus = document.getElementById('filterStatus').value.toLowerCase();
+      const filterEquipe = document.getElementById('filterEquipe').value.toLowerCase();
+      const filterLinha = document.getElementById('filterLinha').value.toLowerCase();
+      const filterSearch = document.getElementById('filterSearch').value.toLowerCase();
+      
+      const tMonth = document.getElementById('tableMonth').value;
+      const tYear = document.getElementById('tableYear').value;
+
+      let filtered = appData.filter(item => {
+        if (tMonth !== 'all') {
+          const d = item.inicio ? new Date(item.inicio) : null;
+          if (!d || isNaN(d)) return false;
+          if (d.getMonth() !== parseInt(tMonth) || d.getFullYear() !== parseInt(tYear)) return false;
+        }
+
+        const autoStatus = getAutomaticStatus(item).toLowerCase();
+        if (filterStatus && autoStatus !== filterStatus) return false;
+        if (filterEquipe && item.equipe.toLowerCase() !== filterEquipe) return false;
+        if (filterLinha && !item.linha.toLowerCase().includes(filterLinha)) return false;
+        if (filterSearch && !item.cliente.toLowerCase().includes(filterSearch) && !item.maquina.toLowerCase().includes(filterSearch) && !item.obs.toLowerCase().includes(filterSearch) && !item.equipe.toLowerCase().includes(filterSearch)) return false;
+        return true;
+      });
+
+      document.getElementById('countBadge').innerText = appData.length;
+      document.getElementById('totalRegistrosBadge').innerText = `Total: ${appData.length} registros`;
+      document.getElementById('tableCountSummary').innerText = `Mostrando ${filtered.length} de ${appData.length} máquinas`;
+
+      const selectAllCb = document.getElementById('selectAllCheckbox');
+      if (selectAllCb) selectAllCb.checked = false;
+      updateSelectedCount();
+
+      if (!filtered.length) {
+        tbody.innerHTML = `<tr><td colspan="12" class="p-8 text-center text-slate-500">Nenhum registo encontrado.</td></tr>`;
+        return;
+      }
+
+      let html = '';
+      filtered.forEach(item => {
+        const autoStatus = getAutomaticStatus(item);
+        let statusBg = autoStatus === 'Entregue' ? 'bg-emerald-950 text-emerald-400 border border-emerald-500/30' : (autoStatus === 'Em andamento' ? 'bg-blue-950 text-blue-400 border border-blue-500/30' : 'bg-slate-800 text-slate-300 border border-slate-700');
+        
+        let pdfLink = item.pdfData ? `<button onclick="viewPdf('${item.pdfData}')" class="text-indigo-400 bg-indigo-950/50 px-2 py-1 rounded text-[11px] font-bold border border-indigo-900/50 hover:bg-indigo-900 transition"><i class="fa-solid fa-file-pdf"></i> OS</button>` : `-`;
+        let selectCell = `<td class="p-3 text-center editor-col"><input type="checkbox" class="row-checkbox rounded bg-slate-900 border-slate-700" value="${item.id}" onchange="updateSelectedCount()"></td>`;
+        let actionCell = `<td class="p-3 text-center editor-col"><button onclick="openAddMachineModal('${item.id}')" class="text-indigo-400 hover:text-indigo-300 p-1"><i class="fa-solid fa-pen"></i></button></td>`;
+
+        html += `
+          <tr class="hover:bg-[#15224a] transition border-b border-slate-800/60">
+            ${selectCell}
+            <td class="p-3 font-bold text-white">${item.equipe}</td>
+            <td class="p-3 font-semibold text-slate-200">${item.cliente}</td>
+            <td class="p-3 text-slate-300 font-medium">${item.maquina}</td>
+            <td class="p-3"><span class="bg-[#0b1329] text-slate-300 border border-slate-700 px-2 py-0.5 rounded text-[10px]">${item.linha}</span></td>
+            <td class="p-3 text-slate-400">${item.inicio || '—'}</td>
+            <td class="p-3 text-slate-400">${item.previsao || '—'}</td>
+            <td class="p-3 text-slate-400">${item.entregaReal || '—'}</td>
+            <td class="p-3"><span class="${statusBg} px-2.5 py-0.5 rounded-full text-[10px] font-bold inline-block">${autoStatus}</span></td>
+            <td class="p-3 text-slate-400 truncate max-w-[150px]">${item.obs || '—'}</td>
+            <td class="p-3 text-center">${pdfLink}</td>
+            ${actionCell}
+          </tr>
+        `;
+      });
+      tbody.innerHTML = html;
+      updateDashboard();
+      updatePodio();
+    }
+
+    function updateDashboard() {
+      const selectedMonth = parseInt(document.getElementById('dashMonth').value);
+      const selectedYear = parseInt(document.getElementById('dashYear').value);
+
+      const monthData = appData.filter(item => {
+        const d = item.inicio ? new Date(item.inicio) : null;
+        if (!d) return false;
+        return d.getMonth() === selectedMonth && d.getFullYear() === selectedYear;
+      });
+
+      const total = monthData.length;
+      const andamento = monthData.filter(i => getAutomaticStatus(i) === 'Em andamento').length;
+      const entregues = monthData.filter(i => getAutomaticStatus(i) === 'Entregue').length;
+      const taxa = total > 0 ? Math.round((entregues / total) * 100) : 0;
+
+      document.getElementById('kpiTotal').innerText = total;
+      document.getElementById('kpiAndamento').innerText = andamento;
+      document.getElementById('kpiEntregues').innerText = entregues;
+      document.getElementById('kpiTaxa').innerText = `${taxa}%`;
+
+      let teamsMap = {};
+      teamsData.forEach(t => teamsMap[t.name] = []);
+      monthData.forEach(item => {
+        if (!teamsMap[item.equipe]) teamsMap[item.equipe] = [];
+        teamsMap[item.equipe].push(item);
+      });
+
+      let teamsHtml = '';
+      for (const [teamName, machines] of Object.entries(teamsMap)) {
+        let machineListHtml = '';
+        if (machines.length === 0) {
+          machineListHtml = `<p class="text-xs text-slate-500 italic py-2">Nenhuma máquina registada.</p>`;
+        } else {
+          machines.forEach(m => {
+            const status = getAutomaticStatus(m);
+            const statusColor = status === 'Entregue' ? 'text-emerald-400 bg-emerald-950/40 border border-emerald-500/20' : (status === 'Em andamento' ? 'text-blue-400 bg-blue-950/40 border border-blue-500/20' : 'text-slate-400 bg-slate-800');
+            const pdfBtn = m.pdfData ? `<button onclick="viewPdf('${m.pdfData}')" class="bg-indigo-600 hover:bg-indigo-500 text-white px-2.5 py-1 rounded-lg text-[10px] font-bold"><i class="fa-solid fa-file-pdf"></i> OS</button>` : '';
+
+            machineListHtml += `
+              <div class="bg-[#0b1329] border border-slate-800 p-3 rounded-2xl space-y-2">
+                <div class="flex justify-between items-start gap-2">
+                  <div>
+                    <span class="text-xs font-bold text-white">${m.maquina}</span>
+                    <p class="text-[10px] text-slate-400">Cliente: <strong class="text-slate-200">${m.cliente}</strong></p>
+                  </div>
+                  <span class="text-[10px] font-bold px-2 py-0.5 rounded-full ${statusColor}">${status}</span>
+                </div>
+                <div class="flex justify-between items-center text-[10px] text-slate-400 pt-1">
+                  <span>Início: ${m.inicio || '-'} | Entrega: ${m.entregaReal || 'Pendente'}</span>
+                  ${pdfBtn}
+                </div>
+              </div>
+            `;
+          });
+        }
+
+        teamsHtml += `
+          <div class="bg-[#0b1329] border border-slate-800 p-5 rounded-3xl space-y-3">
+            <div class="flex justify-between items-center border-b border-slate-800 pb-2">
+              <h4 class="font-extrabold text-white text-xs flex items-center gap-2"><i class="fa-solid fa-shield text-indigo-400"></i> ${teamName}</h4>
+              <span class="text-[10px] bg-slate-800 text-slate-300 font-bold px-2 py-0.5 rounded-full">${machines.length} máq.</span>
+            </div>
+            <div class="space-y-2 max-h-64 overflow-y-auto pr-1">${machineListHtml}</div>
+          </div>
+        `;
+      }
+      document.getElementById('teamsMonthlyContainer').innerHTML = teamsHtml;
+      renderAnnualChart(selectedYear);
+    }
+
+    function renderAnnualChart(year) {
+      const months = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
+      let counts = new Array(12).fill(0);
+      appData.forEach(item => {
+        const d = item.inicio ? new Date(item.inicio) : null;
+        if (d && d.getFullYear() === year) counts[d.getMonth()]++;
+      });
+      const ctx = document.getElementById('annualChart').getContext('2d');
+      if (annualChartInstance) annualChartInstance.destroy();
+      annualChartInstance = new Chart(ctx, {
+        type: 'bar',
+        data: { labels: months, datasets: [{ label: 'Máquinas Iniciadas', data: counts, backgroundColor: '#3b82f6', borderRadius: 6 }] },
+        options: { responsive: true, maintainAspectRatio: false, scales: { x: { ticks: { color: '#94a3b8' }, grid: { color: '#1e293b' } }, y: { ticks: { color: '#94a3b8' }, grid: { color: '#1e293b' } } }, plugins: { legend: { labels: { color: '#cbd5e1' } } } }
+      });
+    }
+
+    function updatePodio() {
+      let teamDeliveries = {};
+      appData.forEach(item => {
+        if (getAutomaticStatus(item) === 'Entregue') teamDeliveries[item.equipe] = (teamDeliveries[item.equipe] || 0) + 1;
+      });
+      let sorted = Object.entries(teamDeliveries).sort((a, b) => b[1] - a[1]);
+      document.getElementById('podio1').innerText = sorted[0] ? `${sorted[0][0]} (${sorted[0][1]} entregas)` : 'Sem entregas';
+      document.getElementById('podio2').innerText = sorted[1] ? `${sorted[1][0]} (${sorted[1][1]} entregas)` : '—';
+      document.getElementById('podio3').innerText = sorted[2] ? `${sorted[2][0]} (${sorted[2][1]} entregas)` : '—';
+    }
+
+    function fileToDataUrl(file) {
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result);
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+      });
+    }
+
+    function fileToBase64(file) {
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result.split(',')[1]);
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+      });
+    }
+
+    function switchTab(tab) {
+      document.querySelectorAll('main > section').forEach(s => s.classList.add('hidden'));
+      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('border-indigo-500', 'text-indigo-400'));
+      document.getElementById(`sec-${tab}`).classList.remove('hidden');
+      document.getElementById(`tab-${tab}`).classList.add('border-indigo-500', 'text-indigo-400');
+    }
+  </script>
 </body>
 </html>
