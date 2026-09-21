@@ -7,6 +7,11 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <!-- ADICIONADO: Bibliotecas do PDF.js para leitura de PDF no navegador -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+  <script>
+    pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+  </script>
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
     body { font-family: 'Inter', sans-serif; background-color: #0b1329; color: #e2e8f0; }
@@ -684,7 +689,7 @@
       document.getElementById('noConfigWarning').classList.add('hidden');
     }
 
-    // FUNÇÕES DE IMPORTAÇÃO EM LOTE COM IA (GEMINI API)
+    // FUNÇÕES DE IMPORTAÇÃO EM LOTE COM IA (GEMINI API) ATUALIZADAS PARA O NAVEGADOR
     function openBatchImportModal() {
       if (!geminiApiKey) {
         alert('Por favor, configure sua chave da API do Gemini nas Definições antes de usar a leitura automática por IA.');
@@ -697,6 +702,20 @@
       document.getElementById('modalBatchImport').classList.remove('hidden');
     }
     function closeBatchImportModal() { document.getElementById('modalBatchImport').classList.add('hidden'); }
+
+    async function extractTextFromPdf(file) {
+      const arrayBuffer = await file.arrayBuffer();
+      const loadingTask = pdfjsLib.getDocument({ data: arrayBuffer });
+      const pdfDoc = await loadingTask.promise;
+      let fullText = "";
+      for (let i = 1; i <= pdfDoc.numPages; i++) {
+        const page = await pdfDoc.getPage(i);
+        const textContent = await page.getTextContent();
+        const pageText = textContent.items.map(item => item.str).join(" ");
+        fullText += pageText + "\n";
+      }
+      return fullText;
+    }
 
     async function processBatchImport() {
       const fileInput = document.getElementById('batchPdfFiles');
@@ -714,9 +733,11 @@
         const file = fileInput.files[i];
         logBox.innerHTML += `<div>[${i+1}/${fileInput.files.length}] Processando ${file.name}...</div>`;
         try {
+          // Extrai o texto limpo do PDF localmente usando PDF.js
+          const pdfText = await extractTextFromPdf(file);
           const base64Data = await fileToDataUrl(file);
-          const base64Content = base64Data.split(',')[1];
-          const extractedData = await callGeminiForPdf(base64Content, file.name);
+          
+          const extractedData = await callGeminiForPdfText(pdfText, file.name);
           
           if (extractedData) {
             const newMachine = {
@@ -746,9 +767,9 @@
       logBox.innerHTML += `<div class="font-bold text-white pt-2">Importação concluída! ${importedCount} OS adicionadas com sucesso.</div>`;
     }
 
-    async function callGeminiForPdf(base64Pdf, fileName) {
+    async function callGeminiForPdfText(pdfText, fileName) {
       const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${geminiApiKey}`;
-      const promptText = `Analise este documento PDF de Ordem de Serviço (OS) e extraia estritamente num formato JSON válido as seguintes chaves:
+      const promptText = `Analise o seguinte texto extraído de um documento PDF de Ordem de Serviço (OS) e extraia estritamente num formato JSON válido as seguintes chaves:
       - "cliente": Nome do cliente ou empresa.
       - "maquina": Modelo ou descrição da máquina.
       - "linha": Linha de produção (escolha rigorosamente entre "Leve", "Intermediária" ou "Pesada").
@@ -756,14 +777,17 @@
       - "inicio": Data de início no formato YYYY-MM-DD se houver, senão string vazia.
       - "previsao": Data de previsão de entrega no formato YYYY-MM-DD se houver, senão string vazia.
       - "obs": Observações relevantes ou resumo breve.
+      
+      Texto do PDF:
+      ${pdfText}
+
       Retorne APENAS o JSON puro, sem blocos de código Markdown ao redor.`;
 
       const body = {
         contents: [
           {
             parts: [
-              { text: promptText },
-              { inline_data: { mime_type: "application/pdf", data: base64Pdf } }
+              { text: promptText }
             ]
           }
         ]
@@ -779,7 +803,6 @@
       const data = await response.json();
       const textResponse = data.candidates[0].content.parts[0].text;
       
-      // Limpeza de blocos de markdown caso a IA retorne
       let cleanJson = textResponse.replace(/```json/g, '').replace(/```/g, '').trim();
       return JSON.parse(cleanJson);
     }
