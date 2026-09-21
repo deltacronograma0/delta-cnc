@@ -444,13 +444,24 @@
             <input type="text" id="addMaquina" required placeholder="Modelo" class="w-full bg-[#0b1329] border border-slate-700 rounded-xl p-2.5 text-white">
           </div>
         </div>
-        <div>
-          <label class="block text-[11px] font-bold text-slate-300 mb-1 uppercase">Linha</label>
-          <select id="addLinha" class="w-full bg-[#0b1329] border border-slate-700 rounded-xl p-2.5 font-medium text-white">
-            <option value="Leve">Leve</option>
-            <option value="Intermediária">Intermediária</option>
-            <option value="Pesada">Pesada</option>
-          </select>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-[11px] font-bold text-slate-300 mb-1 uppercase">Linha</label>
+            <select id="addLinha" class="w-full bg-[#0b1329] border border-slate-700 rounded-xl p-2.5 font-medium text-white">
+              <option value="Leve">Leve</option>
+              <option value="Intermediária">Intermediária</option>
+              <option value="Pesada">Pesada</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-[11px] font-bold text-slate-300 mb-1 uppercase">Status da Máquina</label>
+            <select id="addStatusManual" class="w-full bg-[#0b1329] border border-slate-700 rounded-xl p-2.5 font-medium text-white">
+              <option value="automatico">Automático (Calculado por Datas)</option>
+              <option value="Aguardando produção">Aguardando produção</option>
+              <option value="Em andamento">Em andamento</option>
+              <option value="Entregue">Entregue</option>
+            </select>
+          </div>
         </div>
         <div class="grid grid-cols-3 gap-2">
           <div>
@@ -534,7 +545,7 @@
   </div>
 
   <script>
-    let geminiApiKey = localStorage.getItem('DELTA_GEMINI_KEY') || '';
+    let geminiApiKey = localStorage.getItem('DELTA_GEMINI_KEY'] || '';
     let currentUser = JSON.parse(localStorage.getItem('DELTA_CURRENT_USER')) || { email: 'deltacronograma@gmail.com', role: 'admin' };
     
     let usersData = JSON.parse(localStorage.getItem('DELTA_USERS_DATA')) || [
@@ -555,9 +566,9 @@
       if (!geminiApiKey) document.getElementById('noConfigWarning').classList.remove('hidden');
       if (appData.length === 0) {
         appData = [
-          { id: '1', equipe: 'Felipe e Arthur', cliente: 'AC COMUNICACAO VISUAL LTDA', maquina: 'Fiber Split 50W + 4º Eixo + Estabilizador', linha: 'Leve', inicio: '2026-09-17', previsao: '2026-09-18', entregaReal: '2026-09-18', obs: 'Concluído', pdfData: '' },
-          { id: '2', equipe: 'Felipe e Arthur', cliente: 'LAYSLA BRAGA DA SILVA', maquina: 'FIBER SPLIT 50W', linha: 'Leve', inicio: '2026-09-17', previsao: '2026-09-18', entregaReal: '', obs: 'Em andamento', pdfData: '' },
-          { id: '3', equipe: '—', cliente: 'JPX TECHNOLOGY LTDA', maquina: 'Centro de Usinagem Easy 2030, Spindle 12cv', linha: 'Pesada', inicio: '', previsao: '', entregaReal: '', obs: 'Aguardando', pdfData: '' }
+          { id: '1', equipe: 'Felipe e Arthur', cliente: 'AC COMUNICACAO VISUAL LTDA', maquina: 'Fiber Split 50W + 4º Eixo + Estabilizador', linha: 'Leve', statusManual: 'automatico', inicio: '2026-09-17', previsao: '2026-09-18', entregaReal: '2026-09-18', obs: 'Concluído', pdfData: '' },
+          { id: '2', equipe: 'Felipe e Arthur', cliente: 'LAYSLA BRAGA DA SILVA', maquina: 'FIBER SPLIT 50W', linha: 'Leve', statusManual: 'automatico', inicio: '2026-09-17', previsao: '2026-09-18', entregaReal: '', obs: 'Em andamento', pdfData: '' },
+          { id: '3', equipe: '—', cliente: 'JPX TECHNOLOGY LTDA', maquina: 'Centro de Usinagem Easy 2030, Spindle 12cv', linha: 'Pesada', statusManual: 'automatico', inicio: '', previsao: '', entregaReal: '', obs: 'Aguardando', pdfData: '' }
         ];
         saveData();
       }
@@ -583,6 +594,9 @@
     }
 
     function getAutomaticStatus(item) {
+      if (item.statusManual && item.statusManual !== 'automatico') {
+        return item.statusManual;
+      }
       if (item.entregaReal && item.entregaReal.trim() !== '') return 'Entregue';
       if (item.inicio && item.inicio.trim() !== '') return 'Em andamento';
       return 'Aguardando produção';
@@ -689,7 +703,6 @@
       document.getElementById('noConfigWarning').classList.add('hidden');
     }
 
-    // FUNÇÕES RECONSTRUÍDAS: IMPORTAÇÃO EM LOTE COM LEITURA LOCAL DE PDF E IA
     function openBatchImportModal() {
       const activeKey = localStorage.getItem('DELTA_GEMINI_KEY') || geminiApiKey;
       if (!activeKey) {
@@ -749,13 +762,15 @@
           const extractedData = await callGeminiWithText(pdfText, activeKey);
           
           if (extractedData) {
+            const todayStr = new Date().toISOString().split('T')[0];
             const newMachine = {
               id: Date.now().toString() + Math.random().toString(36).substring(2,5),
               equipe: extractedData.equipe || teamsData[0]?.name || '—',
               cliente: extractedData.cliente || 'CLIENTE NÃO IDENTIFICADO',
               maquina: extractedData.maquina || 'Máquina padrão',
               linha: extractedData.linha || 'Leve',
-              inicio: extractedData.inicio || new Date().toISOString().split('T')[0],
+              statusManual: 'automatico',
+              inicio: extractedData.inicio || todayStr,
               previsao: extractedData.previsao || '',
               entregaReal: '',
               obs: extractedData.obs || 'Importado via IA',
@@ -834,9 +849,9 @@
     }
 
     function exportCSV() {
-      let csv = 'Equipe,Cliente,Maquina,Linha,Inicio,Previsao,EntregaReal,Status,Obs\n';
+      let csv = 'Equipe,Cliente,Maquina,Linha,Status,Inicio,Previsao,EntregaReal,Obs\n';
       appData.forEach(m => {
-        csv += `"${m.equipe}","${m.cliente}","${m.maquina}","${m.linha}","${m.inicio}","${m.previsao}","${m.entregaReal}","${getAutomaticStatus(m)}","${m.obs}"\n`;
+        csv += `"${m.equipe}","${m.cliente}","${m.maquina}","${m.linha}","${getAutomaticStatus(m)}","${m.inicio}","${m.previsao}","${m.entregaReal}","${m.obs}"\n`;
       });
       const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
       const url = URL.createObjectURL(blob);
@@ -922,13 +937,18 @@
         document.getElementById('addCliente').value = item.cliente;
         document.getElementById('addMaquina').value = item.maquina;
         document.getElementById('addLinha').value = item.linha;
-        document.getElementById('addInicio').value = item.inicio;
-        document.getElementById('addPrevisao').value = item.previsao;
-        document.getElementById('addEntregaReal').value = item.entregaReal;
+        document.getElementById('addStatusManual').value = item.statusManual || 'automatico';
+        document.getElementById('addInicio').value = item.inicio || '';
+        document.getElementById('addPrevisao').value = item.previsao || '';
+        document.getElementById('addEntregaReal').value = item.entregaReal || '';
         document.getElementById('addObs').value = item.obs || '';
       } else {
         document.getElementById('editMachineId').value = '';
         document.getElementById('formAddMachine').reset();
+        // Define a data de hoje automaticamente no campo Início ao criar nova máquina
+        const todayStr = new Date().toISOString().split('T')[0];
+        document.getElementById('addInicio').value = todayStr;
+        document.getElementById('addStatusManual').value = 'automatico';
       }
       document.getElementById('modalAddMachine').classList.remove('hidden');
     }
@@ -947,6 +967,7 @@
         cliente: document.getElementById('addCliente').value,
         maquina: document.getElementById('addMaquina').value,
         linha: document.getElementById('addLinha').value,
+        statusManual: document.getElementById('addStatusManual').value,
         inicio: document.getElementById('addInicio').value,
         previsao: document.getElementById('addPrevisao').value,
         entregaReal: document.getElementById('addEntregaReal').value,
