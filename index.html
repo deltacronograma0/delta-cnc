@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="pt-BR">
+<html lang="pt-PT">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -21,13 +21,12 @@
         <div class="bg-amber-500 text-slate-900 font-black p-2.5 rounded-xl text-xl tracking-wider shadow">DELTA</div>
         <div>
           <h1 class="text-lg font-bold leading-tight flex items-center gap-2">
-            DELTA CNC <span class="text-xs bg-amber-500/20 text-amber-400 border border-amber-500/30 px-2 py-0.5 rounded-full font-medium">Web & IA</span>
+            DELTA CNC <span class="text-xs bg-amber-500/20 text-amber-400 border border-amber-500/30 px-2 py-0.5 rounded-full font-medium">Controle de Produção</span>
           </h1>
-          <p class="text-xs text-slate-400">Sistema de Controle de Produção Oficial</p>
+          <p class="text-xs text-slate-400">Sistema Integrado de Gestão de Ordens de Serviço</p>
         </div>
       </div>
 
-      <!-- STATUS, LOGIN & CONFIG -->
       <div class="flex items-center gap-3">
         <div id="userBadge" class="hidden items-center gap-2 bg-slate-800 px-3 py-1.5 rounded-full text-xs border border-slate-700 text-amber-400 font-semibold">
           <i class="fa-solid fa-user-shield"></i> <span id="userNameDisplay">Editor</span>
@@ -51,7 +50,7 @@
           <i class="fa-solid fa-list-check"></i> Acompanhamento
         </button>
         <button onclick="switchTab('dashboard')" id="tab-dashboard" class="tab-btn px-4 py-3 border-b-2 border-transparent text-slate-400 hover:text-slate-200 font-semibold flex items-center gap-2 whitespace-nowrap">
-          <i class="fa-solid fa-chart-line"></i> Dashboard
+          <i class="fa-solid fa-chart-line"></i> Dashboard & Anual
         </button>
         <button onclick="switchTab('podio')" id="tab-podio" class="tab-btn px-4 py-3 border-b-2 border-transparent text-slate-400 hover:text-slate-200 font-semibold flex items-center gap-2 whitespace-nowrap">
           <i class="fa-solid fa-trophy text-amber-400"></i> Destaques & Pódio
@@ -70,7 +69,7 @@
           <i class="fa-solid fa-triangle-exclamation text-amber-500 text-xl mt-0.5"></i>
           <div>
             <h3 class="text-sm font-bold text-amber-900">Chave da API do Gemini necessária</h3>
-            <p class="text-xs text-amber-700 mt-1">Insira sua chave nas configurações para habilitar a leitura de múltiplos PDFs com IA.</p>
+            <p class="text-xs text-amber-700 mt-1">Configure sua chave nas definições para habilitar a leitura automatizada de múltiplos PDFs com IA.</p>
           </div>
         </div>
         <button onclick="openConfigModal()" class="bg-amber-500 text-slate-900 font-bold px-3 py-1.5 rounded-lg text-xs hover:bg-amber-600 transition shadow">
@@ -83,150 +82,171 @@
     <section id="sec-acompanhamento" class="space-y-4">
       <div class="flex flex-wrap justify-between items-center gap-4 bg-white p-5 rounded-2xl shadow-sm border border-slate-200">
         <div>
-          <h2 class="text-lg font-extrabold text-slate-800 tracking-tight"><i class="fa-solid fa-industry text-amber-500 mr-2"></i>Máquinas em Produção</h2>
-          <p class="text-xs text-slate-500">Gerencie ordens de serviço, prazos e andamento fabril</p>
+          <h2 class="text-lg font-extrabold text-slate-800 tracking-tight"><i class="fa-solid fa-industry text-amber-500 mr-2"></i>Acompanhamento de Máquinas em Produção</h2>
+          <p class="text-xs text-slate-500">Gestão automatizada por datas (Início, Previsão e Entrega Real)</p>
         </div>
 
         <div class="flex flex-wrap items-center gap-2">
           <button onclick="openBatchIAModal()" class="editor-only hidden bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-4 py-2.5 rounded-xl text-sm items-center gap-2 shadow transition">
-            <i class="fa-solid fa-wand-magic-sparkles"></i> Importar Lote de OS (IA)
+            <i class="fa-solid fa-wand-magic-sparkles"></i> Importar Lote OS (IA)
           </button>
           <button onclick="openAddMachineModal()" class="editor-only hidden bg-slate-900 hover:bg-slate-800 text-white font-bold px-4 py-2.5 rounded-xl text-sm items-center gap-2 shadow transition">
             <i class="fa-solid fa-plus"></i> Nova Máquina
           </button>
-          <span id="viewerNotice" class="text-xs text-slate-400 italic bg-slate-100 px-3 py-2 rounded-xl border">Modo Visualização (Faça login para editar)</span>
+          <span id="viewerNotice" class="text-xs text-slate-400 italic bg-slate-100 px-3 py-2 rounded-xl border">👀 Modo de leitura</span>
         </div>
       </div>
 
       <!-- FILTROS -->
       <div class="bg-white p-3.5 rounded-2xl shadow-sm border border-slate-200 flex flex-wrap gap-3 items-center text-sm">
         <select id="filterStatus" onchange="renderTable()" class="bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-slate-700 font-medium">
-          <option value="">Todos os Status</option>
-          <option value="Aguardando produção">Aguardando Produção</option>
-          <option value="Em andamento">Em Andamento</option>
+          <option value="">Todos os status</option>
+          <option value="Aguardando produção">Aguardando produção</option>
+          <option value="Em andamento">Em andamento</option>
           <option value="Entregue">Entregue</option>
-          <option value="Atraso">Atraso</option>
-          <option value="Cancelado">Cancelado</option>
         </select>
-
         <select id="filterLinha" onchange="renderTable()" class="bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-slate-700 font-medium">
-          <option value="">Todas as Linhas</option>
+          <option value="">Todas as linhas</option>
           <option value="Linha Leve">Linha Leve</option>
           <option value="Linha Intermediária">Linha Intermediária</option>
           <option value="Linha Pesada">Linha Pesada</option>
         </select>
-
         <div class="relative flex-grow">
           <i class="fa-solid fa-magnifying-glass absolute left-3 top-3 text-slate-400 text-xs"></i>
-          <input type="text" id="filterSearch" oninput="renderTable()" placeholder="Buscar cliente, modelo ou equipe..." class="w-full bg-slate-50 border border-slate-300 rounded-xl pl-9 pr-3 py-2 text-slate-700">
+          <input type="text" id="filterSearch" oninput="renderTable()" placeholder="Pesquisar cliente, modelo ou equipa..." class="w-full bg-slate-50 border border-slate-300 rounded-xl pl-9 pr-3 py-2 text-slate-700">
         </div>
       </div>
 
-      <!-- TABELA PRINCIPAL -->
+      <!-- TABELA -->
       <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
         <div class="overflow-x-auto">
           <table class="w-full text-left text-sm text-slate-600">
             <thead class="bg-slate-900 text-slate-200 font-bold uppercase text-xs tracking-wider">
               <tr>
-                <th class="p-3.5">Equipe</th>
+                <th class="p-3.5">Equipa</th>
                 <th class="p-3.5">Cliente</th>
                 <th class="p-3.5">Máquina / Modelo</th>
                 <th class="p-3.5">Linha</th>
                 <th class="p-3.5">Início</th>
                 <th class="p-3.5">Previsão</th>
-                <th class="p-3.5">Status</th>
-                <th class="p-3.5 text-center">Ordem de Serviço</th>
+                <th class="p-3.5">Entrega Real</th>
+                <th class="p-3.5">Status (Auto)</th>
+                <th class="p-3.5 text-center">OS</th>
                 <th class="p-3.5 text-center editor-col hidden">Ações</th>
               </tr>
             </thead>
             <tbody id="tableBody" class="divide-y divide-slate-100 font-medium">
-              <tr>
-                <td colspan="9" class="p-12 text-center text-slate-400 font-medium">Carregando dados da fábrica...</td>
-              </tr>
+              <tr><td colspan="10" class="p-12 text-center text-slate-400">A carregar...</td></tr>
             </tbody>
           </table>
         </div>
       </div>
     </section>
 
-    <!-- SEÇÃO: DASHBOARD -->
+    <!-- SEÇÃO: DASHBOARD & ANUAL -->
     <section id="sec-dashboard" class="hidden space-y-6">
+      <!-- FILTRO DE MÊS E ANO PARA O DASHBOARD -->
+      <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200 flex flex-wrap justify-between items-center gap-4">
+        <div>
+          <h2 class="text-lg font-extrabold text-slate-900"><i class="fa-solid fa-calendar-days text-amber-500 mr-2"></i>Painel de Levantamento Geral</h2>
+          <p class="text-xs text-slate-500">Selecione o mês e ano de referência para analisar a produção</p>
+        </div>
+        <div class="flex items-center gap-3">
+          <select id="dashMonth" onchange="updateDashboard()" class="bg-slate-50 border border-slate-300 rounded-xl px-4 py-2 font-bold text-sm text-slate-700">
+            <option value="0">Janeiro</option><option value="1">Fevereiro</option><option value="2">Março</option><option value="3">Abril</option>
+            <option value="4">Maio</option><option value="5">Junho</option><option value="6">Julho</option><option value="7">Agosto</option>
+            <option value="8" selected>Setembro</option><option value="9">Outubro</option><option value="10">Novembro</option><option value="11">Dezembro</option>
+          </select>
+          <select id="dashYear" onchange="updateDashboard()" class="bg-slate-50 border border-slate-300 rounded-xl px-4 py-2 font-bold text-sm text-slate-700">
+            <option value="2025">2025</option>
+            <option value="2026" selected>2026</option>
+            <option value="2027">2027</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- CARDS KPI -->
       <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex items-center justify-between">
-          <div>
-            <div class="text-xs text-slate-500 font-semibold uppercase tracking-wider">Total em Fila</div>
-            <div id="kpiTotal" class="text-3xl font-black text-slate-900 mt-1">0</div>
-          </div>
+          <div><div class="text-xs text-slate-500 font-semibold uppercase">Total no Mês</div><div id="kpiTotal" class="text-3xl font-black text-slate-900 mt-1">0</div></div>
           <div class="bg-slate-100 p-3.5 rounded-2xl text-slate-700 text-xl"><i class="fa-solid fa-cubes"></i></div>
         </div>
-
         <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex items-center justify-between">
-          <div>
-            <div class="text-xs text-blue-600 font-semibold uppercase tracking-wider">Em Andamento</div>
-            <div id="kpiAndamento" class="text-3xl font-black text-blue-600 mt-1">0</div>
-          </div>
+          <div><div class="text-xs text-blue-600 font-semibold uppercase">Em Andamento</div><div id="kpiAndamento" class="text-3xl font-black text-blue-600 mt-1">0</div></div>
           <div class="bg-blue-50 p-3.5 rounded-2xl text-blue-600 text-xl"><i class="fa-solid fa-gears"></i></div>
         </div>
-
         <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex items-center justify-between">
-          <div>
-            <div class="text-xs text-emerald-600 font-semibold uppercase tracking-wider">Entregues</div>
-            <div id="kpiEntregues" class="text-3xl font-black text-emerald-600 mt-1">0</div>
-          </div>
+          <div><div class="text-xs text-emerald-600 font-semibold uppercase">Entregues</div><div id="kpiEntregues" class="text-3xl font-black text-emerald-600 mt-1">0</div></div>
           <div class="bg-emerald-50 p-3.5 rounded-2xl text-emerald-600 text-xl"><i class="fa-solid fa-circle-check"></i></div>
         </div>
-
         <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex items-center justify-between">
-          <div>
-            <div class="text-xs text-amber-600 font-semibold uppercase tracking-wider">Taxa de Conclusão</div>
-            <div id="kpiTaxa" class="text-3xl font-black text-amber-500 mt-1">0%</div>
-          </div>
+          <div><div class="text-xs text-amber-600 font-semibold uppercase">Taxa de Conclusão</div><div id="kpiTaxa" class="text-3xl font-black text-amber-500 mt-1">0%</div></div>
           <div class="bg-amber-50 p-3.5 rounded-2xl text-amber-500 text-xl"><i class="fa-solid fa-chart-line"></i></div>
+        </div>
+      </div>
+
+      <!-- LEVANTAMENTO POR EQUIPA NO MÊS -->
+      <div class="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm space-y-4">
+        <h3 class="font-extrabold text-slate-900 text-base flex items-center gap-2"><i class="fa-solid fa-users-rectangle text-indigo-600"></i> Produção por Equipa no Mês</h3>
+        <div id="teamsMonthlyContainer" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          <!-- Preenchido via JS -->
+        </div>
+      </div>
+
+      <!-- LEVANTAMENTO ANUAL COM GRÁFICOS -->
+      <div class="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm space-y-6">
+        <div class="flex justify-between items-center">
+          <div>
+            <h3 class="font-extrabold text-slate-900 text-base flex items-center gap-2"><i class="fa-solid fa-chart-pie text-emerald-600"></i> Levantamento Geral Anual</h3>
+            <p class="text-xs text-slate-500">Volume de máquinas iniciadas e entregues por mês no ano selecionado</p>
+          </div>
+        </div>
+        <div class="h-72 relative">
+          <canvas id="annualChart"></canvas>
         </div>
       </div>
     </section>
 
-    <!-- SEÇÃO: PÓDIO & DESTAQUES -->
+    <!-- SEÇÃO: DESTAQUES & PÓDIO -->
     <section id="sec-podio" class="hidden space-y-6">
       <div class="bg-gradient-to-r from-slate-900 to-slate-800 p-6 rounded-3xl text-white shadow-xl flex items-center justify-between">
         <div>
-          <h2 class="text-2xl font-black flex items-center gap-3"><i class="fa-solid fa-trophy text-amber-400"></i> Destaques & Pódio da Fábrica</h2>
-          <p class="text-xs text-slate-300 mt-1">Reconhecimento de desempenho e entregas</p>
+          <h2 class="text-2xl font-black flex items-center gap-3"><i class="fa-solid fa-trophy text-amber-400"></i> Equipas Destaques do Mês</h2>
+          <p class="text-xs text-slate-300 mt-1">Reconhecimento baseado nas entregas reais concluídas no período</p>
         </div>
       </div>
 
       <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
         <div class="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm text-center space-y-3">
-          <div class="w-12 h-12 bg-amber-100 text-amber-600 rounded-2xl mx-auto flex items-center justify-center text-xl font-black"><i class="fa-solid fa-medal"></i></div>
-          <h3 class="font-bold text-slate-800 text-base">Equipe Mais Ágil</h3>
-          <p class="text-xs text-slate-500" id="podioAgil">Calculando...</p>
+          <div class="w-14 h-14 bg-amber-100 text-amber-600 rounded-2xl mx-auto flex items-center justify-center text-2xl font-black"><i class="fa-solid fa-medal"></i></div>
+          <h3 class="font-bold text-slate-800 text-sm uppercase tracking-wide">1º Lugar — Equipa Campeã</h3>
+          <p class="text-base font-extrabold text-amber-600" id="podio1">Aguardando dados...</p>
         </div>
         <div class="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm text-center space-y-3">
-          <div class="w-12 h-12 bg-emerald-100 text-emerald-600 rounded-2xl mx-auto flex items-center justify-center text-xl font-black"><i class="fa-solid fa-star"></i></div>
-          <h3 class="font-bold text-slate-800 text-base">Maior Volume Entregue</h3>
-          <p class="text-xs text-slate-500" id="podioVolume">Calculando...</p>
+          <div class="w-14 h-14 bg-slate-100 text-slate-600 rounded-2xl mx-auto flex items-center justify-center text-2xl font-black"><i class="fa-solid fa-award"></i></div>
+          <h3 class="font-bold text-slate-800 text-sm uppercase tracking-wide">2º Lugar</h3>
+          <p class="text-base font-bold text-slate-700" id="podio2">—</p>
         </div>
         <div class="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm text-center space-y-3">
-          <div class="w-12 h-12 bg-indigo-100 text-indigo-600 rounded-2xl mx-auto flex items-center justify-center text-xl font-black"><i class="fa-solid fa-bolt"></i></div>
-          <h3 class="font-bold text-slate-800 text-base">Eficiência Geral</h3>
-          <p class="text-xs text-slate-500" id="podioEficiencia">98.4%</p>
+          <div class="w-14 h-14 bg-amber-50 text-amber-700 rounded-2xl mx-auto flex items-center justify-center text-2xl font-black"><i class="fa-solid fa-star"></i></div>
+          <h3 class="font-bold text-slate-800 text-sm uppercase tracking-wide">3º Lugar</h3>
+          <p class="text-base font-bold text-slate-700" id="podio3">—</p>
         </div>
       </div>
     </section>
 
   </main>
 
-  <!-- MODAL: LOGIN DE EDITORES -->
+  <!-- MODAL: LOGIN -->
   <div id="modalLogin" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm hidden flex items-center justify-center p-4 z-50">
     <div class="bg-white rounded-3xl max-w-sm w-full p-6 shadow-2xl space-y-4 border border-slate-100">
       <div class="flex justify-between items-center border-b pb-3">
         <h3 class="font-bold text-slate-900 text-base flex items-center gap-2"><i class="fa-solid fa-lock text-indigo-600"></i> Login de Editor</h3>
         <button onclick="closeLoginModal()" class="text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark text-lg"></i></button>
       </div>
-      <p class="text-xs text-slate-500">Insira a senha de acesso para liberar a edição.</p>
       <form onsubmit="handleLogin(event)" class="space-y-3">
         <div>
-          <label class="block text-xs font-bold text-slate-700 mb-1">Senha de Acesso</label>
+          <label class="block text-xs font-bold text-slate-700 mb-1">Senha</label>
           <input type="password" id="loginPasswordInput" required placeholder="Digite a senha..." class="w-full border rounded-xl p-2.5 text-sm focus:outline-none focus:border-indigo-600">
         </div>
         <div class="flex justify-end gap-2 pt-2">
@@ -239,27 +259,27 @@
 
   <!-- MODAL: NOVA MÁQUINA -->
   <div id="modalAddMachine" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm hidden flex items-center justify-center p-4 z-50">
-    <div class="bg-white rounded-3xl max-w-lg w-full p-6 shadow-2xl space-y-4 border border-slate-100">
+    <div class="bg-white rounded-3xl max-w-lg w-full p-6 shadow-2xl space-y-4 border border-slate-100 max-h-[90vh] overflow-y-auto">
       <div class="flex justify-between items-center border-b pb-4">
         <h3 class="font-extrabold text-slate-900 text-lg flex items-center gap-2"><i class="fa-solid fa-circle-plus text-amber-500"></i> Cadastrar Nova Máquina</h3>
         <button onclick="closeAddMachineModal()" class="text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark text-lg"></i></button>
       </div>
       <form id="formAddMachine" onsubmit="submitNewMachine(event)" class="space-y-3.5 text-sm">
         <div>
-          <label class="block text-xs font-bold text-slate-700 mb-1 uppercase tracking-wider">Equipe / Tag</label>
-          <input type="text" id="addEquipe" required placeholder="Ex: L10-1" class="w-full border rounded-xl p-2.5">
+          <label class="block text-xs font-bold text-slate-700 mb-1 uppercase">Equipa Responsável</label>
+          <input type="text" id="addEquipe" required placeholder="Ex: Equipa Alpha" class="w-full border rounded-xl p-2.5">
         </div>
         <div>
-          <label class="block text-xs font-bold text-slate-700 mb-1 uppercase tracking-wider">Cliente / Razão Social</label>
+          <label class="block text-xs font-bold text-slate-700 mb-1 uppercase">Cliente</label>
           <input type="text" id="addCliente" required placeholder="Nome do cliente" class="w-full border rounded-xl p-2.5">
         </div>
         <div>
-          <label class="block text-xs font-bold text-slate-700 mb-1 uppercase tracking-wider">Descrição da Máquina</label>
+          <label class="block text-xs font-bold text-slate-700 mb-1 uppercase">Modelo da Máquina</label>
           <input type="text" id="addMaquina" required placeholder="Ex: Centro de Usinagem Easy" class="w-full border rounded-xl p-2.5">
         </div>
         <div class="grid grid-cols-2 gap-3">
           <div>
-            <label class="block text-xs font-bold text-slate-700 mb-1 uppercase tracking-wider">Linha</label>
+            <label class="block text-xs font-bold text-slate-700 mb-1 uppercase">Linha</label>
             <select id="addLinha" class="w-full border rounded-xl p-2.5 font-medium">
               <option value="Linha Leve">Linha Leve</option>
               <option value="Linha Intermediária">Linha Intermediária</option>
@@ -267,57 +287,53 @@
             </select>
           </div>
           <div>
-            <label class="block text-xs font-bold text-slate-700 mb-1 uppercase tracking-wider">Status Inicial</label>
-            <select id="addStatus" class="w-full border rounded-xl p-2.5 font-medium">
-              <option value="Aguardando produção">Aguardando Produção</option>
-              <option value="Em andamento">Em Andamento</option>
-              <option value="Entregue">Entregue</option>
-            </select>
+            <label class="block text-xs font-bold text-slate-700 mb-1 uppercase">Data de Início</label>
+            <input type="date" id="addInicio" class="w-full border rounded-xl p-2.5">
           </div>
         </div>
         <div class="grid grid-cols-2 gap-3">
           <div>
-            <label class="block text-xs font-bold text-slate-700 mb-1 uppercase tracking-wider">Data de Início</label>
-            <input type="date" id="addInicio" class="w-full border rounded-xl p-2.5">
+            <label class="block text-xs font-bold text-slate-700 mb-1 uppercase">Previsão de Entrega</label>
+            <input type="date" id="addPrevisao" class="w-full border rounded-xl p-2.5">
           </div>
           <div>
-            <label class="block text-xs font-bold text-slate-700 mb-1 uppercase tracking-wider">Previsão de Entrega</label>
-            <input type="date" id="addPrevisao" class="w-full border rounded-xl p-2.5">
+            <label class="block text-xs font-bold text-slate-700 mb-1 uppercase">Data de Entrega Real</label>
+            <input type="date" id="addEntregaReal" class="w-full border rounded-xl p-2.5">
           </div>
         </div>
         <div>
-          <label class="block text-xs font-bold text-slate-700 mb-1 uppercase tracking-wider">Anexar Ordem de Serviço (PDF)</label>
+          <label class="block text-xs font-bold text-slate-700 mb-1 uppercase">Ficheiro PDF da OS</label>
           <input type="file" id="addPdfFile" accept="application/pdf" class="w-full text-xs border rounded-xl p-2 bg-slate-50">
         </div>
         <div class="flex justify-end gap-2 pt-4 border-t">
           <button type="button" onclick="closeAddMachineModal()" class="px-5 py-2.5 border rounded-xl text-slate-600 font-semibold">Cancelar</button>
-          <button type="submit" class="bg-amber-500 hover:bg-amber-600 text-slate-900 font-bold px-5 py-2.5 rounded-xl shadow transition">Salvar Máquina</button>
+          <button type="submit" class="bg-amber-500 hover:bg-amber-600 text-slate-900 font-bold px-5 py-2.5 rounded-xl shadow transition">Salvar</button>
         </div>
       </form>
     </div>
   </div>
 
-  <!-- MODAL: IMPORTAÇÃO EM LOTE COM IA -->
+  <!-- MODAL: IMPORTAR LOTE IA -->
   <div id="modalBatchIA" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm hidden flex items-center justify-center p-4 z-50">
     <div class="bg-white rounded-3xl max-w-3xl w-full p-6 shadow-2xl space-y-4 border border-slate-100 max-h-[90vh] overflow-y-auto">
       <div class="flex justify-between items-center border-b pb-3">
-        <h3 class="font-extrabold text-slate-900 text-lg flex items-center gap-2"><i class="fa-solid fa-wand-magic-sparkles text-indigo-600"></i> Importação em Lote de OS (IA)</h3>
+        <h3 class="font-extrabold text-slate-900 text-lg flex items-center gap-2"><i class="fa-solid fa-wand-magic-sparkles text-indigo-600"></i> Leitura de Múltiplas OS com IA</h3>
         <button onclick="closeBatchIAModal()" class="text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark text-lg"></i></button>
       </div>
-      <p class="text-xs text-slate-500">Selecione múltiplos arquivos PDF de Ordens de Serviço (você pode selecionar vários de uma vez). A IA fará a leitura e preencherá os dados automaticamente.</p>
+      <p class="text-xs text-slate-500">Selecione vários PDFs de OS. A IA lerá todos em lote e preencherá automaticamente os dados.</p>
       
       <div>
-        <label class="block text-xs font-bold text-slate-700 mb-1">Selecionar Arquivos PDF (Múltiplos)</label>
+        <label class="block text-xs font-bold text-slate-700 mb-1">Ficheiros PDF (Múltiplos)</label>
         <input type="file" id="batchFilesInput" accept="application/pdf" multiple class="w-full border rounded-xl p-3 text-xs bg-slate-50" onchange="handleBatchFilesSelect(event)">
       </div>
 
-      <div id="batchLoading" class="hidden text-center py-4 bg-indigo-50 rounded-2xl border border-indigo-100">
-        <i class="fa-solid fa-spinner fa-spin text-2xl text-indigo-600 mb-2 block"></i>
-        <span class="text-xs font-bold text-indigo-900 block" id="batchLoadingText">Processando arquivos com Gemini IA...</span>
+      <div id="batchLoading" class="hidden text-center py-6 bg-indigo-50 rounded-2xl border border-indigo-100">
+        <i class="fa-solid fa-spinner fa-spin text-3xl text-indigo-600 mb-2 block"></i>
+        <span class="text-xs font-bold text-indigo-900 block" id="batchLoadingText">A processar ordens com Gemini...</span>
       </div>
 
       <div id="batchPreviewContainer" class="hidden space-y-3">
-        <h4 class="text-xs font-bold text-slate-700 uppercase">Registros Extraídos pela IA:</h4>
+        <h4 class="text-xs font-bold text-slate-700 uppercase">Registos Extraídos:</h4>
         <div class="border rounded-xl overflow-x-auto max-h-60">
           <table class="w-full text-xs text-left text-slate-600">
             <thead class="bg-slate-100 font-bold uppercase">
@@ -326,7 +342,6 @@
                 <th class="p-2">Máquina</th>
                 <th class="p-2">Linha</th>
                 <th class="p-2">Início</th>
-                <th class="p-2">Previsão</th>
               </tr>
             </thead>
             <tbody id="batchPreviewBody" class="divide-y"></tbody>
@@ -337,25 +352,25 @@
       <div class="flex justify-end gap-2 pt-2 border-t">
         <button onclick="closeBatchIAModal()" class="px-4 py-2 rounded-xl text-xs font-semibold text-slate-600 border">Cancelar</button>
         <button onclick="processBatchAI()" id="btnProcessBatch" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-5 py-2.5 rounded-xl text-xs shadow transition flex items-center gap-2">
-          <i class="fa-solid fa-bolt"></i> Salvar Todos na Fila
+          <i class="fa-solid fa-bolt"></i> Salvar na Planilha
         </button>
       </div>
     </div>
   </div>
 
-  <!-- MODAL: CONFIGURAÇÕES -->
+  <!-- MODAL CONFIGURAÇÃO -->
   <div id="modalConfig" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm hidden flex items-center justify-center p-4 z-50">
     <div class="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl space-y-4 border border-slate-100">
       <div class="flex justify-between items-center border-b pb-3">
-        <h3 class="font-bold text-slate-900 text-base flex items-center gap-2"><i class="fa-solid fa-gear text-amber-500"></i> Configurações do Sistema</h3>
+        <h3 class="font-bold text-slate-900 text-base flex items-center gap-2"><i class="fa-solid fa-gear text-amber-500"></i> Configuração da API Gemini</h3>
         <button onclick="closeConfigModal()" class="text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark text-lg"></i></button>
       </div>
       <div>
-        <label class="block text-xs font-bold text-slate-700 mb-1 uppercase">Chave API Gemini (IA)</label>
+        <label class="block text-xs font-bold text-slate-700 mb-1 uppercase">Chave API (Gemini Key)</label>
         <input type="password" id="geminiApiKeyInput" placeholder="AIzaSy..." class="w-full border rounded-xl p-2.5 text-sm focus:outline-none focus:border-amber-500">
       </div>
       <div class="flex justify-end pt-2">
-        <button onclick="saveConfig()" class="bg-amber-500 hover:bg-amber-600 text-slate-900 font-bold px-5 py-2 rounded-xl text-xs transition shadow">Salvar Configuração</button>
+        <button onclick="saveConfig()" class="bg-amber-500 hover:bg-amber-600 text-slate-900 font-bold px-5 py-2 rounded-xl text-xs transition shadow">Salvar Chave</button>
       </div>
     </div>
   </div>
@@ -365,25 +380,31 @@
     let isEditor = localStorage.getItem('DELTA_IS_EDITOR') === 'true';
     let appData = JSON.parse(localStorage.getItem('DELTA_MACHINES_DATA')) || [];
     let batchExtractedItems = [];
+    let annualChartInstance = null;
 
     window.addEventListener('DOMContentLoaded', () => {
-      if (!geminiApiKey) {
-        document.getElementById('noConfigWarning').classList.remove('hidden');
-      }
+      if (!geminiApiKey) document.getElementById('noConfigWarning').classList.remove('hidden');
       if (appData.length === 0) {
         appData = [
-          { id: '1', equipe: 'L10-1', cliente: 'ITAPOAN MOVEIS SOB MEDIDAS LTDA', maquina: 'Centro de Usinagem Easy', linha: 'Linha Intermediária', inicio: '2026-07-14', previsao: '', status: 'Aguardando produção', pdfUrl: '' }
+          { id: '1', equipe: 'Equipa Alfa', cliente: 'ITAPOAN MOVEIS', maquina: 'Centro de Usinagem Easy', linha: 'Linha Intermediária', inicio: '2026-09-05', previsao: '2026-09-25', entregaReal: '2026-09-20', pdfUrl: '' },
+          { id: '2', equipe: 'Equipa Beta', cliente: 'MOVEIS INDUSTRIAIS LTDA', maquina: 'Router CNC Master', linha: 'Linha Pesada', inicio: '2026-09-10', previsao: '2026-09-30', entregaReal: '', pdfUrl: '' },
+          { id: '3', equipe: 'Equipa Alfa', cliente: 'MARCENARIA MODERNA', maquina: 'Router Compacta', linha: 'Linha Leve', inicio: '', previsao: '', entregaReal: '', pdfUrl: '' }
         ];
         saveData();
       }
       updateUserUI();
       renderTable();
-      updateKPIs();
+      updateDashboard();
       updatePodio();
     });
 
-    function saveData() {
-      localStorage.setItem('DELTA_MACHINES_DATA', JSON.stringify(appData));
+    function saveData() { localStorage.setItem('DELTA_MACHINES_DATA', JSON.stringify(appData)); }
+
+    // CÁLCULO DE STATUS AUTOMÁTICO
+    function getAutomaticStatus(item) {
+      if (item.entregaReal && item.entregaReal.trim() !== '') return 'Entregue';
+      if (item.inicio && item.inicio.trim() !== '') return 'Em andamento';
+      return 'Aguardando produção';
     }
 
     function updateUserUI() {
@@ -412,7 +433,6 @@
 
     function openLoginModal() { document.getElementById('modalLogin').classList.remove('hidden'); }
     function closeLoginModal() { document.getElementById('modalLogin').classList.add('hidden'); }
-
     function handleLogin(e) {
       e.preventDefault();
       const pass = document.getElementById('loginPasswordInput').value;
@@ -422,18 +442,17 @@
         closeLoginModal();
         updateUserUI();
         renderTable();
-        alert('Login efetuado com sucesso! Modo Editor ativado.');
+        alert('Sessão iniciada com sucesso!');
       } else {
         alert('Senha incorreta!');
       }
     }
-
     function logout() {
       isEditor = false;
       localStorage.setItem('DELTA_IS_EDITOR', 'false');
       updateUserUI();
       renderTable();
-      alert('Você saiu do modo Editor.');
+      alert('Sessão encerrada.');
     }
 
     function openConfigModal() {
@@ -445,10 +464,7 @@
     function closeAddMachineModal() { document.getElementById('modalAddMachine').classList.add('hidden'); }
     
     function openBatchIAModal() {
-      if (!geminiApiKey) {
-        alert('Configure primeiro a sua chave do Gemini!');
-        return openConfigModal();
-      }
+      if (!geminiApiKey) { alert('Insira a chave da API Gemini!'); return openConfigModal(); }
       batchExtractedItems = [];
       document.getElementById('batchFilesInput').value = '';
       document.getElementById('batchPreviewContainer').classList.add('hidden');
@@ -457,100 +473,73 @@
     function closeBatchIAModal() { document.getElementById('modalBatchIA').classList.add('hidden'); }
 
     function saveConfig() {
-      const key = document.getElementById('geminiApiKeyInput').value.trim();
-      localStorage.setItem('DELTA_GEMINI_KEY', key);
-      geminiApiKey = key;
+      geminiApiKey = document.getElementById('geminiApiKeyInput').value.trim();
+      localStorage.setItem('DELTA_GEMINI_KEY', geminiApiKey);
       closeConfigModal();
       document.getElementById('noConfigWarning').classList.add('hidden');
-      alert('Configuração salva com sucesso!');
+      alert('Definições salvas!');
     }
 
     async function handleBatchFilesSelect(e) {
       const files = e.target.files;
       if (!files.length) return;
-
       document.getElementById('batchLoading').classList.remove('hidden');
       document.getElementById('btnProcessBatch').disabled = true;
       batchExtractedItems = [];
 
       for (let i = 0; i < files.length; i++) {
         const file = files[i];
-        document.getElementById('batchLoadingText').innerText = `Lendo arquivo ${i + 1} de ${files.length}: ${file.name}`;
-        
+        document.getElementById('batchLoadingText').innerText = `A ler ficheiro ${i + 1} de ${files.length}: ${file.name}`;
         try {
           const base64Data = await fileToBase64(file);
           const pdfObjectURL = URL.createObjectURL(file);
-
           const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${geminiApiKey}`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
               contents: [{
                 parts: [
-                  {
-                    text: "Analise esta Ordem de Serviço em PDF e retorne EXCLUSIVAMENTE um JSON puro, sem blocos markdown (sem ```json), contendo exatamente estes campos: cliente (string), maquina (string), linha (escolha exata entre: 'Linha Leve', 'Linha Intermediária' ou 'Linha Pesada'), inicio (data YYYY-MM-DD ou data atual), previsao (data YYYY-MM-DD ou vazio)."
-                  },
-                  {
-                    inline_data: {
-                      mime_type: "application/pdf",
-                      data: base64Data
-                    }
-                  }
+                  { text: "Analise esta Ordem de Serviço da Delta CNC e retorne EXCLUSIVAMENTE um JSON puro com: cliente, maquina, linha ('Linha Leve', 'Linha Intermediária' ou 'Linha Pesada'), inicio (YYYY-MM-DD)." },
+                  { inline_data: { mime_type: "application/pdf", data: base64Data } }
                 ]
               }]
             })
           });
-
           const result = await response.json();
-          if (result.error) throw new Error(result.error.message);
-
-          let rawText = result.candidates[0].content.parts[0].text;
-          rawText = rawText.replace(/```json/g, '').replace(/```/g, '').trim();
+          let rawText = result.candidates[0].content.parts[0].text.replace(/```json/g, '').replace(/```/g, '').trim();
           const parsed = JSON.parse(rawText);
 
           batchExtractedItems.push({
             id: Date.now().toString() + Math.random(),
-            equipe: 'OS-IA',
-            cliente: parsed.cliente || 'Cliente OS',
-            maquina: parsed.maquina || 'Máquina CNC',
+            equipe: 'Equipa Padrão',
+            cliente: parsed.cliente || 'Cliente',
+            maquina: parsed.maquina || 'Router CNC',
             linha: parsed.linha || 'Linha Intermediária',
-            status: 'Aguardando produção',
             inicio: parsed.inicio || new Date().toISOString().split('T')[0],
-            previsao: parsed.previsao || '',
+            previsao: '',
+            entregaReal: '',
             pdfUrl: pdfObjectURL
           });
-        } catch (err) {
-          console.error('Erro no arquivo ' + file.name, err);
-        }
+        } catch (err) { console.error(err); }
       }
 
       document.getElementById('batchLoading').classList.add('hidden');
       document.getElementById('btnProcessBatch').disabled = false;
-
-      // Renderiza pré-visualização
-      let tbodyHTML = '';
-      batchExtractedItems.forEach(item => {
-        tbodyHTML += `
-          <tr>
-            <td class="p-2 font-semibold">${item.cliente}</td>
-            <td class="p-2">${item.maquina}</td>
-            <td class="p-2">${item.linha}</td>
-            <td class="p-2">${item.inicio}</td>
-            <td class="p-2">${item.previsao || '-'}</td>
-          </tr>
-        `;
+      let html = '';
+      batchExtractedItems.forEach(i => {
+        html += `<tr><td class="p-2 font-semibold">${i.cliente}</td><td class="p-2">${i.maquina}</td><td class="p-2">${i.linha}</td><td class="p-2">${i.inicio}</td></tr>`;
       });
-      document.getElementById('batchPreviewBody').innerHTML = tbodyHTML;
+      document.getElementById('batchPreviewBody').innerHTML = html;
       document.getElementById('batchPreviewContainer').classList.remove('hidden');
     }
 
     function processBatchAI() {
-      if (!batchExtractedItems.length) return alert('Nenhum registro extraído.');
+      if (!batchExtractedItems.length) return;
       appData = [...batchExtractedItems, ...appData];
       saveData();
       renderTable();
       closeBatchIAModal();
-      alert(`${batchExtractedItems.length} Ordem(ns) de Serviço importada(s) e salva(s) com sucesso!`);
+      alert('Ordens importadas com sucesso!');
     }
 
     function renderTable() {
@@ -560,106 +549,176 @@
       const filterSearch = document.getElementById('filterSearch').value.toLowerCase();
 
       let filtered = appData.filter(item => {
-        if (filterStatus && !item.status.toLowerCase().includes(filterStatus)) return false;
+        const autoStatus = getAutomaticStatus(item).toLowerCase();
+        if (filterStatus && autoStatus !== filterStatus) return false;
         if (filterLinha && !item.linha.toLowerCase().includes(filterLinha)) return false;
         if (filterSearch && !item.cliente.toLowerCase().includes(filterSearch) && !item.maquina.toLowerCase().includes(filterSearch) && !item.equipe.toLowerCase().includes(filterSearch)) return false;
         return true;
       });
 
       if (!filtered.length) {
-        tbody.innerHTML = `<tr><td colspan="9" class="p-8 text-center text-slate-400 font-medium">Nenhum registro encontrado.</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="10" class="p-8 text-center text-slate-400">Nenhum registo encontrado.</td></tr>`;
         return;
       }
 
       let html = '';
-      filtered.forEach((item) => {
+      filtered.forEach(item => {
+        const autoStatus = getAutomaticStatus(item);
         let statusBg = 'bg-amber-100 text-amber-800 border-amber-200';
-        if (item.status === 'Em andamento') statusBg = 'bg-blue-100 text-blue-800 border-blue-200';
-        if (item.status === 'Entregue') statusBg = 'bg-emerald-100 text-emerald-800 border-emerald-200';
-        if (item.status === 'Cancelado') statusBg = 'bg-rose-100 text-rose-800 border-rose-200';
+        if (autoStatus === 'Em andamento') statusBg = 'bg-blue-100 text-blue-800 border-blue-200';
+        if (autoStatus === 'Entregue') statusBg = 'bg-emerald-100 text-emerald-800 border-emerald-200';
 
-        let pdfLink = item.pdfUrl ? `<a href="${item.pdfUrl}" target="_blank" class="text-indigo-600 hover:text-indigo-800 font-bold bg-indigo-50 px-3 py-1.5 rounded-xl inline-flex items-center gap-1.5 text-xs border border-indigo-100 shadow-sm"><i class="fa-solid fa-file-pdf"></i> Ver OS</a>` : `<span class="text-slate-400 text-xs italic">Sem OS</span>`;
-
-        let actionCell = isEditor ? `
-          <td class="p-3.5 text-center">
-            <button onclick="deleteMachine('${item.id}')" class="text-rose-500 hover:text-rose-700 p-2 rounded-xl hover:bg-rose-50 transition" title="Excluir"><i class="fa-solid fa-trash-can"></i></button>
-          </td>
-        ` : `<td class="p-3.5 text-center editor-col hidden">-</td>`;
+        let pdfLink = item.pdfUrl ? `<a href="${item.pdfUrl}" target="_blank" class="text-indigo-600 bg-indigo-50 px-2.5 py-1 rounded-lg text-xs font-bold border border-indigo-100"><i class="fa-solid fa-file-pdf"></i> Ver OS</a>` : `<span class="text-slate-400 text-xs italic">Sem OS</span>`;
+        let actionCell = isEditor ? `<td class="p-3.5 text-center"><button onclick="deleteMachine('${item.id}')" class="text-rose-500 hover:text-rose-700 p-2"><i class="fa-solid fa-trash-can"></i></button></td>` : `<td class="p-3.5 text-center editor-col hidden">-</td>`;
 
         html += `
           <tr class="hover:bg-slate-50 transition border-b border-slate-100">
             <td class="p-3.5 font-bold text-slate-900">${item.equipe}</td>
             <td class="p-3.5 font-semibold text-slate-800">${item.cliente}</td>
             <td class="p-3.5 text-slate-700">${item.maquina}</td>
-            <td class="p-3.5"><span class="bg-slate-100 border border-slate-200 text-slate-600 px-2.5 py-1 rounded-lg text-xs font-semibold">${item.linha}</span></td>
+            <td class="p-3.5"><span class="bg-slate-100 border text-slate-600 px-2 py-0.5 rounded text-xs font-semibold">${item.linha}</span></td>
             <td class="p-3.5 text-xs text-slate-500">${item.inicio || '-'}</td>
             <td class="p-3.5 text-xs text-slate-500">${item.previsao || '-'}</td>
-            <td class="p-3.5"><span class="${statusBg} border px-3 py-1 rounded-full text-xs font-bold inline-block">${item.status}</span></td>
+            <td class="p-3.5 text-xs text-slate-500">${item.entregaReal || '-'}</td>
+            <td class="p-3.5"><span class="${statusBg} border px-2.5 py-1 rounded-full text-xs font-bold">${autoStatus}</span></td>
             <td class="p-3.5 text-center">${pdfLink}</td>
             ${actionCell}
           </tr>
         `;
       });
       tbody.innerHTML = html;
-      updateKPIs();
+      updateDashboard();
       updatePodio();
     }
 
-    function updateKPIs() {
-      const total = appData.length;
-      const andamento = appData.filter(i => i.status === 'Em andamento').length;
-      const entregues = appData.filter(i => i.status === 'Entregue').length;
+    // ATUALIZAÇÃO DO DASHBOARD E LEVANTAMENTO GERAL
+    function updateDashboard() {
+      const selectedMonth = parseInt(document.getElementById('dashMonth').value);
+      const selectedYear = parseInt(document.getElementById('dashYear').value);
+
+      // Filtrar dados do mês selecionado (com base na data de início ou entrega)
+      const monthData = appData.filter(item => {
+        const d = item.inicio ? new Date(item.inicio) : (item.entregaReal ? new Date(item.entregaReal) : null);
+        if (!d) return false;
+        return d.getMonth() === selectedMonth && d.getFullYear() === selectedYear;
+      });
+
+      const total = monthData.length;
+      const andamento = monthData.filter(i => getAutomaticStatus(i) === 'Em andamento').length;
+      const entregues = monthData.filter(i => getAutomaticStatus(i) === 'Entregue').length;
       const taxa = total > 0 ? Math.round((entregues / total) * 100) : 0;
 
       document.getElementById('kpiTotal').innerText = total;
       document.getElementById('kpiAndamento').innerText = andamento;
       document.getElementById('kpiEntregues').innerText = entregues;
       document.getElementById('kpiTaxa').innerText = `${taxa}%`;
+
+      // Levantamento por equipa no mês
+      let teamsMap = {};
+      monthData.forEach(item => {
+        if (!teamsMap[item.equipe]) teamsMap[item.equipe] = [];
+        teamsMap[item.equipe].push(item);
+      });
+
+      let teamsHtml = '';
+      if (Object.keys(teamsMap).length === 0) {
+        teamsHtml = `<div class="col-span-full text-center py-6 text-slate-400 text-xs">Sem registos para este mês/ano.</div>`;
+      } else {
+        for (const [team, machines] of Object.entries(teamsMap)) {
+          teamsHtml += `
+            <div class="bg-slate-50 border border-slate-200 p-4 rounded-2xl space-y-2">
+              <div class="flex justify-between items-center"><h4 class="font-bold text-slate-800 text-sm"><i class="fa-solid fa-people-group text-amber-500 mr-1.5"></i>${team}</h4><span class="bg-indigo-100 text-indigo-700 px-2 py-0.5 rounded-full text-xs font-bold">${machines.length} máq.</span></div>
+              <ul class="space-y-1 text-xs text-slate-600">
+          `;
+          machines.forEach(m => {
+            teamsHtml += `<li class="border-b pb-1 flex justify-between"><span>${m.maquina} (${m.cliente})</span><span class="font-semibold text-slate-500">${getAutomaticStatus(m)}</span></li>`;
+          });
+          teamsHtml += `</ul></div>`;
+        }
+      }
+      document.getElementById('teamsMonthlyContainer').innerHTML = teamsHtml;
+
+      // Gráfico Anual
+      renderAnnualChart(selectedYear);
     }
 
+    function renderAnnualChart(year) {
+      const months = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
+      let monthlyCounts = new Array(12).fill(0);
+      let monthlyDelivered = new Array(12).fill(0);
+
+      appData.forEach(item => {
+        const d = item.inicio ? new Date(item.inicio) : null;
+        if (d && d.getFullYear() === year) {
+          monthlyCounts[d.getMonth()]++;
+        }
+        const dEntrega = item.entregaReal ? new Date(item.entregaReal) : null;
+        if (dEntrega && dEntrega.getFullYear() === year) {
+          monthlyDelivered[dEntrega.getMonth()]++;
+        }
+      });
+
+      const ctx = document.getElementById('annualChart').getContext('2d');
+      if (annualChartInstance) annualChartInstance.destroy();
+
+      annualChartInstance = new Chart(ctx, {
+        type: 'bar',
+        data: {
+          labels: months,
+          datasets: [
+            { label: 'Máquinas Iniciadas', data: monthlyCounts, backgroundColor: '#6366f1', borderRadius: 6 },
+            { label: 'Máquinas Entregues', data: monthlyDelivered, backgroundColor: '#10b981', borderRadius: 6 }
+          ]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: { legend: { position: 'bottom' } }
+        }
+      });
+    }
+
+    // ATUALIZAÇÃO DO PÓDIO COM EQUIPAS DESTAQUES
     function updatePodio() {
-      const entregues = appData.filter(i => i.status === 'Entregue');
-      if (entregues.length > 0) {
-        document.getElementById('podioAgil').innerText = entregues[0].equipe + ' (' + entregues[0].cliente + ')';
-        document.getElementById('podioVolume').innerText = entregues.length + ' Máquinas Concluídas';
-      } else {
-        document.getElementById('podioAgil').innerText = 'Aguardando entregas';
-        document.getElementById('podioVolume').innerText = '0 Concluídas';
-      }
+      let teamDeliveries = {};
+      appData.forEach(item => {
+        if (getAutomaticStatus(item) === 'Entregue') {
+          teamDeliveries[item.equipe] = (teamDeliveries[item.equipe] || 0) + 1;
+        }
+      });
+
+      let sortedTeams = Object.entries(teamDeliveries).sort((a, b) => b[1] - a[1]);
+      document.getElementById('podio1').innerText = sortedTeams[0] ? `${sortedTeams[0][0]} (${sortedTeams[0][1]} entregas)` : 'Sem entregas registadas';
+      document.getElementById('podio2').innerText = sortedTeams[1] ? `${sortedTeams[1][0]} (${sortedTeams[1][1]} entregas)` : '—';
+      document.getElementById('podio3').innerText = sortedTeams[2] ? `${sortedTeams[2][0]} (${sortedTeams[2][1]} entregas)` : '—';
     }
 
     function submitNewMachine(e) {
       e.preventDefault();
       const fileInput = document.getElementById('addPdfFile');
-      let pdfUrl = '';
+      let pdfUrl = fileInput.files.length ? URL.createObjectURL(fileInput.files[0]) : '';
 
-      if (fileInput.files.length) {
-        pdfUrl = URL.createObjectURL(fileInput.files[0]);
-      }
-
-      const newObj = {
+      appData.unshift({
         id: Date.now().toString(),
         equipe: document.getElementById('addEquipe').value,
         cliente: document.getElementById('addCliente').value,
         maquina: document.getElementById('addMaquina').value,
         linha: document.getElementById('addLinha').value,
-        status: document.getElementById('addStatus').value,
         inicio: document.getElementById('addInicio').value,
         previsao: document.getElementById('addPrevisao').value,
+        entregaReal: document.getElementById('addEntregaReal').value,
         pdfUrl: pdfUrl
-      };
-
-      appData.unshift(newObj);
+      });
       saveData();
       renderTable();
       closeAddMachineModal();
       document.getElementById('formAddMachine').reset();
-      alert('Máquina cadastrada com sucesso!');
+      alert('Máquina adicionada com sucesso!');
     }
 
     function deleteMachine(id) {
-      if (confirm('Deseja remover este registro?')) {
-        appData = appData.filter(item => item.id !== id);
+      if (confirm('Deseja eliminar este registo?')) {
+        appData = appData.filter(i => i.id !== id);
         saveData();
         renderTable();
       }
@@ -684,6 +743,7 @@
       const activeBtn = document.getElementById(`tab-${tab}`);
       activeBtn.classList.add('border-amber-500', 'text-amber-500');
       activeBtn.classList.remove('border-transparent', 'text-slate-400');
+      if (tab === 'dashboard') updateDashboard();
     }
   </script>
 </body>
