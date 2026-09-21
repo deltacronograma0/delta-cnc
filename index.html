@@ -113,7 +113,7 @@
         </div>
       </div>
 
-      <!-- TABELA -->
+      <!-- TABELA COM COLUNA DE OS (PDF) -->
       <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
         <div class="overflow-x-auto">
           <table class="w-full text-left text-sm text-slate-600">
@@ -126,12 +126,13 @@
                 <th class="p-3.5">Início</th>
                 <th class="p-3.5">Previsão</th>
                 <th class="p-3.5">Status</th>
+                <th class="p-3.5 text-center">OS (PDF)</th>
                 <th class="p-3.5 text-center">Ações</th>
               </tr>
             </thead>
             <tbody id="tableBody" class="divide-y divide-slate-100 font-medium">
               <tr>
-                <td colspan="8" class="p-12 text-center text-slate-400 font-medium">Carregando dados da produção...</td>
+                <td colspan="9" class="p-12 text-center text-slate-400 font-medium">Carregando dados da produção...</td>
               </tr>
             </tbody>
           </table>
@@ -241,7 +242,7 @@
         <h3 class="font-extrabold text-slate-900 text-lg flex items-center gap-2"><i class="fa-solid fa-wand-magic-sparkles text-indigo-600"></i> Leitor Inteligente de OS</h3>
         <button onclick="closeIAImportModal()" class="text-slate-400 hover:text-slate-600 p-1"><i class="fa-solid fa-xmark text-lg"></i></button>
       </div>
-      <p class="text-xs text-slate-500 leading-relaxed">Selecione o arquivo PDF da Ordem de Serviço. A inteligência artificial irá extrair os dados e cadastrar o cliente e a máquina automaticamente.</p>
+      <p class="text-xs text-slate-500 leading-relaxed">Selecione o arquivo PDF da Ordem de Serviço. A inteligência artificial irá extrair os dados e o PDF ficará armazenado na tabela para consulta.</p>
       
       <div class="border-2 border-dashed border-indigo-200 rounded-2xl p-4 text-center bg-indigo-50/50 hover:bg-indigo-50 transition cursor-pointer" onclick="document.getElementById('pdfFileInput').click()">
         <i class="fa-solid fa-file-pdf text-3xl text-indigo-600 mb-2 block"></i>
@@ -296,8 +297,8 @@
       }
       if (appData.length === 0) {
         appData = [
-          { id: '1', equipe: 'L10-1', cliente: 'ZT SILVA DE BARROS LTDA', maquina: 'Fiber Desktop 50W', linha: 'Linha Leve', inicio: '2026-09-08', previsao: '2026-09-28', status: 'Em andamento' },
-          { id: '2', equipe: 'L9-2', cliente: 'CLEVERSON Revenda', maquina: 'Fiber Desktop 30W', linha: 'Linha Leve', inicio: '2026-09-08', previsao: '2026-09-25', status: 'Aguardando produção' }
+          { id: '1', equipe: 'L10-1', cliente: 'ZT SILVA DE BARROS LTDA', maquina: 'Fiber Desktop 50W', linha: 'Linha Leve', inicio: '2026-09-08', previsao: '2026-09-28', status: 'Em andamento', pdfUrl: '' },
+          { id: '2', equipe: 'L9-2', cliente: 'CLEVERSON Revenda', maquina: 'Fiber Desktop 30W', linha: 'Linha Leve', inicio: '2026-09-08', previsao: '2026-09-25', status: 'Aguardando produção', pdfUrl: '' }
         ];
         saveData();
       }
@@ -351,7 +352,7 @@
       });
 
       if (!filtered.length) {
-        tbody.innerHTML = `<tr><td colspan="8" class="p-8 text-center text-slate-400 font-medium">Nenhuma máquina encontrada.</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="9" class="p-8 text-center text-slate-400 font-medium">Nenhuma máquina encontrada.</td></tr>`;
         return;
       }
 
@@ -360,6 +361,8 @@
         let statusBg = 'bg-amber-100 text-amber-800 border-amber-200';
         if (item.status === 'Em andamento') statusBg = 'bg-blue-100 text-blue-800 border-blue-200';
         if (item.status === 'Entregue') statusBg = 'bg-emerald-100 text-emerald-800 border-emerald-200';
+
+        let pdfLink = item.pdfUrl ? `<a href="${item.pdfUrl}" target="_blank" class="text-indigo-600 hover:text-indigo-800 font-bold bg-indigo-50 p-2 rounded-lg inline-flex items-center gap-1 text-xs" title="Ver OS"><i class="fa-solid fa-file-pdf text-base"></i> Ver OS</a>` : `<span class="text-slate-400 text-xs">-</span>`;
 
         html += `
           <tr class="hover:bg-slate-50 transition border-b border-slate-100">
@@ -370,6 +373,7 @@
             <td class="p-3.5 text-xs text-slate-500">${item.inicio || '-'}</td>
             <td class="p-3.5 text-xs text-slate-500">${item.previsao || '-'}</td>
             <td class="p-3.5"><span class="${statusBg} border px-3 py-1 rounded-full text-xs font-bold inline-block">${item.status}</span></td>
+            <td class="p-3.5 text-center">${pdfLink}</td>
             <td class="p-3.5 text-center">
               <button onclick="deleteMachine('${item.id}')" class="text-rose-500 hover:text-rose-700 p-1.5 rounded-lg hover:bg-rose-50 transition" title="Excluir"><i class="fa-solid fa-trash-can"></i></button>
             </td>
@@ -401,7 +405,8 @@
         linha: document.getElementById('addLinha').value,
         status: document.getElementById('addStatus').value,
         inicio: document.getElementById('addInicio').value,
-        previsao: document.getElementById('addPrevisao').value
+        previsao: document.getElementById('addPrevisao').value,
+        pdfUrl: ''
       };
 
       appData.unshift(newObj);
@@ -436,16 +441,17 @@
 
       try {
         const base64Data = await fileToBase64(file);
+        const pdfObjectURL = URL.createObjectURL(file);
         
-        // UTILIZANDO O MODELO GEMINI 3.8 FLASH PARA SUPORTE TOTAL A PDF
-        const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent?key=${geminiApiKey}`, {
+        // CHAMADA CORRIGIDA PARA O MODELO GEMINI FLASH NA API V1BETA
+        const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${geminiApiKey}`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             contents: [{
               parts: [
                 {
-                  text: "Analise esta Ordem de Serviço em PDF e retorne EXCLUSIVAMENTE um JSON puro, sem blocos markdown (sem ```json), contendo exatamente estes campos: cliente (string), maquina (string), linha (escolha exata entre: 'Linha Leve', 'Linha Intermediária' ou 'Linha Pesada'), inicio (data YYYY-MM-DD ou data atual se não houver), previsao (data YYYY-MM-DD ou vazio)."
+                  text: "Analise esta Ordem de Serviço em PDF e retorne EXCLUSIVAMENTE um objeto JSON válido, sem blocos markdown (sem ```json), contendo exatamente estes campos: cliente (string), maquina (string), linha (escolha exata entre: 'Linha Leve', 'Linha Intermediária' ou 'Linha Pesada'), inicio (data YYYY-MM-DD ou data atual), previsao (data YYYY-MM-DD ou vazio)."
                 },
                 {
                   inline_data: {
@@ -482,7 +488,8 @@
           linha: parsed.linha || 'Linha Intermediária',
           status: 'Aguardando produção',
           inicio: parsed.inicio || new Date().toISOString().split('T')[0],
-          previsao: parsed.previsao || ''
+          previsao: parsed.previsao || '',
+          pdfUrl: pdfObjectURL
         };
 
         appData.unshift(newMachine);
@@ -490,7 +497,7 @@
         renderTable();
         updateKPIs();
         closeIAImportModal();
-        alert('Ordem de Serviço lida e cadastrada com sucesso pela IA!');
+        alert('Ordem de Serviço lida, PDF anexado e cadastrada com sucesso pela IA!');
 
       } catch (err) {
         console.error(err);
