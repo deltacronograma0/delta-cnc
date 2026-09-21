@@ -150,52 +150,58 @@
 
     <!-- SEÇÃO: DASHBOARD & ANUAL -->
     <section id="sec-dashboard" class="hidden space-y-6">
-      <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200 flex flex-wrap justify-between items-center gap-4">
+      <!-- HEADER DASHBOARD COM SELETOR DE MÊS/ANO -->
+      <div class="bg-gradient-to-r from-slate-900 via-slate-800 to-indigo-950 p-6 rounded-3xl shadow-xl text-white flex flex-wrap justify-between items-center gap-4">
         <div>
-          <h2 class="text-lg font-extrabold text-slate-900"><i class="fa-solid fa-calendar-days text-amber-500 mr-2"></i>Painel de Levantamento Geral</h2>
-          <p class="text-xs text-slate-500">Selecione o mês e ano para analisar a produção detalhada</p>
+          <h2 class="text-xl font-black flex items-center gap-2"><i class="fa-solid fa-chart-pie text-amber-400"></i> Painel Analítico de Produção</h2>
+          <p class="text-xs text-slate-300 mt-1">Acompanhamento mensal detalhado por equipa, entregas e auditoria de OS</p>
         </div>
-        <div class="flex items-center gap-3">
-          <select id="dashMonth" onchange="updateDashboard()" class="bg-slate-50 border border-slate-300 rounded-xl px-4 py-2 font-bold text-sm text-slate-700">
+        <div class="flex items-center gap-3 bg-slate-800/80 p-2 rounded-2xl border border-slate-700">
+          <select id="dashMonth" onchange="updateDashboard()" class="bg-slate-900 border border-slate-600 rounded-xl px-3 py-2 font-bold text-xs text-white focus:outline-none">
             <option value="0">Janeiro</option><option value="1">Fevereiro</option><option value="2">Março</option><option value="3">Abril</option>
             <option value="4">Maio</option><option value="5">Junho</option><option value="6">Julho</option><option value="7">Agosto</option>
             <option value="8" selected>Setembro</option><option value="9">Outubro</option><option value="10">Novembro</option><option value="11">Dezembro</option>
           </select>
-          <select id="dashYear" onchange="updateDashboard()" class="bg-slate-50 border border-slate-300 rounded-xl px-4 py-2 font-bold text-sm text-slate-700">
+          <select id="dashYear" onchange="updateDashboard()" class="bg-slate-900 border border-slate-600 rounded-xl px-3 py-2 font-bold text-xs text-white focus:outline-none">
             <option value="2025">2025</option><option value="2026" selected>2026</option><option value="2027">2027</option>
           </select>
         </div>
       </div>
 
-      <!-- CARDS KPI -->
+      <!-- CARDS KPI PREMIUM -->
       <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex items-center justify-between">
-          <div><div class="text-xs text-slate-500 font-semibold uppercase">Total no Mês</div><div id="kpiTotal" class="text-3xl font-black text-slate-900 mt-1">0</div></div>
-          <div class="bg-slate-100 p-3.5 rounded-2xl text-slate-700 text-xl"><i class="fa-solid fa-cubes"></i></div>
+        <div class="bg-white p-5 rounded-3xl border border-slate-200 shadow-sm flex items-center justify-between">
+          <div><div class="text-xs text-slate-400 font-bold uppercase tracking-wider">Total Registado</div><div id="kpiTotal" class="text-3xl font-black text-slate-900 mt-1">0</div></div>
+          <div class="bg-slate-100 p-4 rounded-2xl text-slate-700 text-xl"><i class="fa-solid fa-cubes"></i></div>
         </div>
-        <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex items-center justify-between">
-          <div><div class="text-xs text-blue-600 font-semibold uppercase">Em Andamento</div><div id="kpiAndamento" class="text-3xl font-black text-blue-600 mt-1">0</div></div>
-          <div class="bg-blue-50 p-3.5 rounded-2xl text-blue-600 text-xl"><i class="fa-solid fa-gears"></i></div>
+        <div class="bg-white p-5 rounded-3xl border border-slate-200 shadow-sm flex items-center justify-between">
+          <div><div class="text-xs text-blue-600 font-bold uppercase tracking-wider">Em Andamento</div><div id="kpiAndamento" class="text-3xl font-black text-blue-600 mt-1">0</div></div>
+          <div class="bg-blue-50 p-4 rounded-2xl text-blue-600 text-xl"><i class="fa-solid fa-gears"></i></div>
         </div>
-        <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex items-center justify-between">
-          <div><div class="text-xs text-emerald-600 font-semibold uppercase">Entregues</div><div id="kpiEntregues" class="text-3xl font-black text-emerald-600 mt-1">0</div></div>
-          <div class="bg-emerald-50 p-3.5 rounded-2xl text-emerald-600 text-xl"><i class="fa-solid fa-circle-check"></i></div>
+        <div class="bg-white p-5 rounded-3xl border border-slate-200 shadow-sm flex items-center justify-between">
+          <div><div class="text-xs text-emerald-600 font-bold uppercase tracking-wider">Entregues no Mês</div><div id="kpiEntregues" class="text-3xl font-black text-emerald-600 mt-1">0</div></div>
+          <div class="bg-emerald-50 p-4 rounded-2xl text-emerald-600 text-xl"><i class="fa-solid fa-circle-check"></i></div>
         </div>
-        <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex items-center justify-between">
-          <div><div class="text-xs text-amber-600 font-semibold uppercase">Taxa de Conclusão</div><div id="kpiTaxa" class="text-3xl font-black text-amber-500 mt-1">0%</div></div>
-          <div class="bg-amber-50 p-3.5 rounded-2xl text-amber-500 text-xl"><i class="fa-solid fa-chart-line"></i></div>
+        <div class="bg-white p-5 rounded-3xl border border-slate-200 shadow-sm flex items-center justify-between">
+          <div><div class="text-xs text-amber-600 font-bold uppercase tracking-wider">Taxa de Eficiência</div><div id="kpiTaxa" class="text-3xl font-black text-amber-500 mt-1">0%</div></div>
+          <div class="bg-amber-50 p-4 rounded-2xl text-amber-500 text-xl"><i class="fa-solid fa-bolt"></i></div>
         </div>
       </div>
 
-      <!-- LEVANTAMENTO POR EQUIPA -->
-      <div class="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm space-y-4">
-        <h3 class="font-extrabold text-slate-900 text-base flex items-center gap-2"><i class="fa-solid fa-users-rectangle text-indigo-600"></i> Produção por Equipa no Mês</h3>
-        <div id="teamsMonthlyContainer" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"></div>
+      <!-- DETALHAMENTO POR EQUIPA (MÁQUINAS, DATAS E OS FIXADA) -->
+      <div class="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm space-y-6">
+        <div class="flex items-center justify-between border-b pb-4">
+          <div>
+            <h3 class="font-extrabold text-slate-900 text-base flex items-center gap-2"><i class="fa-solid fa-users-rectangle text-indigo-600"></i> Produção Detalhada por Equipa no Mês</h3>
+            <p class="text-xs text-slate-500 mt-0.5">Consulte abaixo o registo exato de cada máquina, data de entrega e acesso direto à OS</p>
+          </div>
+        </div>
+        <div id="teamsMonthlyContainer" class="grid grid-cols-1 md:grid-cols-2 gap-6"></div>
       </div>
 
       <!-- GRÁFICO ANUAL -->
       <div class="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm space-y-6">
-        <h3 class="font-extrabold text-slate-900 text-base flex items-center gap-2"><i class="fa-solid fa-chart-pie text-emerald-600"></i> Levantamento Geral Anual</h3>
+        <h3 class="font-extrabold text-slate-900 text-base flex items-center gap-2"><i class="fa-solid fa-chart-line text-emerald-600"></i> Levantamento Geral Anual (Evolução de Arranques)</h3>
         <div class="h-72 relative"><canvas id="annualChart"></canvas></div>
       </div>
     </section>
@@ -205,7 +211,7 @@
       <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200 flex justify-between items-center">
         <div>
           <h2 class="text-lg font-extrabold text-slate-900"><i class="fa-solid fa-people-group text-indigo-600 mr-2"></i>Gestão de Equipas e Tags</h2>
-          <p class="text-xs text-slate-500">Cadastre equipas, líderes e especialidades técnicas</p>
+          <p class="text-xs text-slate-500">Cadastre equipas, líderes, edite informações ou remova equipas obsoletas</p>
         </div>
         <button onclick="openAddTeamModal()" class="editor-only hidden bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-4 py-2.5 rounded-xl text-sm shadow transition">
           <i class="fa-solid fa-plus"></i> Nova Equipa
@@ -324,14 +330,15 @@
     </div>
   </div>
 
-  <!-- MODAL: ADICIONAR EQUIPA -->
+  <!-- MODAL: ADICIONAR / EDITAR EQUIPA -->
   <div id="modalAddTeam" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm hidden flex items-center justify-center p-4 z-50">
     <div class="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl space-y-4 border">
       <div class="flex justify-between items-center border-b pb-3">
-        <h3 class="font-bold text-slate-900 text-base"><i class="fa-solid fa-people-group text-indigo-600 mr-2"></i>Nova Equipa</h3>
+        <h3 id="modalTeamTitle" class="font-bold text-slate-900 text-base"><i class="fa-solid fa-people-group text-indigo-600 mr-2"></i>Nova Equipa</h3>
         <button onclick="closeAddTeamModal()" class="text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark text-lg"></i></button>
       </div>
       <form onsubmit="submitTeamForm(event)" class="space-y-3">
+        <input type="hidden" id="editTeamIndex" value="-1">
         <div>
           <label class="block text-xs font-bold text-slate-700 mb-1">Nome da Equipa</label>
           <input type="text" id="teamNameInput" required placeholder="Ex: Equipa Gama" class="w-full border rounded-xl p-2.5 text-sm">
@@ -460,6 +467,7 @@
         closeLoginModal();
         updateUserUI();
         renderTable();
+        renderTeams();
         alert('Sessão iniciada!');
       } else { alert('Senha incorreta!'); }
     }
@@ -468,6 +476,7 @@
       localStorage.setItem('DELTA_IS_EDITOR', 'false');
       updateUserUI();
       renderTable();
+      renderTeams();
     }
 
     function openConfigModal() { document.getElementById('geminiApiKeyInput').value = geminiApiKey; document.getElementById('modalConfig').classList.remove('hidden'); }
@@ -508,26 +517,82 @@
       reader.readAsText(file);
     }
 
-    function openAddTeamModal() { document.getElementById('modalAddTeam').classList.remove('hidden'); }
+    // GESTÃO DE EQUIPAS (NOVO: EDITAR E APAGAR)
+    function openAddTeamModal(index = -1) {
+      document.getElementById('editTeamIndex').value = index;
+      if (index > -1) {
+        const team = teamsData[index];
+        document.getElementById('modalTeamTitle').innerHTML = `<i class="fa-solid fa-pen-to-square text-indigo-600 mr-2"></i>Editar Equipa`;
+        document.getElementById('teamNameInput').value = team.name;
+        document.getElementById('teamTagsInput').value = team.tags.join(', ');
+      } else {
+        document.getElementById('modalTeamTitle').innerHTML = `<i class="fa-solid fa-people-group text-indigo-600 mr-2"></i>Nova Equipa`;
+        document.getElementById('teamNameInput').value = '';
+        document.getElementById('teamTagsInput').value = '';
+      }
+      document.getElementById('modalAddTeam').classList.remove('hidden');
+    }
     function closeAddTeamModal() { document.getElementById('modalAddTeam').classList.add('hidden'); }
+    
     function submitTeamForm(e) {
       e.preventDefault();
+      const index = parseInt(document.getElementById('editTeamIndex').value);
       const name = document.getElementById('teamNameInput').value.trim();
       const tags = document.getElementById('teamTagsInput').value.split(',').map(t => t.trim()).filter(t => t);
-      teamsData.push({ name, tags });
+
+      if (index > -1) {
+        const oldName = teamsData[index].name;
+        teamsData[index] = { name, tags };
+        // Atualizar também nas máquinas existentes se o nome mudou
+        if (oldName !== name) {
+          appData.forEach(m => { if (m.equipe === oldName) m.equipe = name; });
+        }
+      } else {
+        teamsData.push({ name, tags });
+      }
       saveData();
       renderTeams();
+      renderTable();
       closeAddTeamModal();
-      document.getElementById('teamNameInput').value = '';
-      document.getElementById('teamTagsInput').value = '';
-      alert('Equipa cadastrada!');
+      alert('Equipa guardada com sucesso!');
     }
+
+    function deleteTeam(index) {
+      const teamName = teamsData[index].name;
+      const inUse = appData.some(m => m.equipe === teamName);
+      if (inUse) {
+        alert(`Atenção: A equipa "${teamName}" possui máquinas associadas. Reatribua as máquinas antes de apagar.`);
+        return;
+      }
+      if (confirm(`Deseja realmente eliminar a equipa "${teamName}"?`)) {
+        teamsData.splice(index, 1);
+        saveData();
+        renderTeams();
+        alert('Equipa eliminada.');
+      }
+    }
+
     function renderTeams() {
       const container = document.getElementById('teamsGrid');
       let html = '';
-      teamsData.forEach(t => {
-        let tagsHtml = t.tags.map(tag => `<span class="bg-indigo-50 text-indigo-700 px-2 py-0.5 rounded-full text-xs font-semibold">${tag}</span>`).join(' ');
-        html += `<div class="bg-white p-5 rounded-2xl border shadow-sm space-y-2"><h3 class="font-bold text-slate-900">${t.name}</h3><div class="flex flex-wrap gap-1">${tagsHtml || '<span class="text-xs text-slate-400">Sem tags</span>'}</div></div>`;
+      teamsData.forEach((t, idx) => {
+        let tagsHtml = t.tags.map(tag => `<span class="bg-indigo-50 text-indigo-700 px-2.5 py-1 rounded-full text-xs font-semibold">${tag}</span>`).join(' ');
+        let actions = isEditor ? `
+          <div class="flex gap-2 pt-2 border-t mt-2">
+            <button onclick="openAddTeamModal(${idx})" class="flex-1 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold py-1.5 rounded-xl text-xs"><i class="fa-solid fa-pen mr-1"></i> Editar</button>
+            <button onclick="deleteTeam(${idx})" class="flex-1 bg-rose-50 hover:bg-rose-100 text-rose-700 font-bold py-1.5 rounded-xl text-xs"><i class="fa-solid fa-trash mr-1"></i> Apagar</button>
+          </div>
+        ` : '';
+
+        html += `
+          <div class="bg-white p-5 rounded-3xl border border-slate-200 shadow-sm space-y-3">
+            <div class="flex justify-between items-start">
+              <h3 class="font-extrabold text-slate-900 text-base"><i class="fa-solid fa-shield-halved text-indigo-600 mr-1.5"></i>${t.name}</h3>
+            </div>
+            <div class="flex flex-wrap gap-1.5">${tagsHtml || '<span class="text-xs text-slate-400">Sem tags</span>'}</div>
+            ${actions}
+          </div>
+        `;
       });
       container.innerHTML = html;
 
@@ -722,6 +787,7 @@
       updatePodio();
     }
 
+    // DASHBOARD REFORMULADO COM LISTAGEM DETALHADA POR EQUIPA E OS FIXADAS
     function updateDashboard() {
       const selectedMonth = parseInt(document.getElementById('dashMonth').value);
       const selectedYear = parseInt(document.getElementById('dashYear').value);
@@ -743,18 +809,60 @@
       document.getElementById('kpiTaxa').innerText = `${taxa}%`;
 
       let teamsMap = {};
+      teamsData.forEach(t => teamsMap[t.name] = []);
       monthData.forEach(item => {
         if (!teamsMap[item.equipe]) teamsMap[item.equipe] = [];
         teamsMap[item.equipe].push(item);
       });
 
       let teamsHtml = '';
-      for (const [team, machines] of Object.entries(teamsMap)) {
-        teamsHtml += `<div class="bg-slate-50 border p-4 rounded-2xl space-y-2"><h4 class="font-bold text-sm">${team}</h4><ul class="space-y-1 text-xs text-slate-600">`;
-        machines.forEach(m => teamsHtml += `<li>${m.maquina} (${m.cliente})</li>`);
-        teamsHtml += `</ul></div>`;
+      for (const [teamName, machines] of Object.entries(teamsMap)) {
+        let machineListHtml = '';
+        if (machines.length === 0) {
+          machineListHtml = `<p class="text-xs text-slate-400 italic py-2">Nenhuma máquina registada para esta equipa neste mês.</p>`;
+        } else {
+          machines.forEach(m => {
+            const status = getAutomaticStatus(m);
+            const statusColor = status === 'Entregue' ? 'text-emerald-600 bg-emerald-50' : (status === 'Em andamento' ? 'text-blue-600 bg-blue-50' : 'text-amber-600 bg-amber-50');
+            const pdfBtn = m.pdfData 
+              ? `<a href="${m.pdfData}" target="_blank" download="OS-${m.cliente}.pdf" class="inline-flex items-center gap-1 bg-indigo-600 hover:bg-indigo-700 text-white px-2.5 py-1 rounded-lg text-xs font-bold shadow-sm transition"><i class="fa-solid fa-file-pdf"></i> Ver OS Fixada</a>` 
+              : `<span class="text-xs text-slate-400 italic">Sem PDF anexado</span>`;
+
+            machineListHtml += `
+              <div class="bg-white border border-slate-200 p-3.5 rounded-2xl shadow-sm space-y-2">
+                <div class="flex justify-between items-start gap-2">
+                  <div>
+                    <span class="text-xs font-extrabold text-slate-900">${m.maquina}</span>
+                    <p class="text-[11px] text-slate-500">Cliente: <strong class="text-slate-700">${m.cliente}</strong> (${m.linha})</p>
+                  </div>
+                  <span class="text-[10px] font-bold px-2 py-0.5 rounded-full ${statusColor}">${status}</span>
+                </div>
+                <div class="text-[11px] text-slate-500 grid grid-cols-2 gap-1 bg-slate-50 p-2 rounded-xl">
+                  <div>Início: <span class="font-semibold text-slate-700">${m.inicio || '-'}</span></div>
+                  <div>Entrega: <span class="font-semibold text-slate-700">${m.entregaReal || 'Pendente'}</span></div>
+                </div>
+                <div class="flex justify-between items-center pt-1">
+                  <span class="text-[11px] text-slate-600 truncate max-w-[180px]" title="${m.obs}">Obs: ${m.obs || '-'}</span>
+                  ${pdfBtn}
+                </div>
+              </div>
+            `;
+          });
+        }
+
+        teamsHtml += `
+          <div class="bg-slate-50 border border-slate-200 p-5 rounded-3xl space-y-3">
+            <div class="flex justify-between items-center border-b pb-2">
+              <h4 class="font-extrabold text-slate-900 text-sm flex items-center gap-2"><i class="fa-solid fa-shield text-indigo-600"></i> ${teamName}</h4>
+              <span class="text-xs bg-slate-200 text-slate-700 font-bold px-2.5 py-0.5 rounded-full">${machines.length} máq.</span>
+            </div>
+            <div class="space-y-2 max-h-72 overflow-y-auto pr-1">
+              ${machineListHtml}
+            </div>
+          </div>
+        `;
       }
-      document.getElementById('teamsMonthlyContainer').innerHTML = teamsHtml || `<div class="col-span-full text-center text-slate-400 text-xs">Sem registos.</div>`;
+      document.getElementById('teamsMonthlyContainer').innerHTML = teamsHtml;
       renderAnnualChart(selectedYear);
     }
 
