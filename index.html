@@ -7,28 +7,42 @@
     <style>
         body {
             font-family: Arial, sans-serif;
-            margin: 50px;
             background-color: #f4f6f9;
+            margin: 50px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 80vh;
         }
-        .container {
+        .card {
             background: #ffffff;
-            padding: 20px;
+            padding: 30px;
             border-radius: 8px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-            max-width: 500px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+            text-align: center;
+            max-width: 400px;
+            width: 100%;
         }
         h2 {
             color: #333;
+            margin-bottom: 10px;
+        }
+        p {
+            color: #666;
+            font-size: 14px;
+            margin-bottom: 20px;
         }
         .btn-visualizar {
-            display: inline-block;
             background-color: #007bff;
             color: white;
-            padding: 10px 15px;
-            text-decoration: none;
-            border-radius: 4px;
+            border: none;
+            padding: 12px 20px;
+            font-size: 16px;
             font-weight: bold;
-            margin-top: 10px;
+            border-radius: 4px;
+            cursor: pointer;
+            width: 100%;
+            transition: background 0.2s;
         }
         .btn-visualizar:hover {
             background-color: #0056b3;
@@ -37,16 +51,43 @@
 </head>
 <body>
 
-    <div class="container">
-        <h2>Ordem de Serviço #1024</h2>
-        <p>Clique no botão abaixo para abrir a OS diretamente no navegador. Se decidir baixar, você poderá fazer isso pelo próprio visualizador.</p>
+    <div class="card">
+        <h2>Ordem de Serviço #2026</h2>
+        <p>Clique abaixo para abrir a OS em uma nova aba para visualização sem baixar automaticamente.</p>
         
-        <!-- O atributo target="_blank" faz abrir em outra aba/janela para visualização -->
-        <!-- Certifique-se de NÃO usar o atributo 'download' aqui -->
-        <a href="caminho_para_seu_arquivo/os_1024.pdf" target="_blank" rel="noopener noreferrer" class="btn-visualizar">
-            Visualizar OS
-        </a>
+        <!-- Botão que aciona a função JavaScript para abrir o arquivo sem forçar o download -->
+        <button class="btn-visualizar" onclick="abrirOrdemDeServico()">Visualizar OS</button>
     </div>
+
+    <script>
+        async function abrirOrdemDeServico() {
+            try {
+                // Substitua '/sua-api/obter-os/123' pela URL real da sua API ou rota que retorna o arquivo PDF
+                const resposta = await fetch('/sua-api/obter-os/123');
+                
+                if (!resposta.ok) {
+                    throw new Error('Não foi possível carregar o arquivo da OS.');
+                }
+
+                // Converte a resposta do servidor em um Blob (binário do PDF)
+                const blob = await resposta.blob();
+                
+                // Cria uma URL temporária apontando para este Blob na memória do navegador
+                const urlBlob = URL.createObjectURL(blob);
+
+                // Abre a URL temporária em uma nova aba. 
+                // Como o tipo é PDF e a URL é tratada pelo navegador, ele abrirá o visualizador nativo.
+                const novaAba = window.open(urlBlob, '_blank');
+
+                if (!novaAba) {
+                    alert('O navegador bloqueou a abertura da nova aba. Por favor, permita os pop-ups.');
+                }
+            } catch (erro) {
+                console.error('Erro ao abrir a OS:', erro);
+                alert('Erro ao tentar visualizar a Ordem de Serviço.');
+            }
+        }
+    </script>
 
 </body>
 </html>
