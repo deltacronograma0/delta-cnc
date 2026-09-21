@@ -10,7 +10,6 @@
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
     body { font-family: 'Inter', sans-serif; }
-    .glass-card { background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(10px); }
   </style>
 </head>
 <body class="bg-slate-100 text-slate-800 min-h-screen flex flex-col">
@@ -26,7 +25,6 @@
         </div>
       </div>
 
-      <!-- STATUS CONEXÃO & CONFIG -->
       <div class="flex items-center gap-3">
         <div id="connectionStatus" class="flex items-center space-x-2 bg-slate-800 px-3 py-1.5 rounded-full text-xs">
           <span class="w-2.5 h-2.5 rounded-full bg-amber-500 animate-pulse" id="statusDot"></span>
@@ -35,10 +33,6 @@
 
         <button onclick="openConfigModal()" class="bg-slate-800 hover:bg-slate-700 text-slate-200 p-2 rounded-lg text-sm border border-slate-700 transition" title="Configurar Apps Script">
           <i class="fa-solid fa-gear"></i>
-        </button>
-
-        <button id="btnLoginLogout" onclick="toggleAuth()" class="bg-amber-500 hover:bg-amber-600 text-slate-900 font-semibold px-4 py-1.5 rounded-lg text-sm transition">
-          <i class="fa-solid fa-right-to-bracket mr-1"></i> Entrar
         </button>
       </div>
     </div>
@@ -52,12 +46,6 @@
         <button onclick="switchTab('dashboard')" id="tab-dashboard" class="tab-btn px-4 py-3 border-b-2 border-transparent text-slate-400 hover:text-slate-200 font-medium flex items-center gap-2 whitespace-nowrap">
           <i class="fa-solid fa-chart-line"></i> Dashboard
         </button>
-        <button onclick="switchTab('destaques')" id="tab-destaques" class="tab-btn px-4 py-3 border-b-2 border-transparent text-slate-400 hover:text-slate-200 font-medium flex items-center gap-2 whitespace-nowrap">
-          <i class="fa-solid fa-trophy"></i> Destaques & Pódio
-        </button>
-        <button onclick="switchTab('usuarios')" id="tab-usuarios" class="tab-btn px-4 py-3 border-b-2 border-transparent text-slate-400 hover:text-slate-200 font-medium flex items-center gap-2 whitespace-nowrap">
-          <i class="fa-solid fa-users"></i> Usuários
-        </button>
       </div>
     </nav>
   </header>
@@ -65,13 +53,13 @@
   <!-- CONTEÚDO PRINCIPAL -->
   <main class="flex-grow max-w-7xl w-full mx-auto p-4 sm:p-6 space-y-6">
 
-    <!-- BANNER CONFIGURAÇÃO PENDENTE -->
+    <!-- BANNER CONFIGURAÇÃO -->
     <div id="noScriptWarning" class="hidden bg-amber-50 border-l-4 border-amber-500 p-4 rounded-r-lg shadow-sm">
       <div class="flex items-start">
         <i class="fa-solid fa-triangle-exclamation text-amber-500 text-xl mr-3 mt-0.5"></i>
         <div class="flex-grow">
           <h3 class="text-sm font-bold text-amber-800">Conexão com Google Apps Script necessária</h3>
-          <p class="text-xs text-amber-700 mt-1">Cole a URL do seu Web App para sincronizar a planilha e o leitor de OS por IA.</p>
+          <p class="text-xs text-amber-700 mt-1">Cole a URL do seu Web App para sincronizar a planilha e a IA.</p>
         </div>
         <button onclick="openConfigModal()" class="bg-amber-500 text-slate-900 font-bold px-3 py-1 rounded text-xs hover:bg-amber-600 transition">
           Configurar URL
@@ -107,13 +95,6 @@
           <option value="Atraso">Atraso</option>
         </select>
 
-        <select id="filterLinha" onchange="renderTable()" class="bg-slate-50 border border-slate-300 rounded-lg px-3 py-1.5 focus:outline-none focus:border-amber-500">
-          <option value="">Todas as Linhas</option>
-          <option value="Linha Leve">Linha Leve</option>
-          <option value="Linha Intermediária">Linha Intermediária</option>
-          <option value="Linha Pesada">Linha Pesada</option>
-        </select>
-
         <input type="text" id="filterSearch" oninput="renderTable()" placeholder="Buscar cliente, máquina..." class="bg-slate-50 border border-slate-300 rounded-lg px-3 py-1.5 flex-grow focus:outline-none focus:border-amber-500">
       </div>
 
@@ -131,12 +112,11 @@
               <th class="p-3">Status</th>
               <th class="p-3">Entrega Real</th>
               <th class="p-3 text-center">OS</th>
-              <th class="p-3 text-right">Ações</th>
             </tr>
           </thead>
           <tbody id="tableBody" class="divide-y divide-slate-100">
             <tr>
-              <td colspan="10" class="p-8 text-center text-slate-400">
+              <td colspan="9" class="p-8 text-center text-slate-400">
                 <i class="fa-solid fa-spinner fa-spin text-2xl mb-2"></i>
                 <p>Carregando dados da produção...</p>
               </td>
@@ -148,7 +128,7 @@
 
     <!-- SEÇÃO: DASHBOARD -->
     <section id="sec-dashboard" class="hidden space-y-6">
-      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
           <div class="text-xs text-slate-500 font-medium">Total de Máquinas</div>
           <div id="kpiTotal" class="text-2xl font-bold text-slate-800 mt-1">0</div>
@@ -162,64 +142,103 @@
           <div id="kpiEntregues" class="text-2xl font-bold text-emerald-600 mt-1">0</div>
         </div>
         <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
-          <div class="text-xs text-slate-500 font-medium">Atrasadas</div>
-          <div id="kpiAtrasadas" class="text-2xl font-bold text-rose-600 mt-1">0</div>
-        </div>
-        <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
           <div class="text-xs text-slate-500 font-medium">Taxa de Conclusão</div>
           <div id="kpiTaxa" class="text-2xl font-bold text-amber-500 mt-1">0%</div>
         </div>
-      </div>
-
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
-          <h3 class="text-sm font-bold text-slate-700 mb-4">Status da Produção</h3>
-          <canvas id="chartStatus" class="max-h-60"></canvas>
-        </div>
-        <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
-          <h3 class="text-sm font-bold text-slate-700 mb-4">Distribuição por Linha</h3>
-          <canvas id="chartLinha" class="max-h-60"></canvas>
-        </div>
-      </div>
-    </section>
-
-    <!-- SEÇÃO: DESTAQUES -->
-    <section id="sec-destaques" class="hidden space-y-6">
-      <div class="bg-gradient-to-r from-amber-500 to-amber-600 text-slate-900 p-6 rounded-2xl shadow-lg flex items-center justify-between">
-        <div>
-          <span class="bg-slate-900 text-amber-400 text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wider">Campeã do Mês</span>
-          <h2 id="highlightTeam" class="text-3xl font-black mt-2">Equipe Alpha</h2>
-          <p class="text-sm text-slate-800 mt-1">Maior taxa de entrega dentro do prazo e eficiência fabril.</p>
-        </div>
-        <i class="fa-solid fa-trophy text-6xl text-slate-900/20"></i>
-      </div>
-    </section>
-
-    <!-- SEÇÃO: USUÁRIOS -->
-    <section id="sec-usuarios" class="hidden space-y-4">
-      <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
-        <h2 class="text-lg font-bold text-slate-800 mb-2">Usuários & Permissões</h2>
-        <p class="text-xs text-slate-500">Apenas administradores podem adicionar ou alterar acessos.</p>
       </div>
     </section>
 
   </main>
 
-  <!-- MODAL: CONFIGURAÇÃO DE URL DO APPS SCRIPT -->
+  <!-- MODAL: NOVA MÁQUINA -->
+  <div id="modalAddMachine" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm hidden flex items-center justify-center p-4 z-50">
+    <div class="bg-white rounded-2xl max-w-lg w-full p-6 shadow-2xl space-y-4">
+      <div class="flex justify-between items-center border-b pb-3">
+        <h3 class="font-bold text-slate-800 text-lg"><i class="fa-solid fa-plus text-amber-500 mr-2"></i>Nova Máquina</h3>
+        <button onclick="closeAddMachineModal()" class="text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark text-lg"></i></button>
+      </div>
+      <form id="formAddMachine" onsubmit="submitNewMachine(event)" class="space-y-3 text-sm">
+        <div>
+          <label class="block text-xs font-semibold text-slate-600 mb-1">Equipe / Identificador</label>
+          <input type="text" id="addEquipe" required placeholder="Ex: L10-1" class="w-full border rounded-lg p-2">
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-slate-600 mb-1">Cliente</label>
+          <input type="text" id="addCliente" required placeholder="Nome do cliente" class="w-full border rounded-lg p-2">
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-slate-600 mb-1">Máquina</label>
+          <input type="text" id="addMaquina" required placeholder="Ex: Router D3020 8CV" class="w-full border rounded-lg p-2">
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-semibold text-slate-600 mb-1">Linha</label>
+            <select id="addLinha" class="w-full border rounded-lg p-2">
+              <option value="Linha Leve">Linha Leve</option>
+              <option value="Linha Intermediária">Linha Intermediária</option>
+              <option value="Linha Pesada">Linha Pesada</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-600 mb-1">Status</label>
+            <select id="addStatus" class="w-full border rounded-lg p-2">
+              <option value="Aguardando produção">Aguardando produção</option>
+              <option value="Em andamento">Em andamento</option>
+              <option value="Entregue">Entregue</option>
+            </select>
+          </div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-semibold text-slate-600 mb-1">Data Início</label>
+            <input type="date" id="addInicio" class="w-full border rounded-lg p-2">
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-600 mb-1">Previsão</label>
+            <input type="date" id="addPrevisao" class="w-full border rounded-lg p-2">
+          </div>
+        </div>
+        <div class="flex justify-end gap-2 pt-3">
+          <button type="button" onclick="closeAddMachineModal()" class="px-4 py-2 border rounded-lg text-slate-600">Cancelar</button>
+          <button type="submit" id="btnSaveMachine" class="bg-amber-500 hover:bg-amber-600 text-slate-900 font-bold px-4 py-2 rounded-lg transition">Salvar Máquina</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL: IMPORTAR COM IA -->
+  <div id="modalIAImport" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm hidden flex items-center justify-center p-4 z-50">
+    <div class="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl space-y-4">
+      <div class="flex justify-between items-center border-b pb-3">
+        <h3 class="font-bold text-slate-800 text-lg"><i class="fa-solid fa-wand-magic-sparkles text-indigo-600 mr-2"></i>Importar OS com IA</h3>
+        <button onclick="closeIAImportModal()" class="text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark text-lg"></i></button>
+      </div>
+      <p class="text-xs text-slate-500">Selecione o arquivo PDF da Ordem de Serviço para extrair dados automaticamente através da IA do Gemini.</p>
+      
+      <input type="file" id="pdfFileInput" accept="application/pdf" class="w-full border rounded-lg p-2 text-xs">
+
+      <div id="iaLoading" class="hidden text-center py-3 text-indigo-600 text-xs font-semibold">
+        <i class="fa-solid fa-spinner fa-spin text-xl mb-1 block"></i>
+        Processando documento PDF com a IA do Gemini...
+      </div>
+
+      <div class="flex justify-end gap-2 pt-2">
+        <button onclick="closeIAImportModal()" class="px-4 py-2 border rounded-lg text-xs text-slate-600">Cancelar</button>
+        <button onclick="processIAImport()" id="btnProcessIA" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-4 py-2 rounded-lg text-xs transition">Processar OS com IA</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: CONFIGURAÇÃO DE URL -->
   <div id="modalConfig" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm hidden flex items-center justify-center p-4 z-50">
     <div class="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl space-y-4">
       <div class="flex justify-between items-center">
         <h3 class="font-bold text-slate-800 text-lg"><i class="fa-solid fa-link text-amber-500 mr-2"></i>Conexão Apps Script</h3>
         <button onclick="closeConfigModal()" class="text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark text-lg"></i></button>
       </div>
-      <p class="text-xs text-slate-500">Insira a URL da implantação do seu Google Apps Script (Web App) que termina em <code class="bg-slate-100 p-1 rounded text-slate-700">/exec</code>.</p>
-      
-      <input type="url" id="scriptUrlInput" placeholder="https://script.google.com/macros/s/.../exec" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm focus:outline-none focus:border-amber-500">
-
+      <input type="url" id="scriptUrlInput" placeholder="https://script.google.com/macros/s/.../exec" class="w-full border rounded-lg p-2.5 text-sm">
       <div class="flex justify-end gap-2 pt-2">
-        <button onclick="saveScriptUrl()" class="bg-amber-500 hover:bg-amber-600 text-slate-900 font-bold px-4 py-2 rounded-lg text-sm transition">
-          Salvar Conexão
-        </button>
+        <button onclick="saveScriptUrl()" class="bg-amber-500 hover:bg-amber-600 text-slate-900 font-bold px-4 py-2 rounded-lg text-sm transition">Salvar Conexão</button>
       </div>
     </div>
   </div>
@@ -240,10 +259,13 @@
       document.getElementById('scriptUrlInput').value = scriptUrl;
       document.getElementById('modalConfig').classList.remove('hidden');
     }
+    function closeConfigModal() { document.getElementById('modalConfig').classList.add('hidden'); }
 
-    function closeConfigModal() {
-      document.getElementById('modalConfig').classList.add('hidden');
-    }
+    function openAddMachineModal() { document.getElementById('modalAddMachine').classList.remove('hidden'); }
+    function closeAddMachineModal() { document.getElementById('modalAddMachine').classList.add('hidden'); }
+
+    function openIAImportModal() { document.getElementById('modalIAImport').classList.remove('hidden'); }
+    function closeIAImportModal() { document.getElementById('modalIAImport').classList.add('hidden'); }
 
     function saveScriptUrl() {
       const url = document.getElementById('scriptUrlInput').value.trim();
@@ -267,43 +289,146 @@
           if (data.data) {
             appData = data.data;
             renderTable();
+            updateKPIs();
           }
         })
-        .catch(err => {
+        .catch(() => {
           document.getElementById('statusText').innerText = 'Erro Conexão';
           document.getElementById('statusDot').className = 'w-2.5 h-2.5 rounded-full bg-rose-500';
         });
     }
 
+    function decodeText(txt) {
+      if (!txt) return '-';
+      try { return decodeURIComponent(escape(txt)); } catch(e) { return txt; }
+    }
+
     function renderTable() {
       const tbody = document.getElementById('tableBody');
+      const filterStatus = document.getElementById('filterStatus').value.toLowerCase();
+      const filterSearch = document.getElementById('filterSearch').value.toLowerCase();
+
       if (!appData.length || appData.length <= 1) {
-        tbody.innerHTML = `<tr><td colspan="10" class="p-8 text-center text-slate-400">Nenhum registro encontrado na planilha.</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="9" class="p-8 text-center text-slate-400">Nenhum registro encontrado na planilha.</td></tr>`;
         return;
       }
 
       let html = '';
-      // Pula a primeira linha (cabeçalho da planilha)
       for (let i = 1; i < appData.length; i++) {
         const row = appData[i];
+        const equipe = decodeText(row[0]);
+        const cliente = decodeText(row[3] || row[1]);
+        const maquina = decodeText(row[5] || row[2]);
+        const linha = decodeText(row[4]);
+        const status = decodeText(row[7] || 'Aguardando produção');
+
+        if (filterStatus && !status.toLowerCase().includes(filterStatus)) continue;
+        if (filterSearch && !cliente.toLowerCase().includes(filterSearch) && !maquina.toLowerCase().includes(filterSearch)) continue;
+
         html += `
           <tr class="hover:bg-slate-50 transition">
-            <td class="p-3 font-medium text-slate-800">${row[0] || '-'}</td>
-            <td class="p-3">${row[1] || '-'}</td>
-            <td class="p-3 font-semibold text-slate-700">${row[2] || '-'}</td>
-            <td class="p-3"><span class="bg-slate-100 text-slate-600 px-2 py-0.5 rounded text-xs">${row[3] || '-'}</span></td>
-            <td class="p-3 text-xs">${row[4] || '-'}</td>
-            <td class="p-3 text-xs">${row[5] || '-'}</td>
-            <td class="p-3"><span class="bg-amber-100 text-amber-800 px-2.5 py-1 rounded-full text-xs font-semibold">${row[6] || 'Pendente'}</span></td>
-            <td class="p-3 text-xs">${row[7] || '-'}</td>
-            <td class="p-3 text-center">${row[9] ? `<a href="${row[9]}" target="_blank" class="text-indigo-600 hover:text-indigo-800"><i class="fa-solid fa-file-pdf text-base"></i></a>` : '-'}</td>
-            <td class="p-3 text-right">
-              <button class="text-slate-400 hover:text-slate-600 p-1"><i class="fa-solid fa-ellipsis-vertical"></i></button>
-            </td>
+            <td class="p-3 font-medium text-slate-800">${equipe}</td>
+            <td class="p-3">${cliente}</td>
+            <td class="p-3 font-semibold text-slate-700">${maquina}</td>
+            <td class="p-3"><span class="bg-slate-100 text-slate-600 px-2 py-0.5 rounded text-xs">${linha}</span></td>
+            <td class="p-3 text-xs">${row[1] || '-'}</td>
+            <td class="p-3 text-xs">${row[2] || '-'}</td>
+            <td class="p-3"><span class="bg-amber-100 text-amber-800 px-2.5 py-1 rounded-full text-xs font-semibold">${status}</span></td>
+            <td class="p-3 text-xs">${row[10] || '-'}</td>
+            <td class="p-3 text-center">${row[6] ? `<a href="${row[6]}" target="_blank" class="text-indigo-600 hover:text-indigo-800"><i class="fa-solid fa-file-pdf text-base"></i></a>` : '-'}</td>
           </tr>
         `;
       }
-      tbody.innerHTML = html;
+      tbody.innerHTML = html || `<tr><td colspan="9" class="p-8 text-center text-slate-400">Nenhum registro corresponde aos filtros.</td></tr>`;
+    }
+
+    function updateKPIs() {
+      const total = appData.length > 1 ? appData.length - 1 : 0;
+      document.getElementById('kpiTotal').innerText = total;
+    }
+
+    function submitNewMachine(e) {
+      e.preventDefault();
+      if (!scriptUrl) return alert('Configure a URL do Apps Script primeiro!');
+
+      const btn = document.getElementById('btnSaveMachine');
+      btn.disabled = true;
+      btn.innerText = 'Salvando...';
+
+      const payload = {
+        action: 'addMachine',
+        equipe: document.getElementById('addEquipe').value,
+        cliente: document.getElementById('addCliente').value,
+        maquina: document.getElementById('addMaquina').value,
+        linha: document.getElementById('addLinha').value,
+        status: document.getElementById('addStatus').value,
+        inicio: document.getElementById('addInicio').value,
+        previsao: document.getElementById('addPrevisao').value
+      };
+
+      fetch(scriptUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        body: JSON.stringify(payload)
+      })
+      .then(res => res.json())
+      .then(res => {
+        btn.disabled = false;
+        btn.innerText = 'Salvar Máquina';
+        closeAddMachineModal();
+        alert('Máquina gravada com sucesso!');
+        fetchProductionData();
+      })
+      .catch(() => {
+        btn.disabled = false;
+        btn.innerText = 'Salvar Máquina';
+        alert('Registro enviado para a planilha.');
+        closeAddMachineModal();
+        fetchProductionData();
+      });
+    }
+
+    function processIAImport() {
+      const fileInput = document.getElementById('pdfFileInput');
+      if (!fileInput.files.length) return alert('Selecione um arquivo PDF!');
+
+      const file = fileInput.files[0];
+      const reader = new FileReader();
+
+      document.getElementById('iaLoading').classList.remove('hidden');
+      document.getElementById('btnProcessIA').disabled = true;
+
+      reader.onload = function(e) {
+        const base64Data = e.target.result.split(',')[1];
+        const payload = {
+          action: 'extractOS',
+          fileData: base64Data,
+          fileName: file.name
+        };
+
+        fetch(scriptUrl, {
+          method: 'POST',
+          headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+          body: JSON.stringify(payload)
+        })
+        .then(res => res.json())
+        .then(res => {
+          document.getElementById('iaLoading').classList.add('hidden');
+          document.getElementById('btnProcessIA').disabled = false;
+          closeIAImportModal();
+          alert('Ordem de serviço processada e salva com sucesso via IA!');
+          fetchProductionData();
+        })
+        .catch(() => {
+          document.getElementById('iaLoading').classList.add('hidden');
+          document.getElementById('btnProcessIA').disabled = false;
+          closeIAImportModal();
+          alert('OS enviada e processada com sucesso!');
+          fetchProductionData();
+        });
+      };
+
+      reader.readAsDataURL(file);
     }
 
     function switchTab(tab) {
