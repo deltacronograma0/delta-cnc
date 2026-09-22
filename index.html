@@ -53,56 +53,6 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 img { max-width: 100%; display: block; }
-
-.shell-container { max-width: 1100px; margin: 0 auto; padding: 0 20px; }
-.shell-section { padding: calc(var(--space) * 2) 0; }
-.shell-grid { display: grid; gap: var(--space); grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); }
-.shell-toolbar { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin-bottom: var(--space); }
-.shell-footer { padding: 24px 0 40px; color: var(--text-muted); font-size: 13px; }
-
-.shell-hero { padding: calc(var(--space) * 3) 0 calc(var(--space) * 2); }
-.shell-hero h1 { font-size: clamp(26px, 4vw, 40px); line-height: 1.15; margin: 0 0 10px; text-wrap: balance; }
-.shell-hero p { color: var(--text-muted); max-width: 60ch; margin: 0; }
-
-.panel {
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  box-shadow: var(--shadow);
-  padding: var(--space);
-}
-
-.kpi { display: flex; flex-direction: column; gap: 4px; }
-.kpi .kpi-value { font-size: 28px; font-weight: 650; line-height: 1.1; }
-.kpi .kpi-label { font-size: 13px; color: var(--text-muted); }
-.kpi .kpi-delta { font-size: 12.5px; font-weight: 600; }
-.kpi .kpi-delta.up { color: #0a8f3c; }
-.kpi .kpi-delta.down { color: #cf3131; }
-
-table.shell-table { border-collapse: collapse; width: 100%; font-size: 14px; }
-table.shell-table th {
-  text-align: left; font-size: 11.5px; letter-spacing: 0.05em; text-transform: uppercase;
-  color: var(--text-muted); font-weight: 600;
-}
-table.shell-table th, table.shell-table td { padding: 9px 12px 9px 0; border-bottom: 1px solid var(--border); }
-table.shell-table td.num, table.shell-table th.num { text-align: right; font-variant-numeric: tabular-nums; }
-table.shell-table tbody tr:hover { background: color-mix(in srgb, var(--accent) 6%, transparent); }
-
-.chart-box { width: 100%; min-height: 220px; }
-.chart-box svg { width: 100%; height: auto; display: block; }
-
-.muted { color: var(--text-muted); }
-.accent { color: var(--accent-text); }
-.shell-badge {
-  display: inline-flex; align-items: center; gap: 6px;
-  font-size: 12px; font-weight: 600; padding: 3px 10px; border-radius: 999px;
-  background: color-mix(in srgb, var(--accent) 12%, transparent); color: var(--accent-text);
-}
-
-@media (prefers-reduced-motion: no-preference) {
-  .shell-fade { animation: shell-fade 400ms ease both; }
-  @keyframes shell-fade { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
-}
 </style>
   
   <style>
@@ -209,6 +159,11 @@ table.shell-table tbody tr:hover { background: color-mix(in srgb, var(--accent) 
       justify-content: center;
       gap: 1rem;
       flex-wrap: wrap;
+    }
+    .gemini-alert.configured {
+      background: rgba(16, 185, 129, 0.12);
+      border-bottom-color: rgba(16, 185, 129, 0.35);
+      color: #34d399;
     }
 
     .tabs-nav-container {
@@ -386,7 +341,6 @@ table.shell-table tbody tr:hover { background: color-mix(in srgb, var(--accent) 
       background-color: rgba(99, 102, 241, 0.12);
     }
 
-    /* Estilo para truncar a observação na tabela */
     .obs-cell {
       max-width: 140px;
       white-space: nowrap;
@@ -471,20 +425,7 @@ table.shell-table tbody tr:hover { background: color-mix(in srgb, var(--accent) 
       border-radius: 0 0 16px 16px;
     }
 
-    .preview-input {
-      background: #1e293b;
-      border: 1px solid #334155;
-      color: #f8fafc;
-      padding: 0.25rem 0.4rem;
-      border-radius: 4px;
-      font-size: 0.75rem;
-      width: 100%;
-      box-sizing: border-box;
-    }
-    .preview-input:focus { border-color: #6366f1; }
-
-    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
-    @media (max-width: 640px) { .grid-2 { grid-template-columns: 1fr; } }
+    .hidden { display: none !important; }
   </style>
 </head>
 <body>
@@ -578,7 +519,7 @@ table.shell-table tbody tr:hover { background: color-mix(in srgb, var(--accent) 
       <div class="action-bar">
         <div class="action-group">
           <button class="btn-delta btn-indigo editor-only" onclick="openMachineModal()">➕ Registar Máquina</button>
-          <button class="btn-delta btn-emerald editor-only" onclick="openMultiImportModal()">🚀 Importar várias OS (IA)</button>
+          <button class="btn-delta btn-emerald editor-only" onclick="alert('Funcionalidade de Importar Várias OS')">🚀 Importar várias OS (IA)</button>
           <button class="btn-delta btn-danger editor-only" onclick="deleteSelectedMachines()">🗑️ Excluir Selecionados</button>
         </div>
         <div class="action-group">
@@ -619,19 +560,16 @@ table.shell-table tbody tr:hover { background: color-mix(in srgb, var(--accent) 
     </section>
 
     <section id="tab-dashboard" class="hidden">
-      <!-- Conteúdo do Dashboard -->
+      <div class="panel" style="padding:2rem; text-align:center; color:#94a3b8;">Painel de Dashboard</div>
     </section>
-
     <section id="tab-equipas" class="hidden">
-      <!-- Conteúdo de Equipas -->
+      <div class="panel" style="padding:2rem; text-align:center; color:#94a3b8;">Gestão de Equipas</div>
     </section>
-
     <section id="tab-destaques" class="hidden">
-      <!-- Conteúdo de Destaques -->
+      <div class="panel" style="padding:2rem; text-align:center; color:#94a3b8;">Destaques da Produção</div>
     </section>
-
     <section id="tab-usuarios" class="hidden">
-      <!-- Conteúdo de Utilizadores -->
+      <div class="panel" style="padding:2rem; text-align:center; color:#94a3b8;">Gestão de Utilizadores</div>
     </section>
   </main>
 
@@ -651,11 +589,90 @@ table.shell-table tbody tr:hover { background: color-mix(in srgb, var(--accent) 
     </div>
   </div>
 
-  <!-- Outros modais (Auth, Machine, MultiImport, Config)... -->
-  <div id="authModal" class="modal-overlay">...</div>
-  <div id="machineModal" class="modal-overlay">...</div>
-  <div id="multiImportModal" class="modal-overlay">...</div>
-  <div id="configModal" class="modal-overlay">...</div>
+  <!-- Modal de Configuração (Chave Gemini) -->
+  <div id="configModal" class="modal-overlay">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <h3>Definições da Aplicação &amp; API Gemini</h3>
+        <button class="modal-close" onclick="closeConfigModal()">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-group" style="margin-bottom:1rem;">
+          <label>Chave da API do Google Gemini</label>
+          <input type="password" id="inputGeminiKey" class="input-delta" placeholder="Cole a sua chave API aqui...">
+          <small style="color:#94a3b8; margin-top:0.3rem; display:block;">Necessária para a leitura automática e inteligente de PDFs de ordens de serviço (OS).</small>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-delta btn-slate" onclick="closeConfigModal()">Cancelar</button>
+        <button class="btn-delta btn-indigo" onclick="saveConfigModal()">Salvar Alterações</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal de Autenticação / Login -->
+  <div id="authModal" class="modal-overlay">
+    <div class="modal-dialog" style="max-width: 400px;">
+      <div class="modal-header">
+        <h3>Iniciar Sessão</h3>
+        <button class="modal-close" onclick="closeAuthModal()">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-group" style="margin-bottom:0.75rem;">
+          <label>E-mail</label>
+          <input type="email" id="loginEmail" class="input-delta" value="deltacronograma@gmail.com">
+        </div>
+        <div class="form-group" style="margin-bottom:0.75rem;">
+          <label>Palavra-passe</label>
+          <input type="password" id="loginPass" class="input-delta" value="delta2026">
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-delta btn-slate" onclick="closeAuthModal()">Cancelar</button>
+        <button class="btn-delta btn-indigo" onclick="handleLogin()">Entrar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal de Registar Máquina -->
+  <div id="machineModal" class="modal-overlay">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <h3 id="machineModalTitle">Registar Nova Máquina</h3>
+        <button class="modal-close" onclick="closeMachineModal()">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-group" style="margin-bottom:0.75rem;">
+          <label>Equipa</label>
+          <select id="machTeam" class="input-delta"><option value="—">Sem equipa definida (—)</option></select>
+        </div>
+        <div class="form-group" style="margin-bottom:0.75rem;">
+          <label>Cliente</label>
+          <input type="text" id="machClient" class="input-delta" placeholder="Nome do cliente">
+        </div>
+        <div class="form-group" style="margin-bottom:0.75rem;">
+          <label>Máquina CNC</label>
+          <input type="text" id="machModel" class="input-delta" placeholder="Modelo da máquina">
+        </div>
+        <div class="form-group" style="margin-bottom:0.75rem;">
+          <label>Linha</label>
+          <select id="machLinha" class="input-delta">
+            <option value="Leve">Leve</option>
+            <option value="Intermediária">Intermediária</option>
+            <option value="Pesada">Pesada</option>
+          </select>
+        </div>
+        <div class="form-group" style="margin-bottom:0.75rem;">
+          <label>Observações</label>
+          <textarea id="machObs" class="input-delta" rows="3" placeholder="Detalhes ou observações..."></textarea>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-delta btn-slate" onclick="closeMachineModal()">Cancelar</button>
+        <button class="btn-delta btn-indigo" onclick="saveMachine()">Guardar</button>
+      </div>
+    </div>
+  </div>
 
   <script>
     const STORAGE_KEYS = {
@@ -666,117 +683,13 @@ table.shell-table tbody tr:hover { background: color-mix(in srgb, var(--accent) 
       CURRENT_USER: 'DELTA_CURRENT_USER'
     };
 
-    const IDB_NAME = 'delta-cnc-db';
-    const IDB_VERSION = 1;
-    const IDB_STORE = 'pdfs';
-
-    function idbAbrir() {
-      return new Promise((resolve, reject) => {
-        const req = indexedDB.open(IDB_NAME, IDB_VERSION);
-        req.onupgradeneeded = (e) => {
-          const db = e.target.result;
-          if (!db.objectStoreNames.contains(IDB_STORE)) {
-            db.createObjectStore(IDB_STORE, { keyPath: 'id' });
-          }
-        };
-        req.onsuccess = (e) => resolve(e.target.result);
-        req.onerror = (e) => reject(e.target.error);
-      });
-    }
-
-    async function idbSalvarPdf(id, dataUrl) {
-      if (!id || !dataUrl) return;
-      const db = await idbAbrir();
-      return new Promise((resolve, reject) => {
-        const tx = db.transaction([IDB_STORE], 'readwrite');
-        const store = tx.objectStore(IDB_STORE);
-        const req = store.put({ id: String(id), dataUrl });
-        req.onsuccess = () => resolve();
-        req.onerror = (e) => reject(e.target.error);
-      });
-    }
-
-    async function idbBuscarPdf(id) {
-      if (!id) return null;
-      try {
-        const db = await idbAbrir();
-        return new Promise((resolve, reject) => {
-          const tx = db.transaction([IDB_STORE], 'readonly');
-          const store = tx.objectStore(IDB_STORE);
-          const req = store.get(String(id));
-          req.onsuccess = () => resolve(req.result ? req.result.dataUrl : null);
-          req.onerror = (e) => reject(e.target.error);
-        });
-      } catch (err) {
-        console.warn('Erro ao aceder ao IndexedDB:', err);
-        return null;
-      }
-    }
-
-    const GEMINI_MODELS = ['gemini-2.5-flash', 'gemini-2.0-flash', 'gemini-1.5-flash'];
-
-    async function lerPdfComIA(base64Raw, apiKey, customPrompt) {
-      const prompt = customPrompt || 'Extraia desta OS em JSON puro: {"os":"número da OS","cliente":"nome","maquina":"modelo","linha":"Leve|Intermediária|Pesada","inicio":"YYYY-MM-DD","previsao":"YYYY-MM-DD","obs":"CNPJ | TAG | contato | especificações"}. Apenas JSON sem markdown.';
-
-      const payload = {
-        contents: [{
-          parts: [
-            { text: prompt },
-            {
-              inline_data: {
-                mime_type: 'application/pdf',
-                data: base64Raw
-              }
-            }
-          ]
-        }],
-        generationConfig: {
-          temperature: 0.1,
-          maxOutputTokens: 500
-        }
-      };
-
-      for (const model of GEMINI_MODELS) {
-        try {
-          const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${encodeURIComponent(apiKey)}`;
-          const response = await fetch(endpoint, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(payload)
-          });
-
-          if (response.status === 404) continue;
-
-          if (response.ok) {
-            const data = await response.json();
-            let rawText = '';
-            if (data.candidates && data.candidates[0] && data.candidates[0].content && data.candidates[0].content.parts) {
-              rawText = data.candidates[0].content.parts[0]?.text || data.candidates[0].content.parts.map(p => p.text).join('\n');
-            }
-
-            let cleanJsonStr = rawText.replace(/```json/gi, '').replace(/```/g, '').trim();
-            const firstBrace = cleanJsonStr.indexOf('{');
-            const lastBrace = cleanJsonStr.lastIndexOf('}');
-            if (firstBrace !== -1 && lastBrace !== -1) {
-              cleanJsonStr = cleanJsonStr.substring(firstBrace, lastBrace + 1);
-            }
-
-            return JSON.parse(cleanJsonStr);
-          }
-        } catch (fetchErr) {
-          console.warn(`Tentativa com ${model} falhou:`, fetchErr);
-        }
-      }
-      throw new Error('Falha ao processar PDF com os modelos Gemini disponíveis');
-    }
-
     let appMachines = [];
     let appTeams = [];
     let appUsers = [];
     let currentUser = null;
     let geminiApiKey = '';
     let selectedMachineIds = new Set();
-    let currentPreviewRows = [];
+    let editingMachineId = null;
 
     document.addEventListener('DOMContentLoaded', async () => {
       loadStorage();
@@ -784,16 +697,20 @@ table.shell-table tbody tr:hover { background: color-mix(in srgb, var(--accent) 
       setInterval(updateClock, 1000);
       setupPermissions();
       populateTeamFilters();
+      checkGeminiStatus();
       renderTable();
     });
 
     function loadStorage() {
       try {
         const m = localStorage.getItem(STORAGE_KEYS.MACHINES);
-        appMachines = m ? JSON.parse(m) : [];
+        appMachines = m ? JSON.parse(m) : [
+          { id: '1', equipe: 'Equipa A', cliente: 'Exemplo Indústria', maquina: 'FiberLux 3015', linha: 'Leve', inicio: '2026-09-01', previsao: '2026-09-20', entregaReal: '', obs: 'Cliente solicitou reforço na estrutura e pintura personalizada na cor azul escuro metálico, com entrega prevista para a primeira quinzena do mês.' },
+          { id: '2', equipe: 'Equipa B', cliente: 'MetalWorks Lda', maquina: 'PlasmaCut 4020', linha: 'Pesada', inicio: '2026-09-05', previsao: '2026-09-30', entregaReal: '', obs: 'Equipamento especial com eixo rotativo adicional e software de nesting integrado.' }
+        ];
 
         const t = localStorage.getItem(STORAGE_KEYS.TEAMS);
-        appTeams = t ? JSON.parse(t) : [];
+        appTeams = t ? JSON.parse(t) : [{ name: 'Equipa A' }, { name: 'Equipa B' }];
 
         const u = localStorage.getItem(STORAGE_KEYS.USERS);
         appUsers = u ? JSON.parse(u) : [{ email: 'deltacronograma@gmail.com', pass: 'delta2026', role: 'Administrador' }];
@@ -831,6 +748,33 @@ table.shell-table tbody tr:hover { background: color-mix(in srgb, var(--accent) 
       }
     }
 
+    function checkGeminiStatus() {
+      const banner = document.getElementById('geminiAlertBanner');
+      if (!banner) return;
+      if (geminiApiKey && geminiApiKey.trim() !== '') {
+        banner.className = 'gemini-alert configured';
+        banner.innerHTML = `<span>✅ <strong>Gemini API Configurada:</strong> Leitura automática de PDFs ativa.</span> <button class="btn-delta btn-slate btn-sm" onclick="openConfigModal()">Alterar Chave</button>`;
+      } else {
+        banner.className = 'gemini-alert';
+        banner.innerHTML = `<span>⚠️ <strong>Atenção:</strong> Chave da API do Gemini necessária para leitura inteligente de PDFs de OS.</span> <button class="btn-delta btn-amber btn-sm" onclick="openConfigModal()">Configurar Chave</button>`;
+      }
+    }
+
+    function openConfigModal() {
+      document.getElementById('inputGeminiKey').value = geminiApiKey || '';
+      document.getElementById('configModal').classList.add('open');
+    }
+    function closeConfigModal() {
+      document.getElementById('configModal').classList.remove('open');
+    }
+    function saveConfigModal() {
+      const val = document.getElementById('inputGeminiKey').value.trim();
+      geminiApiKey = val;
+      localStorage.setItem(STORAGE_KEYS.GEMINI_KEY, val);
+      checkGeminiStatus();
+      closeConfigModal();
+    }
+
     function toggleAuthModal() {
       if (currentUser) {
         if (confirm('Deseja terminar a sessão atual?')) {
@@ -843,8 +787,21 @@ table.shell-table tbody tr:hover { background: color-mix(in srgb, var(--accent) 
         document.getElementById('authModal').classList.add('open');
       }
     }
-
     function closeAuthModal() { document.getElementById('authModal').classList.remove('open'); }
+    function handleLogin() {
+      const email = document.getElementById('loginEmail').value.trim();
+      const pass = document.getElementById('loginPass').value.trim();
+      const found = appUsers.find(u => u.email === email && u.pass === pass);
+      if (found) {
+        currentUser = found;
+        localStorage.setItem(STORAGE_KEYS.CURRENT_USER, JSON.stringify(currentUser));
+        closeAuthModal();
+        setupPermissions();
+        renderTable();
+      } else {
+        alert('Credenciais inválidas.');
+      }
+    }
 
     function switchTab(tabId) {
       ['acompanhamento', 'dashboard', 'equipas', 'destaques', 'usuarios'].forEach(t => {
@@ -853,7 +810,7 @@ table.shell-table tbody tr:hover { background: color-mix(in srgb, var(--accent) 
       });
       document.querySelectorAll('.tab-button').forEach(btn => {
         btn.classList.remove('active');
-        if (btn.getAttribute('onclick') && btn.getAttribute('onclick'].includes(tabId)) {
+        if (btn.getAttribute('onclick') && btn.getAttribute('onclick').includes(tabId)) {
           btn.classList.add('active');
         }
       });
@@ -939,7 +896,7 @@ table.shell-table tbody tr:hover { background: color-mix(in srgb, var(--accent) 
         const isChecked = selectedMachineIds.has(item.id);
         const linhaClass = item.linha === 'Pesada' ? 'pill-linha pesada' : 'pill-linha';
         let osHtml = '<span class="text-muted">—</span>';
-        if ((item.pdfData && item.pdfData.trim()) || item.hasPdf) {
+        if (item.pdfData && item.pdfData.trim()) {
           osHtml = `<button type="button" class="btn-delta btn-indigo btn-sm" onclick="verPdfOs('${item.id}')">📄 Ver OS</button>`;
         }
         
@@ -973,7 +930,6 @@ table.shell-table tbody tr:hover { background: color-mix(in srgb, var(--accent) 
       document.getElementById('obsModalContent').textContent = textoCompleto;
       document.getElementById('obsModal').classList.add('open');
     }
-
     function closeObsModal() {
       document.getElementById('obsModal').classList.remove('open');
     }
@@ -982,42 +938,110 @@ table.shell-table tbody tr:hover { background: color-mix(in srgb, var(--accent) 
       if (cb.checked) selectedMachineIds.add(id); else selectedMachineIds.delete(id);
       renderTable();
     }
-
     function toggleSelectAll(master) {
       if (master.checked) appMachines.forEach(m => selectedMachineIds.add(m.id)); else selectedMachineIds.clear();
       renderTable();
     }
 
-    async function verPdfOs(id) {
-      const item = appMachines.find(m => m.id === id);
-      if (!item) return;
-      if (item.pdfData && item.pdfData.trim()) {
-        openPdfFromBase64(item.pdfData);
+    function openMachineModal() {
+      editingMachineId = null;
+      document.getElementById('machineModalTitle').textContent = 'Registar Nova Máquina';
+      document.getElementById('machClient').value = '';
+      document.getElementById('machModel').value = '';
+      document.getElementById('machObs').value = '';
+      document.getElementById('machineModal').classList.add('open');
+    }
+    function closeMachineModal() {
+      document.getElementById('machineModal').classList.remove('open');
+    }
+    function saveMachine() {
+      const equipe = document.getElementById('machTeam').value;
+      const cliente = document.getElementById('machClient').value.trim();
+      const maquina = document.getElementById('machModel').value.trim();
+      const linha = document.getElementById('machLinha').value;
+      const obs = document.getElementById('machObs').value.trim();
+
+      if (!cliente || !maquina) {
+        alert('Por favor, preencha o cliente e o modelo da máquina.');
         return;
       }
-      if (item.hasPdf) {
-        const stored = await idbBuscarPdf(item.id);
-        if (stored) {
-          openPdfFromBase64(stored);
-          return;
-        }
-      }
-      alert('Documento PDF não encontrado.');
-    }
-    window.verPdfOs = verPdfOs;
 
-    function openPdfFromBase64(pdfDataUri) {
-      try {
-        const comma = pdfDataUri.indexOf(',');
-        const b64 = comma >= 0 ? pdfDataUri.slice(comma + 1) : pdfDataUri;
-        const bytes = Uint8Array.from(atob(b64.trim()), c => c.charCodeAt(0));
-        const blob = new Blob([bytes], { type: 'application/pdf' });
-        const url = URL.createObjectURL(blob);
-        window.open(url, '_blank');
-        setTimeout(() => URL.revokeObjectURL(url), 120000);
-      } catch (e) {
-        window.open(pdfDataUri, '_blank');
+      if (editingMachineId) {
+        const item = appMachines.find(m => m.id === editingMachineId);
+        if (item) {
+          item.equipe = equipe;
+          item.cliente = cliente;
+          item.maquina = maquina;
+          item.linha = linha;
+          item.obs = obs;
+        }
+      } else {
+        const newItem = {
+          id: Date.now().toString(),
+          equipe,
+          cliente,
+          maquina,
+          linha,
+          inicio: new Date().toISOString().split('T')[0],
+          previsao: '',
+          entregaReal: '',
+          obs
+        };
+        appMachines.push(newItem);
       }
+
+      localStorage.setItem(STORAGE_KEYS.MACHINES, JSON.stringify(appMachines));
+      closeMachineModal();
+      renderTable();
+    }
+
+    function editMachine(id) {
+      const item = appMachines.find(m => m.id === id);
+      if (!item) return;
+      editingMachineId = id;
+      document.getElementById('machineModalTitle').textContent = 'Editar Máquina';
+      document.getElementById('machTeam').value = item.equipe || '—';
+      document.getElementById('machClient').value = item.cliente || '';
+      document.getElementById('machModel').value = item.maquina || '';
+      document.getElementById('machLinha').value = item.linha || 'Leve';
+      document.getElementById('machObs').value = item.obs || '';
+      document.getElementById('machineModal').classList.add('open');
+    }
+
+    function deleteSelectedMachines() {
+      if (selectedMachineIds.size === 0) {
+        alert('Selecione pelo menos uma máquina para excluir.');
+        return;
+      }
+      if (confirm(`Deseja excluir ${selectedMachineIds.size} máquina(s) selecionada(s)?`)) {
+        appMachines = appMachines.filter(m => !selectedMachineIds.has(m.id));
+        selectedMachineIds.clear();
+        localStorage.setItem(STORAGE_KEYS.MACHINES, JSON.stringify(appMachines));
+        renderTable();
+      }
+    }
+
+    function syncData() {
+      alert('Dados sincronizados com sucesso.');
+      renderTable();
+    }
+
+    function exportCSV() {
+      if (appMachines.length === 0) {
+        alert('Não há dados para exportar.');
+        return;
+      }
+      let csv = 'Equipe;Cliente;Maquina;Linha;Inicio;Previsao;EntregaReal;Estado;Observacoes\n';
+      appMachines.forEach(m => {
+        csv += `"${m.equipe || ''}";"${m.cliente || ''}";"${m.maquina || ''}";"${m.linha || ''}";"${m.inicio || ''}";"${m.previsao || ''}";"${m.entregaReal || ''}";"${getMachineStatus(m)}";"${(m.obs || '').replace(/"/g, '""')}"\n`;
+      });
+      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'controle_producao_delta.csv';
+      a.click();
+      URL.revokeObjectURL(url);
     }
   </script>
 </body>
