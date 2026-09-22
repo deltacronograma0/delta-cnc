@@ -410,9 +410,9 @@ body {
   border: 1px solid rgba(245, 158, 11, 0.3);
 }
 .status-atrasado {
-  background: rgba(244, 63, 94, 0.15);
-  color: #fb7185;
-  border: 1px solid rgba(244, 63, 94, 0.4);
+  background: rgba(239, 68, 68, 0.12);
+  color: #f87171;
+  border: 1px solid rgba(239, 68, 68, 0.3);
 }
 
 /* Linha Pill */
@@ -826,8 +826,8 @@ body {
             <option value="todos">Todos os Estados</option>
             <option value="Aguardando produção">Aguardando produção</option>
             <option value="Em andamento">Em andamento</option>
-            <option value="Entregue">Entregue</option>
             <option value="Atrasado">Atrasado</option>
+            <option value="Entregue">Entregue</option>
           </select>
         </div>
         <div class="form-group">
@@ -1142,6 +1142,7 @@ body {
               <option value="automatico">Automático (Calculado pelas Datas)</option>
               <option value="Aguardando produção">Forçar: Aguardando produção</option>
               <option value="Em andamento">Forçar: Em andamento</option>
+              <option value="Atrasado">Forçar: Atrasado</option>
               <option value="Entregue">Forçar: Entregue</option>
             </select>
           </div>
@@ -1515,7 +1516,7 @@ body {
       throw new Error('Falha ao processar PDF com os modelos Gemini disponíveis');
     }
 
-    const SAMPLE_PDF_BASE64 = 'data:application/pdf;base64,JVBERi0xLjQKJcOkw7zDtsOfCjEgMCBvYmoKPDwKL1R5cGUgL0NhdGFsb2cKL1BhZ2VzIDIgMCBSCj4+CmVuZG9iagoyIDAgb2JqCjw8Ci9UeXBlIC9QYWdlcwovS2lkcyBbMyAwIFJdCi9Db3VudCAxCj4+CmVuZG9iagozIDAgb2JqCjw8Ci9UeXBlIC9QYWdlCi9QYXJlbnQgMiAwIFIKL01lZGlhQm94IFswIDAgNjEyIDc5Ml0KL1Jlc291cmNlcyA8PAovRm9udCA8PAovRjEgNCAwIFIKPj4KPj4KL0NvbnRlbnRzIDUgMCBSCj4+CmVuZG9iago0IDAgb2JqCjw8Ci9UeXBlIC9Gb250Ci9TdWJ0eXBlIC9UeXBlMQovQmFzZUZvbnQgL0hlbHZldGljYQo+PgplbmRvYmoKNSAwIG9iago8PAovTGVuZ3RoIDQ0Cj4+CnN0cmVhbQpCVAovRjEgMTIgVGYKNzIgNzIwIFRECihtYXF1aW5hIERFTFRBIENOQyAtIE9TIE1vZGVsbykgVGoKRVQKZW5kc3RyZWFtCmVuZG9iagp4cmVmCjAgNgowMDAwMDAwMDAwIDY1NTM1IGYgCjAwMDAwMDAwMTUgMDAwMDAgbiAKMDAwMDAwMDA2OCAwMDAwMCBuIAowMDAwMDAwMTI1IDAwMDAwIG4gCjAwMDAwMDAyMjUgMDAwMDAgbiAKMDAwMDAwMDI5NiAwMDAwMCBuIAp0cmFpbGVyCjw8Ci9TaXplIDYKL1Jvb3QgMSAwIFIKPj4Kc3RhcnR4cmVmCjM5MAolJUVPRg==';
+    const SAMPLE_PDF_BASE64 = 'data:application/pdf;base64,JVBERi0xLjQKJcOkw7zDtsOfCjEgMCBvYmoKPDwKL1R5cGUgL0NhdGFsb2cKL1BhZ2VzIDIgMCBSCj4+CmVuZG9iagoyIDAgb2JqCjw8Ci9UeXBlIC9QYWdlcwovS2lkcyBbMyAwIFJdCi9Db3VudCAxCj4+CmVuZG9iagozIDAgb2JqCjw8Ci9UeXBlIC9QYWdlCi9QYXJlbnQgMiAwIFIKL01lZGlhQm94IFswIDAgNjEyIDc5Ml0KL1Jlc291cmNlcyA8PAovRm9udCA8PAovRjEgNCAwIFIKPj4KPj4KL0NvbnRlbnRzIDUgMCBSCj4+CmVuZG9iago0IDAgb2JqCjw8Ci9UeXBlIC9Gb250Ci9TdWJ0eXBlIC9UeXBlMQovQmFzZUZvbnQgL0hlbHZldGljYQo+PgplbmRvYmoKNSAwIG9iago8PAovTGVuZ3RoIDQ0Cj4+CnN0cmVhbQpCVAovRjEgMTIgVGYKNzIgNzIwIFRECihtYXF1aW5hIERFTFRBIENOQyAtIE9TIE1vZGVsbykgVGoKRVQKZW5kc3RyZWFtCmVuZG9iagp4cmVmCjAgNgowMDAwMDAwMDAwIDY1NTM1IGYgCjAwMDAwMDAwMTUgMDAwMDAgbiAKMDAwMDAwMDA2OCAwMDAwMCBuIAp0cmFpbGVyCjw8Ci9TaXplIDYKL1Jvb3QgMSAwIFIKPj4Kc3RhcnR4cmVmCjM5MAolJUVPRg==';
 
     const DEFAULT_SEED_MACHINES = [
       { id: '1001', equipe: 'Felipe e Arthur', cliente: 'AC COMUNICACAO VISUAL LTDA', maquina: 'Fiber Split 50W + 4º Eixo + Estabilizador', linha: 'Leve', inicio: '2026-09-17', previsao: '2026-09-18', entregaReal: '2026-09-18', statusManual: 'automatico', obs: 'OS: DM01 | Concluído com testes óticos e alinhamento de espelhos galvo de alta precisão em laboratório.', os: 'DM01', pdfData: SAMPLE_PDF_BASE64 },
@@ -1753,37 +1754,51 @@ body {
     }
 
     /* =================================================================
-       STATUS RULES & FORMATTERS
+       STATUS RULES & FORMATTERS (ALTERAÇÃO SOLICITADA)
        ================================================================= */
     function getMachineStatus(item) {
-      // Regra de Atraso automática: Se a previsão de entrega for menor que hoje, e não estiver entregue
-      if (item.previsao && item.previsao.trim() !== '') {
-        const isEntregue = (item.entregaReal && item.entregaReal.trim() !== '') || (item.statusManual === 'Entregue');
-        if (!isEntregue) {
-          const hoje = new Date();
-          hoje.setHours(0, 0, 0, 0);
-          
-          const parts = item.previsao.split('-');
-          if (parts.length === 3) {
-            const dataPrev = new Date(parseInt(parts[0], 10), parseInt(parts[1], 10) - 1, parseInt(parts[2], 10));
-            dataPrev.setHours(0, 0, 0, 0);
-            
-            if (dataPrev < hoje) {
-              return 'Atrasado';
-            }
-          }
-        }
-      }
-
       if (item.statusManual && item.statusManual !== 'automatico') {
         return item.statusManual;
       }
-      if (item.entregaReal && item.entregaReal.trim() !== '') {
+      
+      // Regra com comparação de apenas dia/mês/ano (ignorando horário) e data atual dinâmica
+      const hoje = new Date();
+      hoje.setHours(0, 0, 0, 0);
+
+      const parseDateOnly = (dateStr) => {
+        if (!dateStr || typeof dateStr !== 'string') return null;
+        const parts = dateStr.split('-');
+        if (parts.length === 3) {
+          const y = parseInt(parts[0], 10);
+          const m = parseInt(parts[1], 10) - 1;
+          const d = parseInt(parts[2], 10);
+          const dt = new Date(y, m, d);
+          dt.setHours(0, 0, 0, 0);
+          return isNaN(dt.getTime()) ? null : dt;
+        }
+        return null;
+      };
+
+      const entregaRealDate = parseDateOnly(item.entregaReal);
+      const previsaoDate = parseDateOnly(item.previsao);
+      const inicioDate = parseDateOnly(item.inicio);
+
+      // 1. Se a máquina tiver data preenchida no campo "Entrega Real Concluída" -> Estado = "Entregue" (Finalizada)
+      if (entregaRealDate) {
         return 'Entregue';
       }
-      if (item.inicio && item.inicio.trim() !== '') {
+
+      // 2. Senão, se a data do campo "Previsão de Entrega" for anterior/inferior à data atual (vencida) -> Estado = "Atrasado"
+      if (previsaoDate && previsaoDate < hoje) {
+        return 'Atrasado';
+      }
+
+      // 3. Senão, se a máquina tiver data preenchida no campo "Data de Início" -> Estado = "Em andamento"
+      if (inicioDate) {
         return 'Em andamento';
       }
+
+      // 4. Senão -> Estado = "Aguardando produção"
       return 'Aguardando produção';
     }
 
@@ -2082,16 +2097,18 @@ body {
         document.getElementById('machReal').value = item.entregaReal || '';
         document.getElementById('machNotes').value = item.obs || '';
         if (item.pdfData || item.hasPdf) {
-          document.getElementById('machPdfStatus').textContent = '📄 Ficheiro PDF associado a esta máquina.';
+          document.getElementById('machPdfStatus').textContent = 'Ficheiro PDF anexado presente.';
         }
       } else {
         document.getElementById('machineModalTitle').textContent = 'Registar Máquina CNC';
         document.getElementById('machId').value = '';
-        const hojeIso = new Date().toISOString().split('T')[0];
-        document.getElementById('machStart').value = hojeIso;
       }
 
       document.getElementById('machineModal').classList.add('open');
+    }
+
+    function editMachine(id) {
+      openMachineModal(id);
     }
 
     function closeMachineModal() {
@@ -2100,7 +2117,7 @@ body {
 
     async function saveMachine(e) {
       e.preventDefault();
-      const idInput = document.getElementById('machId').value;
+      const id = document.getElementById('machId').value;
       const os = document.getElementById('machOs').value.trim();
       const equipe = document.getElementById('machTeam').value;
       const cliente = document.getElementById('machClient').value.trim();
@@ -2111,88 +2128,89 @@ body {
       const previsao = document.getElementById('machForecast').value;
       const entregaReal = document.getElementById('machReal').value;
       const obs = document.getElementById('machNotes').value.trim();
+
       const pdfInput = document.getElementById('machPdf');
-
-      let pdfDataStr = '';
-      let hasPdfFlag = false;
-
-      if (idInput) {
-        const existing = appMachines.find(m => m.id === idInput);
-        if (existing) {
-          pdfDataStr = existing.pdfData || '';
-          hasPdfFlag = existing.hasPdf || false;
-        }
-      }
+      let newPdfData = null;
 
       if (pdfInput.files && pdfInput.files[0]) {
-        const file = pdfInput.files[0];
         try {
-          const base64Result = await new Promise((resolve, reject) => {
-            const reader = new FileReader();
-            reader.onload = () => resolve(reader.result);
-            reader.onerror = reject;
-            reader.readAsDataURL(file);
-          });
-          const newId = idInput || String(Date.now());
-          await idbSalvarPdf(newId, base64Result);
-          hasPdfFlag = true;
-          pdfDataStr = '';
+          newPdfData = await fileToDataUrl(pdfInput.files[0]);
         } catch (err) {
-          console.warn('Erro ao ler PDF no formulário:', err);
+          console.error('Erro ao ler PDF:', err);
         }
       }
 
-      if (idInput) {
-        const idx = appMachines.findIndex(m => m.id === idInput);
-        if (idx !== -1) {
-          appMachines[idx] = {
-            ...appMachines[idx],
-            os, equipe, cliente, maquina, linha, statusManual, inicio, previsao, entregaReal, obs,
-            pdfData: pdfDataStr,
-            hasPdf: hasPdfFlag
+      if (id) {
+        const index = appMachines.findIndex(m => m.id === id);
+        if (index !== -1) {
+          const target = appMachines[index];
+          let hasPdf = target.hasPdf || false;
+          if (newPdfData) {
+            try {
+              await idbSalvarPdf(id, newPdfData);
+              hasPdf = true;
+            } catch (idbErr) {
+              console.warn('Erro ao salvar PDF no IndexedDB:', idbErr);
+            }
+          }
+          appMachines[index] = {
+            ...target,
+            os, equipe, cliente, maquina, linha, statusManual,
+            inicio, previsao, entregaReal, obs,
+            pdfData: '',
+            hasPdf
           };
         }
       } else {
-        const newId = String(Date.now());
-        if (pdfDataStr || hasPdfFlag) {
-          // Já guardado no IDB
+        const newId = 'M_' + Date.now() + '_' + Math.floor(Math.random() * 1000);
+        let hasPdf = false;
+        if (newPdfData) {
+          try {
+            await idbSalvarPdf(newId, newPdfData);
+            hasPdf = true;
+          } catch (idbErr) {
+            console.warn('Erro ao salvar PDF no IndexedDB:', idbErr);
+          }
         }
-        appMachines.unshift({
+        const newMachine = {
           id: newId,
-          os, equipe, cliente, maquina, linha, statusManual, inicio, previsao, entregaReal, obs,
-          pdfData: pdfDataStr,
-          hasPdf: hasPdfFlag
-        });
+          os, equipe, cliente, maquina, linha, statusManual,
+          inicio, previsao, entregaReal, obs,
+          pdfData: '',
+          hasPdf
+        };
+        appMachines.unshift(newMachine);
       }
 
-      saveData();
-      closeMachineModal();
+      await saveData();
       renderTable();
       updateDashboard();
       updatePodio();
+      closeMachineModal();
     }
 
-    function editMachine(id) {
-      openMachineModal(id);
+    function fileToDataUrl(file) {
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result);
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+      });
     }
 
     /* =================================================================
-       IMPORTAÇÃO MÚLTIPLA DE OS COM IA GEMINI
+       IMPORTAR VÁRIAS OS COM IA GEMINI
        ================================================================= */
     function openMultiImportModal() {
+      currentPreviewRows = [];
       document.getElementById('multiPdfInput').value = '';
-      document.getElementById('importPreviewBody').innerHTML = `
-        <tr>
-          <td colspan="9" style="text-align:center; padding:2.5rem; color:var(--text-muted);">
-            Nenhum PDF carregado ainda. Escolha ficheiros PDF acima para pré-visualizar e extrair.
-          </td>
-        </tr>
-      `;
-      document.getElementById('previewRowsCount').textContent = '0 ficheiros na fila';
+      const dateRuleSelect = document.getElementById('importStartDateRule');
+      if (dateRuleSelect) dateRuleSelect.value = 'hoje';
+      document.getElementById('aiProgressBox').style.display = 'none';
       document.getElementById('btnAiParse').disabled = true;
       document.getElementById('btnSaveMulti').disabled = true;
-      document.getElementById('aiProgressBox').style.display = 'none';
-      currentPreviewRows = [];
+      document.getElementById('previewRowsCount').textContent = '0 ficheiros na fila';
+      renderImportPreviewTable();
       document.getElementById('multiImportModal').classList.add('open');
     }
 
@@ -2200,238 +2218,253 @@ body {
       document.getElementById('multiImportModal').classList.remove('open');
     }
 
-    async function onFilesSelected(input) {
-      const files = input.files;
-      if (!files || files.length === 0) return;
-
-      currentPreviewRows = [];
-      const tbody = document.getElementById('importPreviewBody');
-      tbody.innerHTML = '';
-
-      for (let i = 0; i < files.length; i++) {
-        const file = files[i];
-        const rowId = `preview_${Date.now()}_${i}`;
-        
-        try {
-          const base64Full = await new Promise((res, rej) => {
-            const r = new FileReader();
-            r.onload = () => res(r.result);
-            r.onerror = rej;
-            r.readAsDataURL(file);
-          });
-
-          currentPreviewRows.push({
-            id: rowId,
-            fileName: file.name,
-            base64Data: base64Full,
-            os: file.name.replace(/\.[^/.]+$/, ''),
-            equipe: appTeams[0] ? appTeams[0].name : '—',
-            cliente: 'Cliente Extraído',
-            maquina: 'Máquina CNC Padrão',
-            linha: 'Leve',
-            inicio: new Date().toISOString().split('T')[0],
-            previsao: new Date().toISOString().split('T')[0],
-            obs: ''
-          });
-        } catch (e) {
-          console.warn('Erro ao ler ficheiro para pré-visualização:', e);
-        }
-      }
-
-      renderPreviewTable();
-      document.getElementById('btnAiParse').disabled = currentPreviewRows.length === 0;
-      document.getElementById('btnSaveMulti').disabled = currentPreviewRows.length === 0;
-    }
-
-    function renderPreviewTable() {
-      const tbody = document.getElementById('importPreviewBody');
-      document.getElementById('previewRowsCount').textContent = `${currentPreviewRows.length} ficheiro(s) na fila`;
-
-      if (currentPreviewRows.length === 0) {
-        tbody.innerHTML = `
-          <tr>
-            <td colspan="9" style="text-align:center; padding:2.5rem; color:var(--text-muted);">
-              Nenhum PDF carregado ainda.
-            </td>
-          </tr>
-        `;
+    function onFilesSelected(input) {
+      const files = Array.from(input.files || []);
+      if (files.length === 0) {
+        document.getElementById('btnAiParse').disabled = true;
         return;
       }
+      document.getElementById('btnAiParse').disabled = false;
+      document.getElementById('previewRowsCount').textContent = `${files.length} ficheiro(s) selecionado(s)`;
 
-      tbody.innerHTML = currentPreviewRows.map((r, idx) => `
-        <tr id="row_tr_${r.id}">
-          <td style="text-align:center;">
-            <input type="checkbox" id="chk_${r.id}" checked style="cursor:pointer; accent-color:#6366f1;">
-          </td>
-          <td><span style="font-size:0.76rem; color:#d1d5db; max-width:120px; display:inline-block; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" title="${escapeHtml(r.fileName)}">${escapeHtml(r.fileName)}</span></td>
-          <td>
-            <select id="p_team_${r.id}" class="preview-input">
-              ${appTeams.map(t => `<option value="${t.name}" ${t.name === r.equipe ? 'selected' : ''}>${t.name}</option>`).join('')}
-            </select>
-          </td>
-          <td><input type="text" id="p_client_${r.id}" class="preview-input" value="${escapeHtml(r.cliente)}"></td>
-          <td><input type="text" id="p_mach_${r.id}" class="preview-input" value="${escapeHtml(r.maquina)}"></td>
-          <td>
-            <select id="p_linha_${r.id}" class="preview-input">
-              <option value="Leve" ${r.linha === 'Leve' ? 'selected' : ''}>Leve</option>
-              <option value="Intermediária" ${r.linha === 'Intermediária' ? 'selected' : ''}>Intermediária</option>
-              <option value="Pesada" ${r.linha === 'Pesada' ? 'selected' : ''}>Pesada</option>
-            </select>
-          </td>
-          <td><input type="date" id="p_start_${r.id}" class="preview-input" value="${r.inicio}"></td>
-          <td><input type="date" id="p_forecast_${r.id}" class="preview-input" value="${r.previsao}"></td>
-          <td><input type="text" id="p_obs_${r.id}" class="preview-input" value="${escapeHtml(r.obs)}"></td>
-        </tr>
-      `).join('');
-    }
+      currentPreviewRows = files.map((f, idx) => {
+        const nameWithoutExt = f.name.replace(/\.[^/.]+$/, "");
+        const initialOs = nameWithoutExt.toUpperCase().startsWith('DM') ? nameWithoutExt : ('DM' + (appMachines.length + idx + 1));
+        const row = {
+          id: 'import_' + idx,
+          file: f,
+          fileName: f.name,
+          selected: true,
+          os: initialOs,
+          equipe: '',
+          cliente: '',
+          maquina: 'Máquina CNC (A aguardar IA)',
+          linha: 'Leve',
+          inicio: '',
+          previsao: '',
+          obs: `OS: ${initialOs} | Ficheiro: ${f.name}`,
+          base64: ''
+        };
 
-    function toggleSelectAllPreview(masterCheckbox) {
-      const checked = masterCheckbox.checked;
-      currentPreviewRows.forEach(r => {
-        const chk = document.getElementById(`chk_${r.id}`);
-        if (chk) chk.checked = checked;
+        fileToDataUrl(f).then(dataUrl => {
+          row.base64 = dataUrl;
+        }).catch(err => console.error('Erro ao ler base64 do ficheiro:', err));
+
+        return row;
       });
+
+      renderImportPreviewTable();
     }
 
     async function processPdfsWithGemini() {
-      const key = geminiApiKey || localStorage.getItem(STORAGE_KEYS.GEMINI_KEY);
-      if (!key || !key.trim()) {
-        alert('Chave da API do Gemini não configurada! Por favor, configure a chave nas Definições antes de usar a IA.');
+      const files = Array.from(document.getElementById('multiPdfInput').files || []);
+      if (files.length === 0) return;
+
+      if (!geminiApiKey) {
+        alert('Por favor configure primeiro a sua Chave da API do Gemini nas Definições!');
         openConfigModal();
         return;
       }
 
-      if (currentPreviewRows.length === 0) return;
-
       const progressBox = document.getElementById('aiProgressBox');
-      const progressBar = document.getElementById('aiProgressBar');
       const progressText = document.getElementById('aiProgressText');
       const progressPercent = document.getElementById('aiProgressPercent');
+      const progressBar = document.getElementById('aiProgressBar');
       const btnParse = document.getElementById('btnAiParse');
 
       progressBox.style.display = 'block';
       btnParse.disabled = true;
 
-      const startDateRule = document.getElementById('importStartDateRule').value;
-      const hojeIso = new Date().toISOString().split('T')[0];
-
-      let completed = 0;
       const total = currentPreviewRows.length;
+      let completed = 0;
+      progressText.textContent = `Lendo 0 de ${total}...`;
+      progressBar.style.width = '0%';
+      progressPercent.textContent = '0%';
 
-      for (let i = 0; i < total; i++) {
+      const aiPrompt = 'Extraia desta OS em JSON puro: {"os":"número da OS","cliente":"nome","maquina":"modelo","linha":"Leve|Intermediária|Pesada","inicio":"YYYY-MM-DD","previsao":"YYYY-MM-DD","obs":"CNPJ | TAG | contato | especificações"}. Apenas JSON sem markdown.';
+
+      const CONCURRENCY_LIMIT = 4;
+      let queueIndex = 0;
+
+      async function processSingleItem(i) {
         const row = currentPreviewRows[i];
-        progressText.textContent = `A processar (${i + 1}/${total}): ${row.fileName}`;
-        const pct = Math.round((i / total) * 100);
-        progressBar.style.width = `${pct}%`;
-        progressPercent.textContent = `${pct}%`;
+        const file = row.file;
 
         try {
-          const commaIdx = row.base64Data.indexOf(',');
-          const pureBase64 = commaIdx >= 0 ? row.base64Data.slice(commaIdx + 1) : row.base64Data;
-          
-          const aiResult = await lerPdfComIA(pureBase64, key);
-          
-          if (aiResult) {
-            if (aiResult.os) row.os = String(aiResult.os);
-            if (aiResult.cliente) row.cliente = String(aiResult.cliente);
-            if (aiResult.maquina) row.maquina = String(aiResult.maquina);
-            if (aiResult.linha && ['Leve', 'Intermediária', 'Pesada'].includes(aiResult.linha)) {
-              row.linha = aiResult.linha;
-            }
-            if (aiResult.previsao) row.previsao = String(aiResult.previsao);
-            
-            if (startDateRule === 'hoje') {
-              row.inicio = hojeIso;
-            } else if (startDateRule === 'nenhuma') {
-              row.inicio = '';
-            } else if (startDateRule === 'os' && aiResult.inicio) {
-              row.inicio = String(aiResult.inicio);
-            }
+          const base64DataUrl = row.base64 || await fileToDataUrl(file);
+          const base64Raw = base64DataUrl.includes(',') ? base64DataUrl.split(',')[1] : base64DataUrl;
+          row.base64 = base64DataUrl;
 
-            if (aiResult.obs) row.obs = String(aiResult.obs);
+          const parsed = await lerPdfComIA(base64Raw, geminiApiKey, aiPrompt);
+
+          const extractedOs = (parsed.os || row.os || '').trim();
+          row.os = extractedOs;
+          row.cliente = parsed.cliente || 'Cliente Identificado';
+          row.maquina = parsed.maquina || 'Router / Laser CNC';
+          row.linha = ['Leve', 'Intermediária', 'Pesada'].includes(parsed.linha) ? parsed.linha : 'Leve';
+          row.equipe = '';
+          row.inicio = parsed.inicio || '';
+          row.previsao = parsed.previsao || '';
+
+          let parsedObs = (parsed.obs || '').trim();
+          if (parsedObs.toLowerCase().startsWith('os:')) {
+            row.obs = parsedObs;
+          } else if (extractedOs) {
+            row.obs = parsedObs ? `OS: ${extractedOs} | ${parsedObs}` : `OS: ${extractedOs}`;
+          } else {
+            row.obs = parsedObs || 'Processado com Gemini IA';
           }
-        } catch (err) {
-          console.warn(`Erro na leitura IA para ${row.fileName}:`, err);
-        }
 
-        completed++;
+          row.selected = true;
+        } catch (err) {
+          console.warn(`Falha na leitura IA de ${row.fileName}:`, err);
+          row.obs = `⚠️ Erro na IA: ${err.message || 'Falha ao analisar'}`;
+          row.selected = false;
+        } finally {
+          completed++;
+          const pct = Math.round((completed / total) * 100);
+          progressBar.style.width = pct + '%';
+          progressPercent.textContent = pct + '%';
+          progressText.textContent = `Lendo ${completed} de ${total}...`;
+          renderImportPreviewTable();
+        }
       }
 
-      progressBar.style.width = '100%';
-      progressPercent.textContent = '100%';
-      progressText.textContent = 'Leitura com IA concluída com sucesso!';
-      btnParse.disabled = false;
+      const poolSize = Math.min(CONCURRENCY_LIMIT, total);
+      const workers = Array.from({ length: poolSize }, async () => {
+        while (queueIndex < total) {
+          const currentIdx = queueIndex++;
+          await processSingleItem(currentIdx);
+        }
+      });
 
-      renderPreviewTable();
+      await Promise.all(workers);
+
+      progressText.textContent = `✅ Concluído: ${completed} de ${total} ficheiro(s) analisado(s).`;
+      document.getElementById('btnSaveMulti').disabled = !currentPreviewRows.some(r => r.selected);
+      btnParse.disabled = false;
+    }
+
+    function renderImportPreviewTable() {
+      const tbody = document.getElementById('importPreviewBody');
+      if (currentPreviewRows.length === 0) {
+        tbody.innerHTML = `
+          <tr>
+            <td colspan="9" style="text-align:center; padding:2.5rem; color:var(--text-muted);">
+              Nenhum PDF carregado ainda. Escolha ficheiros PDF acima para pré-visualizar e extrair.
+            </td>
+          </tr>
+        `;
+        document.getElementById('btnSaveMulti').disabled = true;
+        return;
+      }
+
+      tbody.innerHTML = currentPreviewRows.map((row, idx) => {
+        const displayName = row.fileName || (row.file && row.file.name) || (row.os ? `${row.os}.pdf` : 'OS.pdf');
+        return `
+          <tr>
+            <td style="text-align:center;">
+              <input type="checkbox" ${row.selected ? 'checked' : ''} onchange="updatePreviewRowValue(${idx}, 'selected', this.checked)" style="cursor:pointer; accent-color:#6366f1;">
+            </td>
+            <td style="max-width:140px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" title="${escapeHtml(displayName)}">
+              <span style="font-size:0.75rem; color:#93c5fd; font-weight:600; display:inline-flex; align-items:center; gap:0.35rem;">
+                📄 ${escapeHtml(displayName)}
+              </span>
+            </td>
+            <td><input type="text" class="preview-input" value="${escapeHtml(row.equipe)}" onchange="updatePreviewRowValue(${idx}, 'equipe', this.value)" placeholder="Equipa"></td>
+            <td><input type="text" class="preview-input" value="${escapeHtml(row.cliente)}" onchange="updatePreviewRowValue(${idx}, 'cliente', this.value)" placeholder="Cliente"></td>
+            <td><input type="text" class="preview-input" value="${escapeHtml(row.maquina)}" onchange="updatePreviewRowValue(${idx}, 'maquina', this.value)" placeholder="Modelo"></td>
+            <td>
+              <select class="preview-input" onchange="updatePreviewRowValue(${idx}, 'linha', this.value)">
+                <option value="Leve" ${row.linha === 'Leve' ? 'selected' : ''}>Leve</option>
+                <option value="Intermediária" ${row.linha === 'Intermediária' ? 'selected' : ''}>Intermediária</option>
+                <option value="Pesada" ${row.linha === 'Pesada' ? 'selected' : ''}>Pesada</option>
+              </select>
+            </td>
+            <td><input type="date" class="preview-input" value="${row.inicio || ''}" onchange="updatePreviewRowValue(${idx}, 'inicio', this.value)"></td>
+            <td><input type="date" class="preview-input" value="${row.previsao || ''}" onchange="updatePreviewRowValue(${idx}, 'previsao', this.value)"></td>
+            <td><input type="text" class="preview-input" value="${escapeHtml(row.obs)}" onchange="updatePreviewRowValue(${idx}, 'obs', this.value)"></td>
+          </tr>
+        `;
+      }).join('');
+
+      document.getElementById('btnSaveMulti').disabled = !currentPreviewRows.some(r => r.selected);
+    }
+
+    function updatePreviewRowValue(idx, key, val) {
+      if (currentPreviewRows[idx]) {
+        currentPreviewRows[idx][key] = val;
+      }
+      document.getElementById('btnSaveMulti').disabled = !currentPreviewRows.some(r => r.selected);
+    }
+
+    function toggleSelectAllPreview(masterCheckbox) {
+      const isChecked = masterCheckbox.checked;
+      currentPreviewRows.forEach(row => row.selected = isChecked);
+      renderImportPreviewTable();
     }
 
     async function saveImportedRows() {
-      let savedCount = 0;
-      const startDateRule = document.getElementById('importStartDateRule').value;
-      const hojeIso = new Date().toISOString().split('T')[0];
+      const selectedRows = currentPreviewRows.filter(r => r.selected);
+      if (selectedRows.length === 0) {
+        alert('Nenhum registo selecionado para salvar.');
+        return;
+      }
 
-      for (const row of currentPreviewRows) {
-        const chk = document.getElementById(`chk_${row.id}`);
-        if (chk && chk.checked) {
-          const teamVal = document.getElementById(`p_team_${row.id}`).value;
-          const clientVal = document.getElementById(`p_client_${row.id}`).value.trim();
-          const machVal = document.getElementById(`p_mach_${row.id}`).value.trim();
-          const linhaVal = document.getElementById(`p_linha_${row.id}`).value;
-          
-          let startVal = document.getElementById(`p_start_${row.id}`).value;
-          if (startDateRule === 'hoje') startVal = hojeIso;
-          else if (startDateRule === 'nenhuma') startVal = '';
+      const dateRule = document.getElementById('importStartDateRule').value;
+      const todayStr = new Date().toISOString().split('T')[0];
 
-          const forecastVal = document.getElementById(`p_forecast_${row.id}`).value;
-          const obsVal = document.getElementById(`p_obs_${row.id}`).value.trim();
-
-          const newId = String(Date.now() + Math.floor(Math.random() * 1000));
-          
-          try {
-            if (row.base64Data) {
-              await idbSalvarPdf(newId, row.base64Data);
-            }
-          } catch (e) {
-            console.warn('Erro ao salvar PDF importado no IDB:', e);
-          }
-
-          appMachines.unshift({
-            id: newId,
-            os: row.os || 'OS',
-            equipe: teamVal,
-            cliente: clientVal || 'Cliente',
-            maquina: machVal || 'Máquina CNC',
-            linha: linhaVal,
-            inicio: startVal,
-            previsao: forecastVal,
-            entregaReal: '',
-            statusManual: 'automatico',
-            obs: obsVal,
-            hasPdf: !!row.base64Data,
-            pdfData: ''
-          });
-
-          savedCount++;
+      for (const row of selectedRows) {
+        let finalInicio = row.inicio;
+        if (dateRule === 'hoje') {
+          finalInicio = todayStr;
+        } else if (dateRule === 'nenhuma') {
+          finalInicio = '';
         }
+
+        const newId = 'M_' + Date.now() + '_' + Math.floor(Math.random() * 10000);
+        let hasPdf = false;
+        if (row.base64) {
+          try {
+            await idbSalvarPdf(newId, row.base64);
+            hasPdf = true;
+          } catch (idbErr) {
+            console.warn('Erro ao salvar PDF em lote no IndexedDB:', idbErr);
+          }
+        }
+
+        const newMach = {
+          id: newId,
+          os: row.os || 'DM_NEW',
+          equipe: row.equipe || '—',
+          cliente: row.cliente || 'Cliente Novo',
+          maquina: row.maquina || 'Router CNC',
+          linha: row.linha || 'Leve',
+          statusManual: 'automatico',
+          inicio: finalInicio,
+          previsao: row.previsao || '',
+          entregaReal: '',
+          obs: row.obs || '',
+          pdfData: '',
+          hasPdf
+        };
+
+        appMachines.unshift(newMach);
       }
 
-      if (savedCount > 0) {
-        saveData();
-        closeMultiImportModal();
-        renderTable();
-        updateDashboard();
-        updatePodio();
-        alert(`${savedCount} máquina(s) importada(s) com sucesso!`);
-      } else {
-        alert('Nenhuma máquina selecionada para salvar.');
-      }
+      await saveData();
+      closeMultiImportModal();
+      renderTable();
+      updateDashboard();
+      updatePodio();
+      alert(`${selectedRows.length} máquina(s) importada(s) com sucesso!`);
     }
 
     /* =================================================================
-       CONFIGURAÇÕES, API KEY E BACKUP
+       CONFIGURAÇÃO, BACKUP & EXPORTAÇÃO CSV
        ================================================================= */
     function openConfigModal() {
-      document.getElementById('geminiApiKeyInput').value = geminiApiKey || localStorage.getItem(STORAGE_KEYS.GEMINI_KEY) || '';
+      document.getElementById('geminiApiKeyInput').value = geminiApiKey;
       document.getElementById('configModal').classList.add('open');
     }
 
@@ -2444,134 +2477,126 @@ body {
       geminiApiKey = val;
       localStorage.setItem(STORAGE_KEYS.GEMINI_KEY, val);
       checkGeminiBanner();
-      alert('Chave API Gemini guardada com sucesso!');
+      alert('Chave da API do Gemini guardada com sucesso!');
       closeConfigModal();
     }
 
     function checkGeminiBanner() {
       const banner = document.getElementById('geminiAlertBanner');
-      const key = geminiApiKey || localStorage.getItem(STORAGE_KEYS.GEMINI_KEY);
-      if (key && key.length > 5) {
-        if (banner) banner.style.display = 'none';
-      } else {
-        if (banner) banner.style.display = 'flex';
+      if (banner) {
+        if (geminiApiKey && geminiApiKey.length > 5) {
+          banner.style.display = 'none';
+        } else {
+          banner.style.display = 'flex';
+        }
       }
     }
 
     function exportBackup() {
       const backupObj = {
-        version: '2.0',
+        version: '1.0',
         exportDate: new Date().toISOString(),
         machines: appMachines,
         teams: appTeams,
         users: appUsers
       };
-
-      const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(backupObj, null, 2));
-      const dlAnchorElem = document.createElement('a');
-      dlAnchorElem.setAttribute("href", dataStr);
-      dlAnchorElem.setAttribute("download", `cp_delta_backup_${new Date().toISOString().split('T')[0]}.json`);
-      document.body.appendChild(dlAnchorElem);
-      dlAnchorElem.click();
-      dlAnchorElem.remove();
+      const blob = new Blob([JSON.stringify(backupObj, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `DELTA_Backup_${new Date().toISOString().split('T')[0]}.json`;
+      a.click();
+      setTimeout(() => URL.revokeObjectURL(url), 5000);
     }
 
-    async function importBackup(event) {
-      const file = event.target.files[0];
+    async function importBackup(e) {
+      const file = e.target.files[0];
       if (!file) return;
-
-      try {
-        const text = await file.text();
-        const data = JSON.parse(text);
-
-        if (data.machines && Array.isArray(data.machines)) {
-          appMachines = data.machines;
+      const reader = new FileReader();
+      reader.onload = async function(evt) {
+        try {
+          const data = JSON.parse(evt.target.result);
+          if (data && Array.isArray(data.machines)) {
+            appMachines = data.machines;
+            if (Array.isArray(data.teams)) appTeams = data.teams;
+            if (Array.isArray(data.users)) appUsers = data.users;
+            await saveData();
+            renderTable();
+            updateDashboard();
+            updatePodio();
+            renderTeams();
+            renderUsers();
+            alert('Backup restaurado com sucesso!');
+          } else {
+            alert('Ficheiro de backup inválido ou corrompido.');
+          }
+        } catch (err) {
+          console.error('Erro ao ler JSON de backup:', err);
+          alert('Erro ao processar ficheiro JSON.');
         }
-        if (data.teams && Array.isArray(data.teams)) {
-          appTeams = data.teams;
-        }
-        if (data.users && Array.isArray(data.users)) {
-          appUsers = data.users;
-        }
-
-        saveData();
-        populateTeamFilters();
-        renderTable();
-        updateDashboard();
-        updatePodio();
-        renderTeams();
-        renderUsers();
-        alert('Cópia de segurança restaurada com sucesso!');
-        closeConfigModal();
-      } catch (err) {
-        console.error('Erro ao importar backup:', err);
-        alert('Erro ao processar o ficheiro JSON de backup. Verifique se o formato é válido.');
-      }
+      };
+      reader.readAsText(file);
     }
 
     function exportCSV() {
-      let csvContent = "data:text/csv;charset=utf-8,OS;Equipa;Cliente;Maquina;Linha;Inicio;PrevisaoEntrega;EntregaReal;Estado;Observacoes\n";
-
+      let csv = 'ID;OS;Equipa;Cliente;Maquina;Linha;Inicio;Previsao;EntregaReal;Estado;Observacoes\n';
       appMachines.forEach(m => {
-        const status = getMachineStatus(m);
+        const st = getMachineStatus(m);
         const row = [
-          `"${m.os || ''}"`,
-          `"${m.equipe || ''}"`,
-          `"${m.cliente || ''}"`,
-          `"${m.maquina || ''}"`,
-          `"${m.linha || ''}"`,
-          `"${m.inicio || ''}"`,
-          `"${m.previsao || ''}"`,
-          `"${m.entregaReal || ''}"`,
-          `"${status}"`,
+          m.id,
+          `"${(m.os || '').replace(/"/g, '""')}"`,
+          `"${(m.equipe || '').replace(/"/g, '""')}"`,
+          `"${(m.cliente || '').replace(/"/g, '""')}"`,
+          `"${(m.maquina || '').replace(/"/g, '""')}"`,
+          `"${(m.linha || '').replace(/"/g, '""')}"`,
+          m.inicio || '',
+          m.previsao || '',
+          m.entregaReal || '',
+          `"${st}"`,
           `"${(m.obs || '').replace(/"/g, '""')}"`
         ];
-        csvContent += row.join(";") + "\n";
+        csv += row.join(';') + '\n';
       });
 
-      const encodedUri = encodeURI(csvContent);
-      const link = document.createElement("a");
-      link.setAttribute("href", encodedUri);
-      link.setAttribute("download", `cp_delta_producao_${new Date().toISOString().split('T')[0]}.csv`);
-      document.body.appendChild(link);
-      link.click();
-      link.remove();
+      const blob = new Blob(["\uFEFF" + csv], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `CP_DELTA_Relatorio_${new Date().toISOString().split('T')[0]}.csv`;
+      a.click();
+      setTimeout(() => URL.revokeObjectURL(url), 5000);
     }
 
     /* =================================================================
-       EQUIPAS
+       EQUIPAS & GESTÃO
        ================================================================= */
     function renderTeams() {
       const container = document.getElementById('teamsContainer');
       if (!container) return;
 
       if (appTeams.length === 0) {
-        container.innerHTML = '<p class="text-muted">Nenhuma equipa registada.</p>';
+        container.innerHTML = '<div style="color:var(--text-muted); padding:1rem;">Nenhuma equipa registada.</div>';
         return;
       }
 
       container.innerHTML = appTeams.map((t, idx) => {
-        const teamMachines = appMachines.filter(m => m.equipe === t.name);
-        const entregues = teamMachines.filter(m => getMachineStatus(m) === 'Entregue').length;
-        const andamento = teamMachines.filter(m => getMachineStatus(m) === 'Em andamento' || getMachineStatus(m) === 'Atrasado').length;
-
         const tagsHtml = (t.tags || []).map(tag => `<span class="team-badge-tag">${escapeHtml(tag)}</span>`).join('');
+        const activeCount = appMachines.filter(m => m.equipe === t.name && getMachineStatus(m) === 'Em andamento').length;
+        const deliveredCount = appMachines.filter(m => m.equipe === t.name && getMachineStatus(m) === 'Entregue').length;
 
         return `
-          <div class="kpi-card" style="display:flex; flex-direction:column; justify-content:space-between;">
-            <div>
-              <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:0.75rem;">
-                <h3 style="margin:0; font-size:1.05rem; color:#ffffff; font-weight:700;">${escapeHtml(t.name)}</h3>
-                <button class="btn-delta btn-slate btn-sm editor-only" onclick="editTeam(${idx})" title="Editar Equipa">✏️</button>
-              </div>
-              <div style="margin-bottom:1rem;">
-                ${tagsHtml || '<span style="font-size:0.72rem; color:var(--text-muted);">Sem tags</span>'}
+          <div class="teams-production-card" style="position:relative;">
+            <div style="display:flex; justify-content:space-between; align-items:start; margin-bottom:0.75rem;">
+              <h3 style="margin:0; font-size:1.05rem; color:#ffffff; font-weight:700;">${escapeHtml(t.name)}</h3>
+              <div class="editor-only" style="display:flex; gap:0.35rem;">
+                <button class="btn-delta btn-slate btn-sm" onclick="openTeamModal(${idx})" title="Editar">✏️</button>
+                <button class="btn-delta btn-danger btn-sm" onclick="deleteTeam(${idx})" title="Excluir">🗑️</button>
               </div>
             </div>
-            <div style="border-top:1px solid var(--border); padding-top:0.75rem; display:flex; justify-content:space-between; font-size:0.78rem; color:var(--text-muted);">
-              <span>Entregues: <strong style="color:#34d399;">${entregues}</strong></span>
-              <span>Em Andamento: <strong style="color:#60a5fa;">${andamento}</strong></span>
-              <span>Total: <strong style="color:#ffffff;">${teamMachines.length}</strong></span>
+            <div style="margin-bottom:1rem;">${tagsHtml}</div>
+            <div style="display:flex; justify-content:space-between; font-size:0.78rem; color:var(--text-muted); border-top:1px solid var(--border); padding-top:0.75rem;">
+              <span>⚙️ Em Andamento: <strong style="color:#60a5fa;">${activeCount}</strong></span>
+              <span>✅ Entregues: <strong style="color:#34d399;">${deliveredCount}</strong></span>
             </div>
           </div>
         `;
@@ -2584,7 +2609,7 @@ body {
       document.getElementById('teamEditIndex').value = idx;
       if (idx >= 0 && appTeams[idx]) {
         document.getElementById('teamModalTitle').textContent = 'Editar Equipa';
-        document.getElementById('teamNameInput').value = appTeams[idx].name;
+        document.getElementById('teamNameInput').value = appTeams[idx].name || '';
         document.getElementById('teamTagsInput').value = (appTeams[idx].tags || []).join(', ');
       } else {
         document.getElementById('teamModalTitle').textContent = 'Registar Nova Equipa';
@@ -2595,169 +2620,49 @@ body {
     }
 
     function closeTeamModal() {
-      document.getElementById('teamModal.classList').remove('open'); // fixed typo inline
       document.getElementById('teamModal').classList.remove('open');
     }
 
     function saveTeamSubmit() {
       const idx = parseInt(document.getElementById('teamEditIndex').value, 10);
       const name = document.getElementById('teamNameInput').value.trim();
-      const tagsRaw = document.getElementById('teamTagsInput').value.trim();
+      const tagsRaw = document.getElementById('teamTagsInput').value;
       const tags = tagsRaw ? tagsRaw.split(',').map(s => s.trim()).filter(Boolean) : [];
 
       if (!name) {
-        alert('Preencha o nome da equipa.');
+        alert('Insira o nome da equipa.');
         return;
       }
 
       if (idx >= 0 && appTeams[idx]) {
-        appTeams[idx].name = name;
-        appTeams[idx].tags = tags;
+        appTeams[idx] = { name, tags };
       } else {
         appTeams.push({ name, tags });
       }
 
       saveData();
-      populateTeamFilters();
-      renderTeams();
       closeTeamModal();
+      renderTeams();
+      populateTeamFilters();
+      updateDashboard();
+      updatePodio();
     }
 
-    function editTeam(idx) {
-      openTeamModal(idx);
-    }
-
-    /* =================================================================
-       DASHBOARD & KPIS
-       ================================================================= */
-    function updateDashboard() {
-      const total = appMachines.length;
-      const andamento = appMachines.filter(m => {
-        const st = getMachineStatus(m);
-        return st === 'Em andamento' || st === 'Atrasado';
-      }).length;
-
-      const mesRef = '2026-09';
-      const entreguesMes = appMachines.filter(m => m.entregaReal && m.entregaReal.startsWith(mesRef)).length;
-      const prevMes = appMachines.filter(m => m.previsao && m.previsao.startsWith(mesRef)).length;
-      const eficiencia = prevMes > 0 ? Math.min(100, Math.round((entreguesMes / prevMes) * 100)) : (entreguesMes > 0 ? 100 : 0);
-
-      document.getElementById('kpiTotal').textContent = total;
-      document.getElementById('kpiAndamento').textContent = andamento;
-      document.getElementById('kpiEntreguesMes').textContent = entreguesMes;
-      document.getElementById('kpiEficiencia').textContent = `${eficiencia}%`;
-
-      // Teams list in dashboard
-      const dashTeamsList = document.getElementById('dashTeamsList');
-      if (dashTeamsList) {
-        if (appTeams.length === 0) {
-          dashTeamsList.innerHTML = '<p class="text-muted">Sem equipas registadas.</p>';
-        } else {
-          dashTeamsList.innerHTML = appTeams.map(t => {
-            const tm = appMachines.filter(m => m.equipe === t.name);
-            const tEntregues = tm.filter(m => m.entregaReal && m.entregaReal.startsWith(mesRef)).length;
-            const tTotal = tm.length;
-            const pct = tTotal > 0 ? Math.round((tEntregues / tTotal) * 100) : 0;
-
-            return `
-              <div class="team-item">
-                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.45rem;">
-                  <strong style="color:#ffffff; font-size:0.9rem;">${escapeHtml(t.name)}</strong>
-                  <span style="font-size:0.76rem; color:var(--text-muted);">${tEntregues} entregues no mês (${tTotal} total)</span>
-                </div>
-                <div style="width:100%; height:6px; background:#07090e; border-radius:3px; overflow:hidden; border:1px solid var(--border);">
-                  <div style="width:${pct}%; height:100%; background:linear-gradient(90deg, #6366f1, #10b981);"></div>
-                </div>
-              </div>
-            `;
-          }).join('');
-        }
-      }
-
-      // Annual chart (2026)
-      const chartBox = document.getElementById('annualChartBox');
-      if (chartBox) {
-        const months = ['01', '02', '03', '04', '05', '06', '07', '08', '09', '10', '11', '12'];
-        const monthNames = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
-        
-        const counts = months.map(mo => {
-          const prefix = `2026-${mo}`;
-          return appMachines.filter(m => m.inicio && m.inicio.startsWith(prefix)).length;
-        });
-
-        const maxCount = Math.max(...counts, 5);
-
-        chartBox.innerHTML = months.map((mo, idx) => {
-          const val = counts[idx];
-          const heightPct = Math.round((val / maxCount) * 100);
-          return `
-            <div class="svg-bar-col">
-              <span class="svg-bar-val">${val}</span>
-              <div class="svg-bar" style="height: ${heightPct}%;" title="${monthNames[idx]}/2026: ${val} máquinas iniciadas"></div>
-              <span class="svg-bar-label">${monthNames[idx]}</span>
-            </div>
-          `;
-        }).join('');
+    function deleteTeam(idx) {
+      if (confirm(`Deseja excluir a equipa "${appTeams[idx].name}"?`)) {
+        appTeams.splice(idx, 1);
+        saveData();
+        renderTeams();
+        populateTeamFilters();
+        updateDashboard();
+        updatePodio();
       }
     }
 
     /* =================================================================
-       PODIUM & DESTAQUES
-       ================================================================= */
-    function updatePodio() {
-      const mesRef = '2026-09';
-      const teamStats = appTeams.map(t => {
-        const tm = appMachines.filter(m => m.equipe === t.name);
-        const entregues = tm.filter(m => m.entregaReal && m.entregaReal.startsWith(mesRef)).length;
-        const andamento = tm.filter(m => {
-          const st = getMachineStatus(m);
-          return st === 'Em andamento' || st === 'Atrasado';
-        }).length;
-        return { name: t.name, entregues, andamento, score: (entregues * 10) + andamento };
-      });
-
-      teamStats.sort((a, b) => b.score - a.score);
-
-      const podiumWrapper = document.getElementById('podiumWrapper');
-      if (podiumWrapper) {
-        const top3 = [
-          teamStats[1] || { name: '—', entregues: 0, andamento: 0 },
-          teamStats[0] || { name: '—', entregues: 0, andamento: 0 },
-          teamStats[2] || { name: '—', entregues: 0, andamento: 0 }
-        ];
-        const stepClasses = ['step-2', 'step-1', 'step-3'];
-        const medals = ['🥈', '🥇', '🥉'];
-        const titles = ['2º Lugar', '1º Lugar', '3º Lugar'];
-
-        podiumWrapper.innerHTML = top3.map((st, i) => `
-          <div class="podium-step ${stepClasses[i]}">
-            <div style="font-weight:700; color:#ffffff; font-size:0.9rem; margin-bottom:0.5rem;">${escapeHtml(st.name)}</div>
-            <div class="podium-pillar">
-              <div class="medal-icon">${medals[i]}</div>
-              <div style="font-size:0.75rem; color:var(--text-muted); text-transform:uppercase; font-weight:700;">${titles[i]}</div>
-              <div style="font-size:1.15rem; font-weight:800; color:#ffffff; margin-top:0.25rem;">${st.entregues} <span style="font-size:0.7rem; font-weight:normal; color:var(--text-muted);">entregues</span></div>
-            </div>
-          </div>
-        `).join('');
-      }
-
-      const tableBody = document.getElementById('podiumTableBody');
-      if (tableBody) {
-        tableBody.innerHTML = teamStats.map((st, i) => `
-          <tr>
-            <td><strong style="color:#818cf8;">#${i + 1}</strong></td>
-            <td><strong style="color:#ffffff;">${escapeHtml(st.name)}</strong></td>
-            <td><span style="color:#34d399; font-weight:700;">${st.entregues}</span></td>
-            <td><span style="color:#60a5fa; font-weight:600;">${st.andamento}</span></td>
-            <td><strong>${st.score} pts</strong></td>
-          </tr>
-        `).join('');
-      }
-    }
-
-    /* =================================================================
-       UTILIZADORES
-       ================================================================= */
+       UTILIZADORES & GESTÃO
+       ================================================================
+ */
     function renderUsers() {
       const tbody = document.getElementById('usersTableBody');
       if (!tbody) return;
@@ -2765,9 +2670,9 @@ body {
       tbody.innerHTML = appUsers.map((u, idx) => `
         <tr>
           <td><strong style="color:#ffffff;">${escapeHtml(u.email)}</strong></td>
-          <td><span class="pill-linha ${u.role === 'Administrador' ? 'pesada' : ''}">${escapeHtml(u.role)}</span></td>
+          <td><span class="badge-status status-andamento">${escapeHtml(u.role)}</span></td>
           <td style="text-align:right;">
-            ${appUsers.length > 1 ? `<button class="btn-delta btn-danger btn-sm editor-only" onclick="deleteUser(${idx})">🗑️ Excluir</button>` : ''}
+            ${idx > 0 ? `<button class="btn-delta btn-danger btn-sm editor-only" onclick="deleteUser(${idx})">🗑️ Excluir</button>` : '<span class="text-muted" style="font-size:0.75rem;">Sistema (Protegido)</span>'}
           </td>
         </tr>
       `).join('');
@@ -2788,7 +2693,6 @@ body {
     function saveNewUserSubmit() {
       const email = document.getElementById('newEditorEmail').value.trim();
       const pass = document.getElementById('newEditorPass').value;
-
       if (!email || !pass) {
         alert('Preencha o e-mail e a palavra-passe.');
         return;
@@ -2796,20 +2700,169 @@ body {
 
       appUsers.push({ email, pass, role: 'Editor' });
       saveData();
-      renderUsers();
       closeUserModal();
-      alert('Novo utilizador criado com sucesso!');
+      renderUsers();
+      alert('Utilizador criado com sucesso!');
     }
 
     function deleteUser(idx) {
-      if (appUsers.length <= 1) {
-        alert('Não é possível excluir o último utilizador do sistema.');
+      if (idx === 0) {
+        alert('Não é possível excluir o Administrador principal.');
         return;
       }
       if (confirm(`Deseja excluir o acesso de ${appUsers[idx].email}?`)) {
         appUsers.splice(idx, 1);
         saveData();
         renderUsers();
+      }
+    }
+
+    /* =================================================================
+       DASHBOARD & PODIUM LOGIC
+       ================================================================= */
+    function updateDashboard() {
+      document.getElementById('kpiTotal').textContent = appMachines.length;
+
+      const emAndamento = appMachines.filter(m => getMachineStatus(m) === 'Em andamento').length;
+      document.getElementById('kpiAndamento').textContent = emAndamento;
+
+      const mesRefStr = '2026-09';
+      const entreguesMes = appMachines.filter(m => {
+        const st = getMachineStatus(m);
+        return st === 'Entregue' && m.entregaReal && m.entregaReal.startsWith(mesRefStr);
+      }).length;
+
+      document.getElementById('kpiEntreguesMes').textContent = entreguesMes;
+
+      const prevMesCount = appMachines.filter(m => m.previsao && m.previsao.startsWith(mesRefStr)).length;
+      const eficiencia = prevMesCount > 0 ? Math.round((entreguesMes / prevMesCount) * 100) : (entreguesMes > 0 ? 100 : 0);
+      document.getElementById('kpiEficiencia').textContent = `${eficiencia}%`;
+
+      // Render dash teams list
+      const dashTeamsList = document.getElementById('dashTeamsList');
+      if (dashTeamsList) {
+        if (appTeams.length === 0) {
+          dashTeamsList.innerHTML = '<div style="color:var(--text-muted); font-size:0.82rem;">Sem equipas registadas.</div>';
+        } else {
+          dashTeamsList.innerHTML = appTeams.map(t => {
+            const teamMach = appMachines.filter(m => m.equipe === t.name);
+            const teamEntregues = teamMach.filter(m => getMachineStatus(m) === 'Entregue' && m.entregaReal && m.entregaReal.startsWith(mesRefStr)).length;
+            const teamAndamento = teamMach.filter(m => getMachineStatus(m) === 'Em andamento').length;
+            const teamTotal = teamMach.length;
+
+            return `
+              <div class="team-item">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.4rem;">
+                  <strong style="color:#ffffff; font-size:0.9rem;">${escapeHtml(t.name)}</strong>
+                  <span style="font-size:0.75rem; color:#818cf8; font-weight:700;">${teamTotal} total registado(s)</span>
+                </div>
+                <div style="display:flex; gap:1.25rem; font-size:0.78rem; color:var(--text-muted);">
+                  <span>✅ Entregues no mês: <strong style="color:#34d399;">${teamEntregues}</strong></span>
+                  <span>⚙️ Em Andamento: <strong style="color:#60a5fa;">${teamAndamento}</strong></span>
+                </div>
+              </div>
+            `;
+          }).join('');
+        }
+      }
+
+      // Annual chart (2026)
+      const annualChartBox = document.getElementById('annualChartBox');
+      if (annualChartBox) {
+        const meses = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
+        const counts = Array(12).fill(0);
+
+        appMachines.forEach(m => {
+          if (m.inicio && m.inicio.startsWith('2026-')) {
+            const mParts = m.inicio.split('-');
+            if (mParts.length === 3) {
+              const monthIdx = parseInt(mParts[1], 10) - 1;
+              if (monthIdx >= 0 && monthIdx < 12) {
+                counts[monthIdx]++;
+              }
+            }
+          }
+        });
+
+        const maxVal = Math.max(...counts, 5);
+
+        annualChartBox.innerHTML = meses.map((mes, idx) => {
+          const val = counts[idx];
+          const heightPct = Math.round((val / maxVal) * 100);
+          return `
+            <div class="svg-bar-col" title="${val} arranques em ${mes}/2026">
+              <div class="svg-bar-val">${val}</div>
+              <div class="svg-bar" style="height: ${Math.max(heightPct, 6)}%;"></div>
+              <div class="svg-bar-label">${mes}</div>
+            </div>
+          `;
+        }).join('');
+      }
+    }
+
+    function updatePodio() {
+      const mesRefStr = '2026-09';
+      const teamScores = appTeams.map(t => {
+        const delivered = appMachines.filter(m => m.equipe === t.name && getMachineStatus(m) === 'Entregue' && m.entregaReal && m.entregaReal.startsWith(mesRefStr)).length;
+        const active = appMachines.filter(m => m.equipe === t.name && getMachineStatus(m) === 'Em andamento').length;
+        return { name: t.name, delivered, active, score: (delivered * 10) + active };
+      });
+
+      teamScores.sort((a, b) => b.score - a.score);
+
+      const podiumWrapper = document.getElementById('podiumWrapper');
+      if (podiumWrapper) {
+        const top3 = [teamScores[1], teamScores[0], teamScores[2]].filter(Boolean);
+        const stepsConfig = [
+          { pos: 2, label: '2º Lugar', medal: '🥈', stepClass: 'step-2' },
+          { pos: 1, label: '1º Lugar', medal: '🥇', stepClass: 'step-1' },
+          { pos: 3, label: '3º Lugar', medal: '🥉', stepClass: 'step-3' }
+        ];
+
+        podiumWrapper.innerHTML = stepsConfig.map(cfg => {
+          const item = top3.find(t => {
+            if (cfg.pos === 1) return t === teamScores[0];
+            if (cfg.pos === 2) return t === teamScores[1];
+            return t === teamScores[2];
+          });
+
+          if (!item) {
+            return `
+              <div class="podium-step ${cfg.stepClass}">
+                <div class="podium-pillar">
+                  <div class="medal-icon">${cfg.medal}</div>
+                  <div style="font-weight:700; color:var(--text-muted); font-size:0.85rem;">—</div>
+                  <div style="font-size:0.75rem; color:var(--text-muted);">0 entregues</div>
+                </div>
+                <div style="margin-top:0.6rem; font-size:0.8rem; font-weight:700; color:var(--text-muted);">${cfg.label}</div>
+              </div>
+            `;
+          }
+
+          return `
+            <div class="podium-step ${cfg.stepClass}">
+              <div class="podium-pillar">
+                <div class="medal-icon">${cfg.medal}</div>
+                <div style="font-weight:700; color:#ffffff; font-size:0.92rem; margin-bottom:0.2rem;">${escapeHtml(item.name)}</div>
+                <div style="font-size:0.76rem; color:#34d399; font-weight:600;">${item.delivered} máquina(s)</div>
+              </div>
+              <div style="margin-top:0.6rem; font-size:0.85rem; font-weight:700; color:#818cf8;">${cfg.label}</div>
+            </div>
+          `;
+        }).join('');
+      }
+
+      const podiumTableBody = document.getElementById('podiumTableBody');
+      if (podiumTableBody) {
+        podiumTableBody.innerHTML = teamScores.map((ts, idx) => `
+          <tr>
+            <td><strong style="color:#ffffff;">#${idx + 1}</strong></td>
+            <td>${escapeHtml(ts.name)}</td>
+            <td><strong style="color:#34d399;">${ts.delivered}</strong></td>
+            <td><strong style="color:#60a5fa;">${ts.active}</strong></td>
+            <td><strong style="color:#818cf8;">${ts.score} pts</strong></td>
+          </tr>
+        `).join('');
       }
     }
   </script>
