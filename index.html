@@ -409,6 +409,11 @@ body {
   color: #fbbf24;
   border: 1px solid rgba(245, 158, 11, 0.3);
 }
+.status-atrasado {
+  background: rgba(239, 68, 68, 0.12);
+  color: #f87171;
+  border: 1px solid rgba(239, 68, 68, 0.3);
+}
 
 /* Linha Pill */
 .pill-linha {
@@ -822,6 +827,7 @@ body {
             <option value="Aguardando produção">Aguardando produção</option>
             <option value="Em andamento">Em andamento</option>
             <option value="Entregue">Entregue</option>
+            <option value="Atrasado">Atrasado</option>
           </select>
         </div>
         <div class="form-group">
@@ -1137,6 +1143,7 @@ body {
               <option value="Aguardando produção">Forçar: Aguardando produção</option>
               <option value="Em andamento">Forçar: Em andamento</option>
               <option value="Entregue">Forçar: Entregue</option>
+              <option value="Atrasado">Forçar: Atrasado</option>
             </select>
           </div>
 
@@ -1756,6 +1763,13 @@ body {
       if (item.entregaReal && item.entregaReal.trim() !== '') {
         return 'Entregue';
       }
+      // Regra de estado: se a data de previsão de entrega for maior que a data de hoje, o estado fica atrasado
+      if (item.previsao && item.previsao.trim() !== '') {
+        const hojeStr = new Date().toISOString().split('T')[0];
+        if (item.previsao > hojeStr) {
+          return 'Atrasado';
+        }
+      }
       if (item.inicio && item.inicio.trim() !== '') {
         return 'Em andamento';
       }
@@ -1767,6 +1781,8 @@ body {
         return `<span class="badge-status status-entregue">✓ Entregue</span>`;
       } else if (status === 'Em andamento') {
         return `<span class="badge-status status-andamento">⚙️ Em andamento</span>`;
+      } else if (status === 'Atrasado') {
+        return `<span class="badge-status status-atrasado">⚠️ Atrasado</span>`;
       }
       return `<span class="badge-status status-aguardando">⏳ Aguardando</span>`;
     }
@@ -2457,359 +2473,6 @@ body {
 
       const dashTeamsList = document.getElementById('dashTeamsList');
       const teamStats = {};
-      appTeams.forEach(t => {
-        teamStats[t.name] = { total: 0, entregues: 0, andamento: 0 };
-      });
-
-      appMachines.forEach(m => {
-        const eq = m.equipe || 'Sem Equipa';
-        if (!teamStats[eq]) {
-          teamStats[eq] = { total: 0, entregues: 0, andamento: 0 };
-        }
-        teamStats[eq].total++;
-        const st = getMachineStatus(m);
-        if (st === 'Entregue' && m.entregaReal && m.entregaReal.startsWith(filterPeriodVal)) {
-          teamStats[eq].entregues++;
-        }
-        if (st === 'Em andamento') {
-          teamStats[eq].andamento++;
-        }
-      });
-
-      dashTeamsList.innerHTML = Object.keys(teamStats).map(eqName => {
-        const st = teamStats[eqName];
-        return `
-          <div class="team-item">
-            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.35rem;">
-              <strong style="color:#ffffff; font-size:0.9rem;">${escapeHtml(eqName)}</strong>
-              <span class="badge-status status-andamento">${st.entregues} entregues no mês</span>
-            </div>
-            <div style="font-size:0.76rem; color:var(--text-muted); display:flex; gap:1rem;">
-              <span>Total registadas: <strong style="color:#e5e7eb;">${st.total}</strong></span>
-              <span>Em fabrico ativo: <strong style="color:#60a5fa;">${st.andamento}</strong></span>
-            </div>
-          </div>
-        `;
-      }).join('');
-
-      const annualBox = document.getElementById('annualChartBox');
-      const monthlyCounts = { '01':0, '02':0, '03':0, '04':0, '05':0, '06':0, '07':0, '08':0, '09':0, '10':0, '11':0, '12':0 };
-
-      appMachines.forEach(m => {
-        const dateToCheck = m.inicio || m.previsao || '';
-        if (dateToCheck && dateToCheck.startsWith('2026-')) {
-          const mPart = dateToCheck.substring(5, 7);
-          if (monthlyCounts[mPart] !== undefined) {
-            monthlyCounts[mPart]++;
-          }
-        }
-      });
-
-      const maxVal = Math.max(...Object.values(monthlyCounts), 5);
-      const shortMonths = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
-      const keys = ['01', '02', '03', '04', '05', '06', '07', '08', '09', '10', '11', '12'];
-
-      annualBox.innerHTML = keys.map((k, idx) => {
-        const val = monthlyCounts[k];
-        const heightPct = Math.max(12, Math.round((val / maxVal) * 100));
-        return `
-          <div class="svg-bar-col">
-            <div class="svg-bar-val">${val}</div>
-            <div class="svg-bar" style="height: ${heightPct}%;" title="${shortMonths[idx]}: ${val} máquinas"></div>
-            <div class="svg-bar-label">${shortMonths[idx]}</div>
-          </div>
-        `;
-      }).join('');
-    }
-
-    /* =================================================================
-       EQUIPAS, PODIO, UTILIZADORES & CONFIG
-       ================================================================= */
-    function renderTeams() {
-      const container = document.getElementById('teamsContainer');
-      container.innerHTML = appTeams.map((t, idx) => {
-        const tagsHtml = (t.tags || []).map(tag => `<span class="team-badge-tag">${escapeHtml(tag)}</span>`).join('');
-        return `
-          <div class="table-card" style="padding:1.35rem; display:flex; flex-direction:column; justify-content:space-between;">
-            <div>
-              <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:0.75rem;">
-                <h3 style="margin:0; font-size:1.05rem; color:#ffffff; font-weight:700;">👥 ${escapeHtml(t.name)}</h3>
-                <button class="btn-delta btn-slate btn-sm editor-only" onclick="openTeamModal(${idx})" title="Editar Equipa">✏️</button>
-              </div>
-              <div style="margin-bottom:1.25rem;">
-                ${tagsHtml || '<span style="font-size:0.75rem; color:var(--text-muted);">Sem tags</span>'}
-              </div>
-            </div>
-            <div style="border-top:1px solid var(--border); padding-top:0.75rem; font-size:0.76rem; color:var(--text-muted); display:flex; justify-content:space-between;">
-              <span>Membros / Responsáveis</span>
-              <span style="color:#818cf8; font-weight:600;">Ativo</span>
-            </div>
-          </div>
-        `;
-      }).join('');
-      setupPermissions();
-    }
-
-    function openTeamModal(index = -1) {
-      document.getElementById('teamEditIndex').value = index;
-      if (index >= 0 && appTeams[index]) {
-        document.getElementById('teamModalTitle').textContent = 'Editar Equipa';
-        document.getElementById('teamNameInput').value = appTeams[index].name || '';
-        document.getElementById('teamTagsInput').value = (appTeams[index].tags || []).join(', ');
-      } else {
-        document.getElementById('teamModalTitle').textContent = 'Registar Nova Equipa';
-        document.getElementById('teamNameInput').value = '';
-        document.getElementById('teamTagsInput').value = '';
-      }
-      document.getElementById('teamModal').classList.add('open');
-    }
-
-    function closeTeamModal() {
-      document.getElementById('teamModal').classList.remove('open');
-    }
-
-    function saveTeamSubmit() {
-      const index = parseInt(document.getElementById('teamEditIndex').value, 10);
-      const name = document.getElementById('teamNameInput').value.trim();
-      const tagsStr = document.getElementById('teamTagsInput').value.trim();
-      const tags = tagsStr ? tagsStr.split(',').map(s => s.trim()).filter(Boolean) : [];
-
-      if (!name) {
-        alert('Por favor, informe o nome da equipa.');
-        return;
-      }
-
-      if (index >= 0 && appTeams[index]) {
-        appTeams[index] = { name, tags };
-      } else {
-        appTeams.push({ name, tags });
-      }
-
-      saveData();
-      populateTeamFilters();
-      renderTeams();
-      closeTeamModal();
-    }
-
-    function updatePodio() {
-      const filterPeriodVal = document.getElementById('filterPeriod').value || '2026-09';
-      const teamCounts = {};
-
-      appTeams.forEach(t => teamCounts[t.name] = { entregues: 0, andamento: 0 });
-
-      appMachines.forEach(m => {
-        const eq = m.equipe || 'Outros';
-        if (!teamCounts[eq]) teamCounts[eq] = { entregues: 0, andamento: 0 };
-        const st = getMachineStatus(m);
-        if (st === 'Entregue' && m.entregaReal && m.entregaReal.startsWith(filterPeriodVal)) {
-          teamCounts[eq].entregues++;
-        }
-        if (st === 'Em andamento') {
-          teamCounts[eq].andamento++;
-        }
-      });
-
-      const sortedTeams = Object.keys(teamCounts).map(name => ({
-        name,
-        entregues: teamCounts[name].entregues,
-        andamento: teamCounts[name].andamento,
-        score: teamCounts[name].entregues * 10 + teamCounts[name].andamento
-      })).sort((a, b) => b.score - a.score);
-
-      const podiumWrapper = document.getElementById('podiumWrapper');
-      const step1 = sortedTeams[0] || { name: '—', entregues: 0 };
-      const step2 = sortedTeams[1] || { name: '—', entregues: 0 };
-      const step3 = sortedTeams[2] || { name: '—', entregues: 0 };
-
-      podiumWrapper.innerHTML = `
-        <div class="podium-step step-2">
-          <div style="font-weight:700; color:#9ca3af; margin-bottom:0.5rem; font-size:0.9rem;">2º Lugar</div>
-          <div class="podium-pillar">
-            <div class="medal-icon">🥈</div>
-            <div style="font-weight:700; color:#ffffff; font-size:0.9rem; margin-bottom:0.3rem;">${escapeHtml(step2.name)}</div>
-            <div style="font-size:0.75rem; color:#d1d5db;">${step2.entregues} entregues</div>
-          </div>
-        </div>
-
-        <div class="podium-step step-1">
-          <div style="font-weight:800; color:#f59e0b; margin-bottom:0.5rem; font-size:1.05rem;">1º Lugar 🥇</div>
-          <div class="podium-pillar">
-            <div class="medal-icon">🥇</div>
-            <div style="font-weight:800; color:#ffffff; font-size:1rem; margin-bottom:0.3rem;">${escapeHtml(step1.name)}</div>
-            <div style="font-size:0.8rem; color:#fde047; font-weight:700;">${step1.entregues} entregues</div>
-          </div>
-        </div>
-
-        <div class="podium-step step-3">
-          <div style="font-weight:700; color:#b45309; margin-bottom:0.5rem; font-size:0.9rem;">3º Lugar</div>
-          <div class="podium-pillar">
-            <div class="medal-icon">🥉</div>
-            <div style="font-weight:700; color:#ffffff; font-size:0.9rem; margin-bottom:0.3rem;">${escapeHtml(step3.name)}</div>
-            <div style="font-size:0.75rem; color:#d1d5db;">${step3.entregues} entregues</div>
-          </div>
-        </div>
-      `;
-
-      const podiumTableBody = document.getElementById('podiumTableBody');
-      podiumTableBody.innerHTML = sortedTeams.map((t, idx) => `
-        <tr>
-          <td><strong style="color:${idx === 0 ? '#f59e0b' : (idx === 1 ? '#9ca3af' : '#b45309')};">${idx + 1}º</strong></td>
-          <td><strong style="color:#ffffff;">${escapeHtml(t.name)}</strong></td>
-          <td><span style="color:#34d399; font-weight:700;">${t.entregues}</span></td>
-          <td><span style="color:#60a5fa;">${t.andamento}</span></td>
-          <td><strong>${t.score} pts</strong></td>
-        </tr>
-      `).join('');
-    }
-
-    function renderUsers() {
-      const tbody = document.getElementById('usersTableBody');
-      tbody.innerHTML = appUsers.map((u, idx) => `
-        <tr>
-          <td><strong style="color:#ffffff;">${escapeHtml(u.email)}</strong></td>
-          <td><span class="pill-linha" style="border-color:rgba(99,102,241,0.3); color:#c7d2fe; background:rgba(99,102,241,0.1);">${escapeHtml(u.role)}</span></td>
-          <td style="text-align:right;">
-            ${appUsers.length > 1 ? `<button class="btn-delta btn-danger btn-sm editor-only" onclick="deleteUser(${idx})">🗑️ Excluir</button>` : '<span style="font-size:0.75rem; color:var(--text-muted);">Protegido</span>'}
-          </td>
-        </tr>
-      `).join('');
-      setupPermissions();
-    }
-
-    function openUserModal() {
-      document.getElementById('newEditorEmail').value = '';
-      document.getElementById('newEditorPass').value = '';
-      document.getElementById('userModal').classList.add('open');
-    }
-
-    function closeUserModal() {
-      document.getElementById('userModal').classList.remove('open');
-    }
-
-    function saveNewUserSubmit() {
-      const email = document.getElementById('newEditorEmail').value.trim();
-      const pass = document.getElementById('newEditorPass').value;
-
-      if (!email || !pass) {
-        alert('Preencha o e-mail e a palavra-passe.');
-        return;
-      }
-
-      appUsers.push({ email, pass, role: 'Editor' });
-      saveData();
-      renderUsers();
-      closeUserModal();
-      alert('Novo utilizador criado com sucesso!');
-    }
-
-    function deleteUser(idx) {
-      if (appUsers.length <= 1) {
-        alert('Não pode excluir o último utilizador do sistema.');
-        return;
-      }
-      if (confirm(`Deseja excluir o acesso de ${appUsers[idx].email}?`)) {
-        appUsers.splice(idx, 1);
-        saveData();
-        renderUsers();
-      }
-    }
-
-    function openConfigModal() {
-      document.getElementById('geminiApiKeyInput').value = geminiApiKey;
-      document.getElementById('configModal').classList.add('open');
-    }
-
-    function closeConfigModal() {
-      document.getElementById('configModal').classList.remove('open');
-    }
-
-    function saveGeminiKey() {
-      const key = document.getElementById('geminiApiKeyInput').value.trim();
-      geminiApiKey = key;
-      localStorage.setItem(STORAGE_KEYS.GEMINI_KEY, key);
-      checkGeminiBanner();
-      alert('Chave da API Gemini guardada com sucesso!');
-      closeConfigModal();
-    }
-
-    function checkGeminiBanner() {
-      const banner = document.getElementById('geminiAlertBanner');
-      if (banner) {
-        if (geminiApiKey && geminiApiKey.length > 10) {
-          banner.style.display = 'none';
-        } else {
-          banner.style.display = 'flex';
-        }
-      }
-    }
-
-    function exportBackup() {
-      const backupData = {
-        machines: appMachines,
-        teams: appTeams,
-        users: appUsers,
-        exportDate: new Date().toISOString()
-      };
-      const blob = new Blob([JSON.stringify(backupData, null, 2)], { type: 'application/json' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `delta-backup-${new Date().toISOString().split('T')[0]}.json`;
-      a.click();
-      setTimeout(() => URL.revokeObjectURL(url), 5000);
-    }
-
-    async function importBackup(e) {
-      const file = e.target.files[0];
-      if (!file) return;
-      const reader = new FileReader();
-      reader.onload = async (evt) => {
-        try {
-          const parsed = JSON.parse(evt.target.result);
-          if (parsed.machines) appMachines = parsed.machines;
-          if (parsed.teams) appTeams = parsed.teams;
-          if (parsed.users) appUsers = parsed.users;
-          await saveData();
-          populateTeamFilters();
-          renderTable();
-          updateDashboard();
-          renderTeams();
-          updatePodio();
-          renderUsers();
-          alert('Cópia de segurança restaurada com sucesso!');
-        } catch (err) {
-          alert('Erro ao processar ficheiro de backup JSON.');
-        }
-      };
-      reader.readAsText(file);
-    }
-
-    function exportCSV() {
-      let csv = 'OS;Equipe;Cliente;Maquina;Linha;Inicio;Previsao;EntregaReal;Estado;Observacoes\n';
-      appMachines.forEach(m => {
-        const row = [
-          `"${m.os || ''}"`,
-          `"${m.equipe || ''}"`,
-          `"${m.cliente || ''}"`,
-          `"${m.maquina || ''}"`,
-          `"${m.linha || ''}"`,
-          `"${m.inicio || ''}"`,
-          `"${m.previsao || ''}"`,
-          `"${m.entregaReal || ''}"`,
-          `"${getMachineStatus(m)}"`,
-          `"${(m.obs || '').replace(/"/g, '""')}"`
-        ];
-        csv += row.join(';') + '\n';
-      });
-
-      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `delta-producao-${new Date().toISOString().split('T')[0]}.csv`;
-      a.click();
-      setTimeout(() => URL.revokeObjectURL(url), 5000);
-    }
   </script>
 </body>
 </html>
