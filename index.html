@@ -7,6 +7,107 @@
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/basecoat-css@1.0.2/dist/basecoat.cdn.min.css">
   <style>
+/* Skip artifact shell — fixed styles served beside every artifact.
+   Complements basecoat; artifacts override --accent for their own identity. */
+:root {
+  color-scheme: light dark;
+  --accent: #2563eb;
+  --accent-contrast: #ffffff;
+  --accent-text: color-mix(in srgb, var(--accent) 72%, #000);
+  --bg: #f8f9fb;
+  --surface: #ffffff;
+  --text: #14171f;
+  --text-muted: #5b6472;
+  --border: rgba(20, 23, 31, 0.10);
+  --radius: 10px;
+  --shadow: 0 1px 3px rgba(20, 23, 31, 0.08);
+  --space: 16px;
+}
+@media (prefers-color-scheme: dark) {
+  :root:where(:not([data-theme="light"])) {
+    --accent-text: color-mix(in srgb, var(--accent) 78%, #fff);
+    --bg: #101318;
+    --surface: #181c23;
+    --text: #eef1f6;
+    --text-muted: #9aa4b2;
+    --border: rgba(238, 241, 246, 0.12);
+    --shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
+  }
+}
+:root:where([data-theme="dark"]) {
+  color-scheme: dark;
+  --accent-text: color-mix(in srgb, var(--accent) 78%, #fff);
+  --bg: #101318;
+  --surface: #181c23;
+  --text: #eef1f6;
+  --text-muted: #9aa4b2;
+  --border: rgba(238, 241, 246, 0.12);
+  --shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
+}
+:root:where([data-theme="light"]) { color-scheme: light; }
+* { box-sizing: border-box; }
+html, body { margin: 0; padding: 0; }
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  line-height: 1.55;
+  -webkit-font-smoothing: antialiased;
+}
+img { max-width: 100%; display: block; }
+
+.shell-container { max-width: 1100px; margin: 0 auto; padding: 0 20px; }
+.shell-section { padding: calc(var(--space) * 2) 0; }
+.shell-grid { display: grid; gap: var(--space); grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); }
+.shell-toolbar { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin-bottom: var(--space); }
+.shell-footer { padding: 24px 0 40px; color: var(--text-muted); font-size: 13px; }
+
+.shell-hero { padding: calc(var(--space) * 3) 0 calc(var(--space) * 2); }
+.shell-hero h1 { font-size: clamp(26px, 4vw, 40px); line-height: 1.15; margin: 0 0 10px; text-wrap: balance; }
+.shell-hero p { color: var(--text-muted); max-width: 60ch; margin: 0; }
+
+.panel {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: var(--space);
+}
+
+.kpi { display: flex; flex-direction: column; gap: 4px; }
+.kpi .kpi-value { font-size: 28px; font-weight: 650; line-height: 1.1; }
+.kpi .kpi-label { font-size: 13px; color: var(--text-muted); }
+.kpi .kpi-delta { font-size: 12.5px; font-weight: 600; }
+.kpi .kpi-delta.up { color: #0a8f3c; }
+.kpi .kpi-delta.down { color: #cf3131; }
+
+table.shell-table { border-collapse: collapse; width: 100%; font-size: 14px; }
+table.shell-table th {
+  text-align: left; font-size: 11.5px; letter-spacing: 0.05em; text-transform: uppercase;
+  color: var(--text-muted); font-weight: 600;
+}
+table.shell-table th, table.shell-table td { padding: 9px 12px 9px 0; border-bottom: 1px solid var(--border); }
+table.shell-table td.num, table.shell-table th.num { text-align: right; font-variant-numeric: tabular-nums; }
+table.shell-table tbody tr:hover { background: color-mix(in srgb, var(--accent) 6%, transparent); }
+
+.chart-box { width: 100%; min-height: 220px; }
+.chart-box svg { width: 100%; height: auto; display: block; }
+
+.muted { color: var(--text-muted); }
+.accent { color: var(--accent-text); }
+.shell-badge {
+  display: inline-flex; align-items: center; gap: 6px;
+  font-size: 12px; font-weight: 600; padding: 3px 10px; border-radius: 999px;
+  background: color-mix(in srgb, var(--accent) 12%, transparent); color: var(--accent-text);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .shell-fade { animation: shell-fade 400ms ease both; }
+  @keyframes shell-fade { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+}
+</style>
+  
+  <style>
     :root {
       --accent: #6366f1;
       --accent-contrast: #ffffff;
@@ -67,6 +168,7 @@
       font-weight: 700;
       margin: 0;
       color: #f8fafc;
+      letter-spacing: -0.01em;
     }
     .brand-titles p {
       font-size: 0.78rem;
@@ -138,7 +240,9 @@
       white-space: nowrap;
       transition: all 0.15s ease;
     }
-    .tab-button:hover { color: #f1f5f9; }
+    .tab-button:hover {
+      color: #f1f5f9;
+    }
     .tab-button.active {
       color: #818cf8;
       border-bottom-color: #6366f1;
@@ -225,6 +329,7 @@
       border-radius: 6px;
       font-size: 0.84rem;
       outline: none;
+      transition: border-color 0.15s;
       width: 100%;
       box-sizing: border-box;
     }
@@ -249,7 +354,10 @@
       overflow: hidden;
       box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
     }
-    .table-scroll { overflow-x: auto; max-width: 100%; }
+    .table-scroll {
+      overflow-x: auto;
+      max-width: 100%;
+    }
     .delta-table {
       width: 100%;
       border-collapse: collapse;
@@ -273,8 +381,12 @@
       color: #cbd5e1;
       vertical-align: middle;
     }
-    .delta-table tbody tr:hover { background-color: #172554; }
-    .delta-table tr.selected-row { background-color: rgba(99, 102, 241, 0.12); }
+    .delta-table tbody tr:hover {
+      background-color: #172554;
+    }
+    .delta-table tr.selected-row {
+      background-color: rgba(99, 102, 241, 0.12);
+    }
 
     .badge-status {
       display: inline-flex;
@@ -353,8 +465,10 @@
 
     .modal-overlay {
       position: fixed; top: 0; left: 0; right: 0; bottom: 0;
-      background: rgba(2, 6, 23, 0.85); backdrop-filter: blur(4px);
-      display: none; align-items: center; justify-content: center; z-index: 100; padding: 1rem;
+      background: rgba(2, 6, 23, 0.85);
+      backdrop-filter: blur(4px);
+      display: none; align-items: center; justify-content: center;
+      z-index: 100; padding: 1rem;
     }
     .modal-overlay.open { display: flex; }
     .modal-dialog {
@@ -365,7 +479,8 @@
     .modal-dialog.wide { max-width: 1050px; }
     .modal-header { padding: 1.25rem 1.5rem; border-bottom: 1px solid #1e293b; display: flex; align-items: center; justify-content: space-between; }
     .modal-header h3 { margin: 0; font-size: 1.1rem; color: #f8fafc; }
-    .modal-close { background: transparent; border: none; color: #94a3b8; font-size: 1.3rem; cursor: pointer; }
+    .modal-close { background: transparent; border: none; color: #94a3b8; font-size: 1.3rem; cursor: pointer; line-height: 1; }
+    .modal-close:hover { color: #f8fafc; }
     .modal-body { padding: 1.5rem; }
     .modal-footer { padding: 1rem 1.5rem; border-top: 1px solid #1e293b; display: flex; justify-content: flex-end; gap: 0.75rem; background: #090e1a; border-radius: 0 0 16px 16px; }
 
@@ -373,14 +488,13 @@
       background: #1e293b; border: 1px solid #334155; color: #f8fafc;
       padding: 0.25rem 0.4rem; border-radius: 4px; font-size: 0.75rem; width: 100%; box-sizing: border-box;
     }
+    .preview-input:focus { border-color: #6366f1; }
+
     .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
     @media (max-width: 640px) { .grid-2 { grid-template-columns: 1fr; } }
 
     .teams-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 1.25rem; }
-    .team-badge-tag {
-      background: #1e293b; color: #cbd5e1; border: 1px solid #334155;
-      padding: 0.2rem 0.5rem; border-radius: 9999px; font-size: 0.72rem; display: inline-block; margin-right: 0.35rem; margin-bottom: 0.35rem;
-    }
+    .team-badge-tag { background: #1e293b; color: #cbd5e1; border: 1px solid #334155; padding: 0.2rem 0.5rem; border-radius: 9999px; font-size: 0.72rem; display: inline-block; margin-right: 0.35rem; margin-bottom: 0.35rem; }
 
     .hidden { display: none !important; }
     .text-muted { color: #94a3b8; }
@@ -393,7 +507,7 @@
       gap: 0.8rem; padding-top: 1.5rem; box-sizing: border-box; border-bottom: 1px solid #334155;
     }
     .svg-bar-col { flex: 1; display: flex; flex-direction: column; align-items: center; height: 100%; justify-content: flex-end; position: relative; }
-    .svg-bar { width: 80%; max-width: 38px; background: linear-gradient(180deg, #6366f1 0%, #4338ca 100%); border-radius: 6px 6px 0 0; min-height: 4px; }
+    .svg-bar { width: 80%; max-width: 38px; background: linear-gradient(180deg, #6366f1 0%, #4338ca 100%); border-radius: 6px 6px 0 0; transition: height 0.4s ease; min-height: 4px; }
     .svg-bar-val { font-size: 0.72rem; color: #94a3b8; margin-bottom: 0.3rem; font-weight: 600; }
     .svg-bar-label { font-size: 0.7rem; color: #64748b; margin-top: 0.4rem; white-space: nowrap; }
   </style>
@@ -419,16 +533,20 @@
           <span class="status-dot"></span>
           <span>Online</span>
         </div>
-        <div class="meta-tag" id="clockEl">⏱️ 00:00:00</div>
+        <div class="meta-tag" id="clockEl">
+          ⏱️ 00:00:00
+        </div>
         <div class="meta-tag" style="background:#131c31;">
           👤 <span id="currentUserLabel" style="font-weight:600;">Administrador</span>
         </div>
-        <button id="authBtn" class="btn-delta btn-slate btn-sm" onclick="toggleAuthModal()">Entrar</button>
+        <button id="authBtn" class="btn-delta btn-slate btn-sm" onclick="toggleAuthModal()">
+          Entrar
+        </button>
       </div>
     </div>
   </header>
 
-  <!-- Warning Banner -->
+  <!-- Gemini Key Warning Banner -->
   <div id="geminiAlertBanner" class="gemini-alert">
     <span>⚠️ <strong>Atenção:</strong> Chave da API do Gemini necessária para leitura inteligente de PDFs de OS.</span>
     <button class="btn-delta btn-amber btn-sm" onclick="openConfigModal()">Configurar Chave</button>
@@ -437,11 +555,21 @@
   <!-- Navigation Tabs -->
   <nav class="tabs-nav-container">
     <div class="tabs-nav">
-      <button class="tab-button active" onclick="switchTab('acompanhamento')">📋 Acompanhamento</button>
-      <button class="tab-button" onclick="switchTab('dashboard')">📊 Dashboard</button>
-      <button class="tab-button" onclick="switchTab('equipas')">👥 Equipas</button>
-      <button class="tab-button" onclick="switchTab('destaques')">🏆 Destaques</button>
-      <button class="tab-button" onclick="switchTab('usuarios')">🔐 Utilizadores</button>
+      <button class="tab-button active" onclick="switchTab('acompanhamento')">
+        📋 Acompanhamento
+      </button>
+      <button class="tab-button" onclick="switchTab('dashboard')">
+        📊 Dashboard
+      </button>
+      <button class="tab-button" onclick="switchTab('equipas')">
+        👥 Equipas
+      </button>
+      <button class="tab-button" onclick="switchTab('destaques')">
+        🏆 Destaques
+      </button>
+      <button class="tab-button" onclick="switchTab('usuarios')">
+        🔐 Utilizadores
+      </button>
     </div>
   </nav>
 
@@ -450,6 +578,7 @@
 
     <!-- TAB 1: ACOMPANHAMENTO -->
     <section id="tab-acompanhamento">
+      <!-- Filter Bar -->
       <div class="filters-box">
         <div class="form-group">
           <label>Período (Mês / Ano)</label>
@@ -484,34 +613,57 @@
           </select>
         </div>
         <div class="form-group">
-          <button class="btn-delta btn-slate" onclick="clearFilters()" style="margin-top:auto;">🧹 Limpar Filtros</button>
+          <button class="btn-delta btn-slate" onclick="clearFilters()" style="margin-top:auto;">
+            🧹 Limpar Filtros
+          </button>
         </div>
       </div>
 
+      <!-- Action Bar -->
       <div class="action-bar">
         <div class="action-group">
-          <button class="btn-delta btn-indigo editor-only" onclick="openMachineModal()">➕ Registar Máquina</button>
-          <button class="btn-delta btn-emerald editor-only" onclick="openMultiImportModal()">🚀 Importar várias OS (IA)</button>
-          <button class="btn-delta btn-danger editor-only" onclick="deleteSelectedMachines()">🗑️ Excluir Selecionados</button>
+          <button class="btn-delta btn-indigo editor-only" onclick="openMachineModal()">
+            ➕ Registar Máquina
+          </button>
+          <button class="btn-delta btn-emerald editor-only" onclick="openMultiImportModal()">
+            🚀 Importar várias OS (IA)
+          </button>
+          <button class="btn-delta btn-danger editor-only" onclick="deleteSelectedMachines()">
+            🗑️ Excluir Selecionados
+          </button>
         </div>
         <div class="action-group">
-          <button class="btn-delta btn-slate" onclick="syncData()">🔄 Sincronizar</button>
-          <button class="btn-delta btn-slate" onclick="exportCSV()">📥 Exportar CSV</button>
-          <button class="btn-delta btn-slate" onclick="openConfigModal()">⚙️ Definições &amp; Backup</button>
+          <button class="btn-delta btn-slate" onclick="syncData()">
+            🔄 Sincronizar
+          </button>
+          <button class="btn-delta btn-slate" onclick="exportCSV()">
+            📥 Exportar CSV
+          </button>
+          <button class="btn-delta btn-slate" onclick="openConfigModal()">
+            ⚙️ Definições &amp; Backup
+          </button>
         </div>
       </div>
 
+      <!-- Table count badges -->
       <div class="table-info-bar">
-        <div><span class="meta-tag" id="countShowing">Mostrando 0 de 0 máquinas</span></div>
-        <div><span class="meta-tag" id="countTotalBadge">Total de Registos: 0</span></div>
+        <div>
+          <span class="meta-tag" id="countShowing">Mostrando 0 de 0 máquinas</span>
+        </div>
+        <div>
+          <span class="meta-tag" id="countTotalBadge">Total de Registos: 0</span>
+        </div>
       </div>
 
+      <!-- Machines Table -->
       <div class="table-card">
         <div class="table-scroll">
           <table class="delta-table" id="machinesTable">
             <thead>
               <tr>
-                <th style="width: 35px; text-align:center;"><input type="checkbox" id="selectAllCheckbox" onchange="toggleSelectAll(this)"></th>
+                <th style="width: 35px; text-align:center;">
+                  <input type="checkbox" id="selectAllCheckbox" onchange="toggleSelectAll(this)">
+                </th>
                 <th>Equipa</th>
                 <th>Cliente</th>
                 <th>Máquina CNC</th>
@@ -525,7 +677,9 @@
                 <th style="text-align:right;">Ações</th>
               </tr>
             </thead>
-            <tbody id="machinesTableBody"></tbody>
+            <tbody id="machinesTableBody">
+              <!-- Rendered via JS -->
+            </tbody>
           </table>
         </div>
       </div>
@@ -566,8 +720,12 @@
         </div>
 
         <div class="teams-production-card">
-          <h3 style="margin-top:0; margin-bottom:0.5rem; font-size:1rem; color:#f8fafc;">📈 Arranques de Produção Anual (2026)</h3>
-          <p style="font-size:0.75rem; color:#94a3b8; margin-top:0; margin-bottom:1rem;">Evolução de novas máquinas iniciadas ao longo dos meses</p>
+          <h3 style="margin-top:0; margin-bottom:0.5rem; font-size:1rem; color:#f8fafc;">
+            📈 Arranques de Produção Anual (2026)
+          </h3>
+          <p style="font-size:0.75rem; color:#94a3b8; margin-top:0; margin-bottom:1rem;">
+            Evolução de novas máquinas iniciadas ao longo dos meses
+          </p>
           <div class="svg-chart-container" id="annualChartBox"></div>
         </div>
       </div>
@@ -577,7 +735,9 @@
     <section id="tab-equipas" class="hidden">
       <div class="action-bar">
         <h2 style="font-size:1.15rem; margin:0; color:#f8fafc;">Equipas de Fabrico &amp; Montagem</h2>
-        <button class="btn-delta btn-indigo editor-only" onclick="openTeamModal()">➕ Registar Nova Equipa</button>
+        <button class="btn-delta btn-indigo editor-only" onclick="openTeamModal()">
+          ➕ Registar Nova Equipa
+        </button>
       </div>
       <div class="teams-grid" id="teamsContainer"></div>
     </section>
@@ -586,9 +746,13 @@
     <section id="tab-destaques" class="hidden">
       <div style="text-align:center; max-width:600px; margin:0 auto;">
         <h2 style="font-size:1.4rem; color:#f8fafc; margin-bottom:0.3rem;">🏆 Pódio de Eficiência do Mês</h2>
-        <p style="color:#94a3b8; font-size:0.85rem;">Equipas com maior volume de máquinas CNC entregues no mês.</p>
+        <p style="color:#94a3b8; font-size:0.85rem;">
+          Equipas com maior volume de máquinas CNC entregues no mês de <span class="dashMonthName" style="color:#818cf8; font-weight:600;">Setembro/2026</span>.
+        </p>
       </div>
+
       <div class="podium-container" id="podiumWrapper"></div>
+
       <div class="table-card" style="max-width:850px; margin:2rem auto 0;">
         <div style="padding:1rem 1.25rem; border-bottom:1px solid #1e293b;">
           <h3 style="margin:0; font-size:0.95rem; color:#f8fafc;">Quadro Geral de Desempenho</h3>
@@ -612,8 +776,11 @@
     <section id="tab-usuarios" class="hidden">
       <div class="action-bar">
         <h2 style="font-size:1.15rem; margin:0; color:#f8fafc;">Gestão de Acessos &amp; Utilizadores</h2>
-        <button class="btn-delta btn-indigo editor-only" onclick="openUserModal()">➕ Registar Novo Editor</button>
+        <button class="btn-delta btn-indigo editor-only" onclick="openUserModal()">
+          ➕ Registar Novo Editor
+        </button>
       </div>
+
       <div class="table-card" style="max-width:800px;">
         <table class="delta-table">
           <thead>
@@ -677,10 +844,12 @@
               <select id="machTeam" class="input-delta" required></select>
             </div>
           </div>
+
           <div class="form-group" style="margin-bottom:1rem;">
             <label>Cliente</label>
             <input type="text" id="machClient" class="input-delta" placeholder="Razão social ou Nome" required>
           </div>
+
           <div class="grid-2" style="margin-bottom:1rem;">
             <div class="form-group">
               <label>Modelo da Máquina</label>
@@ -695,6 +864,7 @@
               </select>
             </div>
           </div>
+
           <div class="form-group" style="margin-bottom:1rem;">
             <label>Regra de Estado</label>
             <select id="machStatusManual" class="input-delta">
@@ -704,6 +874,7 @@
               <option value="Entregue">Forçar: Entregue</option>
             </select>
           </div>
+
           <div class="grid-2" style="margin-bottom:1rem;">
             <div class="form-group">
               <label>Data de Início</label>
@@ -714,19 +885,23 @@
               <input type="date" id="machForecast" class="input-delta">
             </div>
           </div>
+
           <div class="form-group" style="margin-bottom:1rem;">
             <label>Entrega Real Concluída</label>
             <input type="date" id="machReal" class="input-delta">
           </div>
+
           <div class="form-group" style="margin-bottom:1rem;">
             <label>Observações Técnicas</label>
-            <textarea id="machNotes" class="input-delta" rows="2" placeholder="Especificações, opcionais..."></textarea>
+            <textarea id="machNotes" class="input-delta" rows="2" placeholder="Especificações, opcionais, motorização..."></textarea>
           </div>
+
           <div class="form-group" style="margin-bottom:0.5rem;">
             <label>Ficheiro PDF da Ordem de Serviço (Opcional)</label>
             <input type="file" id="machPdf" class="input-delta" accept="application/pdf">
             <span id="machPdfStatus" style="font-size:0.75rem; color:#94a3b8; margin-top:0.25rem;"></span>
           </div>
+
           <div class="modal-footer" style="padding:1rem 0 0; background:transparent;">
             <button type="button" class="btn-delta btn-slate" onclick="closeMachineModal()">Cancelar</button>
             <button type="submit" class="btn-delta btn-indigo">Guardar Máquina</button>
@@ -744,32 +919,50 @@
           <span style="font-size:1.3rem;">🚀</span>
           <div>
             <h3 style="margin:0;">Importar Múltiplas OS com Inteligência Artificial</h3>
-            <p style="margin:0; font-size:0.76rem; color:#94a3b8;">Selecione vários ficheiros PDF de OS para extração estruturada automática via Google Gemini</p>
+            <p style="margin:0; font-size:0.76rem; color:#94a3b8;">
+              Selecione vários ficheiros PDF de OS para extração estruturada automática via Google Gemini
+            </p>
           </div>
         </div>
         <button class="modal-close" onclick="closeMultiImportModal()">&times;</button>
       </div>
+
       <div class="modal-body">
         <div style="background:#162036; border:1px dashed #3b82f6; border-radius:12px; padding:1.25rem; margin-bottom:1.25rem;">
           <div style="display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:1rem;">
             <div style="flex:1; min-width:250px;">
-              <label style="font-size:0.8rem; font-weight:600; color:#cbd5e1; display:block; margin-bottom:0.35rem;">Carregar Ficheiros PDF de Ordens de Serviço:</label>
+              <label style="font-size:0.8rem; font-weight:600; color:#cbd5e1; display:block; margin-bottom:0.35rem;">
+                Carregar Ficheiros PDF de Ordens de Serviço:
+              </label>
               <input type="file" id="multiPdfInput" multiple accept="application/pdf,.pdf" class="input-delta" onchange="onFilesSelected(this)">
+              <div style="font-size:0.73rem; color:#94a3b8; margin-top:0.4rem; display:flex; align-items:center; gap:0.35rem;">
+                <span>⚡</span>
+                <span>Modelos suportados: Gemini 3.x (fallback automático)</span>
+              </div>
             </div>
-            <div>
-              <button id="btnAiParse" class="btn-delta btn-emerald" onclick="processPdfsWithGemini()" disabled>✨ Ler PDFs com IA</button>
+            <div style="display:flex; gap:0.5rem; align-items:flex-end;">
+              <button id="btnAiParse" class="btn-delta btn-emerald" onclick="processPdfsWithGemini()" disabled>
+                ✨ Ler PDFs com IA
+              </button>
             </div>
           </div>
+
           <div style="display:flex; flex-wrap:wrap; align-items:flex-end; gap:1rem; margin-top:0.85rem; padding-top:0.85rem; border-top:1px solid #1e293b;">
             <div style="min-width:230px;">
-              <label for="importStartDateRule" style="font-size:0.75rem; font-weight:600; color:#94a3b8; text-transform:uppercase; display:block; margin-bottom:0.35rem;">Data de início:</label>
+              <label for="importStartDateRule" style="font-size:0.75rem; font-weight:600; color:#94a3b8; text-transform:uppercase; letter-spacing:0.03em; display:block; margin-bottom:0.35rem;">
+                Data de início:
+              </label>
               <select id="importStartDateRule" class="input-delta" style="padding:0.42rem 0.65rem;">
                 <option value="hoje" selected>Usar data de hoje</option>
                 <option value="nenhuma">Sem data de início</option>
                 <option value="os">Usar data de início da OS</option>
               </select>
             </div>
+            <div style="font-size:0.74rem; color:#94a3b8; flex:1; min-width:220px; line-height:1.4;">
+              💡 <span>Controla apenas a data de início. A previsão de entrega sempre vem da OS.</span>
+            </div>
           </div>
+
           <div id="aiProgressBox" style="margin-top:0.85rem; font-size:0.8rem; display:none;">
             <div style="display:flex; justify-content:space-between; margin-bottom:0.25rem;">
               <span id="aiProgressText" style="color:#60a5fa; font-weight:600;">A analisar documentos...</span>
@@ -780,15 +973,21 @@
             </div>
           </div>
         </div>
+
         <div style="margin-bottom:0.5rem; display:flex; justify-content:space-between; align-items:center;">
-          <h4 style="margin:0; font-size:0.88rem; color:#f8fafc;">Prévia de Dados Extraídos</h4>
+          <h4 style="margin:0; font-size:0.88rem; color:#f8fafc;">
+            Prévia de Dados Extraídos (Células editáveis)
+          </h4>
           <span style="font-size:0.75rem; color:#94a3b8;" id="previewRowsCount">0 ficheiros na fila</span>
         </div>
+
         <div class="table-card" style="max-height:360px; overflow-y:auto;">
           <table class="delta-table" id="importPreviewTable">
             <thead>
               <tr>
-                <th style="width:30px; text-align:center;"><input type="checkbox" id="previewSelectAll" checked onchange="toggleSelectAllPreview(this)"></th>
+                <th style="width:30px; text-align:center;">
+                  <input type="checkbox" id="previewSelectAll" checked onchange="toggleSelectAllPreview(this)">
+                </th>
                 <th>PDF</th>
                 <th>Equipa</th>
                 <th>Cliente</th>
@@ -800,14 +999,21 @@
               </tr>
             </thead>
             <tbody id="importPreviewBody">
-              <tr><td colspan="9" style="text-align:center; padding:2rem; color:#64748b;">Nenhum PDF carregado ainda.</td></tr>
+              <tr>
+                <td colspan="9" style="text-align:center; padding:2rem; color:#64748b;">
+                  Nenhum PDF carregado ainda. Escolha ficheiros PDF acima para pré-visualizar e extrair.
+                </td>
+              </tr>
             </tbody>
           </table>
         </div>
       </div>
+
       <div class="modal-footer">
         <button class="btn-delta btn-slate" onclick="closeMultiImportModal()">Cancelar</button>
-        <button id="btnSaveMulti" class="btn-delta btn-emerald" onclick="saveImportedRows()" disabled>💾 Salvar selecionadas</button>
+        <button id="btnSaveMulti" class="btn-delta btn-emerald" onclick="saveImportedRows()" disabled>
+          💾 Salvar selecionadas
+        </button>
       </div>
     </div>
   </div>
@@ -821,17 +1027,29 @@
       </div>
       <div class="modal-body">
         <div style="margin-bottom:1.5rem;">
-          <label style="display:block; font-size:0.8rem; font-weight:600; color:#cbd5e1; margin-bottom:0.4rem;">Chave API Gemini (Google AI Studio)</label>
+          <label style="display:block; font-size:0.8rem; font-weight:600; color:#cbd5e1; margin-bottom:0.4rem;">
+            Chave API Gemini (Google AI Studio)
+          </label>
           <div style="display:flex; gap:0.5rem;">
             <input type="password" id="geminiApiKeyInput" class="input-delta" placeholder="AIzaSy...">
             <button class="btn-delta btn-indigo" onclick="saveGeminiKey()">Guardar</button>
           </div>
+          <p style="font-size:0.73rem; color:#94a3b8; margin-top:0.4rem;">
+            A chave é armazenada com segurança localmente no seu navegador para permitir a leitura automatizada de PDFs.
+          </p>
         </div>
+
         <hr style="border:0; border-top:1px solid #1e293b; margin:1.5rem 0;">
+
         <div>
-          <h4 style="margin:0 0 0.5rem; font-size:0.9rem; color:#f8fafc;">Segurança de Dados</h4>
+          <h4 style="margin:0 0 0.5rem; font-size:0.9rem; color:#f8fafc;">Segurança de Dados (Backup Completo)</h4>
+          <p style="font-size:0.75rem; color:#94a3b8; margin-bottom:1rem;">
+            Exporte ou restaure todo o ecossistema (Máquinas, Equipas e Utilizadores) em ficheiro JSON estruturado.
+          </p>
           <div style="display:flex; flex-wrap:wrap; gap:0.6rem;">
-            <button class="btn-delta btn-slate" onclick="exportBackup()">💾 Exportar Backup (JSON)</button>
+            <button class="btn-delta btn-slate" onclick="exportBackup()">
+              💾 Exportar Backup (JSON)
+            </button>
             <label class="btn-delta btn-slate" style="margin:0; cursor:pointer;">
               📂 Restaurar Backup (JSON)
               <input type="file" id="backupFileInput" accept=".json" style="display:none;" onchange="importBackup(event)">
@@ -855,12 +1073,12 @@
       <div class="modal-body">
         <input type="hidden" id="teamEditIndex" value="-1">
         <div class="form-group" style="margin-bottom:1rem;">
-          <label>Nome da Equipa</label>
-          <input type="text" id="teamNameInput" class="input-delta" required>
+          <label>Nome da Equipa ou Técnicos</label>
+          <input type="text" id="teamNameInput" class="input-delta" placeholder="Ex.: Lucas e Bruno" required>
         </div>
         <div class="form-group">
-          <label>Tags de Especialidade</label>
-          <input type="text" id="teamTagsInput" class="input-delta" placeholder="Ex.: Linha Leve, Precisão">
+          <label>Tags de Especialidade (separadas por vírgula)</label>
+          <input type="text" id="teamTagsInput" class="input-delta" placeholder="Ex.: Linha Leve, Precisão CNC, Montagem Rápida">
         </div>
       </div>
       <div class="modal-footer">
@@ -879,12 +1097,12 @@
       </div>
       <div class="modal-body">
         <div class="form-group" style="margin-bottom:1rem;">
-          <label>E-mail</label>
-          <input type="email" id="newEditorEmail" class="input-delta" required>
+          <label>E-mail do Utilizador</label>
+          <input type="email" id="newEditorEmail" class="input-delta" placeholder="tecnico@deltacnc.pt" required>
         </div>
         <div class="form-group" style="margin-bottom:1rem;">
-          <label>Palavra-passe</label>
-          <input type="password" id="newEditorPass" class="input-delta" required>
+          <label>Palavra-passe de Acesso</label>
+          <input type="password" id="newEditorPass" class="input-delta" placeholder="••••••••" required>
         </div>
       </div>
       <div class="modal-footer">
@@ -894,7 +1112,7 @@
     </div>
   </div>
 
-  <!-- SCRIPTS -->
+  <!-- CORE LOGIC SCRIPTS -->
   <script>
     const STORAGE_KEYS = {
       MACHINES: 'DELTA_MACHINES_DATA',
@@ -955,14 +1173,23 @@
 
     async function lerPdfComIA(base64Raw, apiKey, customPrompt) {
       const prompt = customPrompt || 'Extraia desta OS em JSON puro: {"os":"número da OS","cliente":"nome","maquina":"modelo","linha":"Leve|Intermediária|Pesada","inicio":"YYYY-MM-DD","previsao":"YYYY-MM-DD","obs":"CNPJ | TAG | contato | especificações"}. Apenas JSON sem markdown.';
+
       const payload = {
         contents: [{
           parts: [
             { text: prompt },
-            { inline_data: { mime_type: 'application/pdf', data: base64Raw } }
+            {
+              inline_data: {
+                mime_type: 'application/pdf',
+                data: base64Raw
+              }
+            }
           ]
         }],
-        generationConfig: { temperature: 0.1, maxOutputTokens: 500 }
+        generationConfig: {
+          temperature: 0.1,
+          maxOutputTokens: 500
+        }
       };
 
       for (const model of GEMINI_MODELS) {
@@ -973,739 +1200,16 @@
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(payload)
           });
-          if (response.status === 404) continue;
+
+          if (response.status === 404) {
+            continue;
+          }
+
           if (response.ok) {
             const data = await response.json();
             let rawText = '';
             if (data.candidates && data.candidates[0] && data.candidates[0].content && data.candidates[0].content.parts) {
               rawText = data.candidates[0].content.parts[0]?.text || data.candidates[0].content.parts.map(p => p.text).join('\n');
             }
-            let cleanJsonStr = rawText.replace(/```json/gi, '').replace(/```/g, '').trim();
-            const firstBrace = cleanJsonStr.indexOf('{');
-            const lastBrace = cleanJsonStr.lastIndexOf('}');
-            if (firstBrace !== -1 && lastBrace !== -1) {
-              cleanJsonStr = cleanJsonStr.substring(firstBrace, lastBrace + 1);
-            }
-            return JSON.parse(cleanJsonStr);
-          }
-        } catch (fetchErr) {
-          console.warn(`Tentativa com ${model} falhou:`, fetchErr);
-        }
-      }
-      throw new Error('Falha ao processar PDF com os modelos Gemini disponíveis');
-    }
 
-    const SAMPLE_PDF_BASE64 = 'data:application/pdf;base64,JVBERi0xLjQKJcOkw7zDtsOfCjEgMCBvYmoKPDwKL1R5cGUgL0NhdGFsb2cKL1BhZ2VzIDIgMCBSCj4+CmVuZG9iagoyIDAgb2JqCjw8Ci9UeXBlIC9QYWdlcwovS2lkcyBbMyAwIFJdCi9Db3VudCAxCj4+CmVuZG9iagozIDAgb2JqCjw8Ci9UeXBlIC9QYWdlCi9QYXJlbnQgMiAwIFIKL01lZGlhQm94IFswIDAgNjEyIDc5Ml0KL1Jlc291cmNlcyA8PAovRm9udCA8PAovRjEgNCAwIFIKPj4KPj4KL0NvbnRlbnRzIDUgMCBSCj4+CmVuZG9iago0IDAgb2JqCjw8Ci9UeXBlIC9Gb250Ci9TdWJ0eXBlIC9UeXBlMQovQmFzZUZvbnQgL0hlbHZldGljYQo+PgplbmRvYmoKNSAwIG9iago8PAovTGVuZ3RoIDQ0Cj4+CnN0cmVhbQpCVAovRjEgMTIgVGYKNzIgNzIwIFRECihtYXF1aW5hIERFTFRBIENOQyAtIE9TIE1vZGVsbykgVGoKRVQKZW5kc3RyZWFtCmVuZG9iagp4cmVmCjAgNgowMDAwMDAwMDAwIDY1NTM1IGYgCjAwMDAwMDAwMTUgMDAwMDAgbiAKMDAwMDAwMDA2OCAwMDAwMCBuIAowMDAwMDAwMTI1IDAwMDAwIG4gCjAwMDAwMDAyMjUgMDAwMDAgbiAKMDAwMDAwMDI5NiAwMDAwMCBuIAp0cmFpbGVyCjw8Ci9TaXplIDYKL1Jvb3QgMSAwIFIKPj4Kc3RhcnR4cmVmCjM5MAolJUVPRg==';
-
-    const DEFAULT_SEED_MACHINES = [
-      { id: '1001', equipe: 'Felipe e Arthur', cliente: 'AC COMUNICACAO VISUAL LTDA', maquina: 'Fiber Split 50W', linha: 'Leve', inicio: '2026-09-17', previsao: '2026-09-18', entregaReal: '2026-09-18', statusManual: 'automatico', obs: 'OS: DM01 | Concluído', os: 'DM01', pdfData: SAMPLE_PDF_BASE64 },
-      { id: '1002', equipe: 'Felipe e Arthur', cliente: 'LAYSLA BRAGA', maquina: 'FIBER SPLIT 50W', linha: 'Leve', inicio: '2026-09-17', previsao: '2026-09-18', entregaReal: '', statusManual: 'automatico', obs: 'Em montagem', os: 'DM02' }
-    ];
-
-    const DEFAULT_SEED_TEAMS = [
-      { name: 'Felipe e Arthur', tags: ['Alta Performance', 'Linha Leve'] },
-      { name: 'Equipa Beta', tags: ['Linha Pesada', 'Precisão CNC'] }
-    ];
-
-    const DEFAULT_SEED_USERS = [
-      { email: 'deltacronograma@gmail.com', pass: 'delta2026', role: 'Administrador' }
-    ];
-
-    let appMachines = [];
-    let appData = appMachines;
-    let appTeams = [];
-    let appUsers = [];
-    let currentUser = null;
-    let geminiApiKey = '';
-    let selectedMachineIds = new Set();
-    let currentPreviewRows = [];
-
-    document.addEventListener('DOMContentLoaded', async () => {
-      loadStorage();
-      await migrarPdfsAntigosParaIdb();
-      updateClock();
-      setInterval(updateClock, 1000);
-      setupPermissions();
-      populateTeamFilters();
-      renderTable();
-      updateDashboard();
-      renderTeams();
-      updatePodio();
-      renderUsers();
-      checkGeminiBanner();
-    });
-
-    async function migrarPdfsAntigosParaIdb() {
-      let mudou = false;
-      for (const item of appMachines) {
-        if (item.pdfData && item.pdfData.length > 50) {
-          try {
-            await idbSalvarPdf(item.id, item.pdfData);
-            item.pdfData = '';
-            item.hasPdf = true;
-            mudou = true;
-          } catch (e) {
-            console.warn('Erro ao migrar PDF:', e);
-          }
-        } else if (item.pdfData) {
-          item.hasPdf = true;
-          item.pdfData = '';
-          mudou = true;
-        }
-      }
-      if (mudou) saveData();
-    }
-
-    function loadStorage() {
-      try {
-        const m = localStorage.getItem(STORAGE_KEYS.MACHINES);
-        appMachines = m ? JSON.parse(m) : [...DEFAULT_SEED_MACHINES];
-        appData = appMachines;
-
-        const t = localStorage.getItem(STORAGE_KEYS.TEAMS);
-        appTeams = t ? JSON.parse(t) : [...DEFAULT_SEED_TEAMS];
-
-        const u = localStorage.getItem(STORAGE_KEYS.USERS);
-        appUsers = u ? JSON.parse(u) : [...DEFAULT_SEED_USERS];
-
-        geminiApiKey = localStorage.getItem(STORAGE_KEYS.GEMINI_KEY) || '';
-
-        const cur = localStorage.getItem(STORAGE_KEYS.CURRENT_USER);
-        if (cur) {
-          currentUser = JSON.parse(cur);
-        } else {
-          currentUser = appUsers[0];
-          localStorage.setItem(STORAGE_KEYS.CURRENT_USER, JSON.stringify(currentUser));
-        }
-        saveData();
-      } catch (err) {
-        appMachines = [...DEFAULT_SEED_MACHINES];
-        appData = appMachines;
-        appTeams = [...DEFAULT_SEED_TEAMS];
-        appUsers = [...DEFAULT_SEED_USERS];
-        currentUser = appUsers[0];
-      }
-    }
-
-    async function saveData() {
-      try {
-        localStorage.setItem(STORAGE_KEYS.MACHINES, JSON.stringify(appMachines));
-        localStorage.setItem(STORAGE_KEYS.TEAMS, JSON.stringify(appTeams));
-        localStorage.setItem(STORAGE_KEYS.USERS, JSON.stringify(appUsers));
-        if (currentUser) {
-          localStorage.setItem(STORAGE_KEYS.CURRENT_USER, JSON.stringify(currentUser));
-        }
-      } catch (e) {
-        console.warn('Quota excedida, salvando no IndexedDB...');
-      }
-    }
-
-    function updateClock() {
-      const now = new Date();
-      const el = document.getElementById('clockEl');
-      if (el) el.innerHTML = `⏱️ ${now.toLocaleDateString('pt-PT')} ${now.toLocaleTimeString('pt-PT', { hour12: false })}`;
-    }
-
-    function setupPermissions() {
-      const userLabel = document.getElementById('currentUserLabel');
-      const authBtn = document.getElementById('authBtn');
-      const editorEls = document.querySelectorAll('.editor-only');
-
-      if (currentUser) {
-        userLabel.textContent = `${currentUser.email.split('@')[0]} (${currentUser.role})`;
-        authBtn.textContent = 'Terminar Sessão';
-        authBtn.className = 'btn-delta btn-danger btn-sm';
-        editorEls.forEach(el => el.style.display = '');
-      } else {
-        userLabel.textContent = 'Visitante';
-        authBtn.textContent = 'Entrar';
-        authBtn.className = 'btn-delta btn-slate btn-sm';
-        editorEls.forEach(el => el.style.display = 'none');
-      }
-    }
-
-    function toggleAuthModal() {
-      if (currentUser) {
-        if (confirm('Deseja terminar a sessão atual?')) {
-          currentUser = null;
-          localStorage.removeItem(STORAGE_KEYS.CURRENT_USER);
-          setupPermissions();
-          renderTable();
-          renderUsers();
-        }
-      } else {
-        document.getElementById('authModal').classList.add('open');
-      }
-    }
-
-    function closeAuthModal() { document.getElementById('authModal').classList.remove('open'); }
-
-    function handleLoginSubmit() {
-      const email = document.getElementById('loginEmail').value.trim();
-      const pass = document.getElementById('loginPassword').value;
-      const user = appUsers.find(u => u.email.toLowerCase() === email.toLowerCase() && u.pass === pass);
-      if (user) {
-        currentUser = user;
-        saveData();
-        setupPermissions();
-        closeAuthModal();
-        alert(`Bem-vindo, ${user.role}!`);
-      } else {
-        alert('Credenciais incorretas!');
-      }
-    }
-
-    function switchTab(tabId) {
-      ['acompanhamento', 'dashboard', 'equipas', 'destaques', 'usuarios'].forEach(t => {
-        const sec = document.getElementById(`tab-${t}`);
-        if (sec) sec.classList.add('hidden');
-      });
-      document.querySelectorAll('.tab-button').forEach(btn => {
-        btn.classList.remove('active');
-        if (btn.getAttribute('onclick')?.includes(tabId)) btn.classList.add('active');
-      });
-      document.getElementById(`tab-${tabId}`).classList.remove('hidden');
-      if (tabId === 'dashboard') updateDashboard();
-      if (tabId === 'destaques') updatePodio();
-      if (tabId === 'equipas') renderTeams();
-      if (tabId === 'usuarios') renderUsers();
-    }
-
-    function getMachineStatus(item) {
-      if (item.statusManual && item.statusManual !== 'automatico') return item.statusManual;
-      if (item.entregaReal && item.entregaReal.trim() !== '') return 'Entregue';
-      if (item.inicio && item.inicio.trim() !== '') return 'Em andamento';
-      return 'Aguardando produção';
-    }
-
-    function getStatusBadge(status) {
-      if (status === 'Entregue') return `<span class="badge-status status-entregue">✓ Entregue</span>`;
-      if (status === 'Em andamento') return `<span class="badge-status status-andamento">⚙️ Em andamento</span>`;
-      return `<span class="badge-status status-aguardando">⏳ Aguardando</span>`;
-    }
-
-    function formatDateDisplay(d) {
-      if (!d) return '—';
-      const p = d.split('-');
-      return p.length === 3 ? `${p[2]}/${p[1]}/${p[0]}` : d;
-    }
-
-    function escapeHtml(str) {
-      if (!str) return '';
-      return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
-    }
-
-    function populateTeamFilters() {
-      const selectFilter = document.getElementById('filterTeam');
-      const machSelect = document.getElementById('machTeam');
-      const val = selectFilter.value;
-      selectFilter.innerHTML = '<option value="todas">Todas as Equipas</option>';
-      machSelect.innerHTML = '<option value="—">Sem equipa definida (—)</option>';
-      appTeams.forEach(t => {
-        selectFilter.innerHTML += `<option value="${t.name}">${t.name}</option>`;
-        machSelect.innerHTML += `<option value="${t.name}">${t.name}</option>`;
-      });
-      if (val) selectFilter.value = val;
-    }
-
-    function clearFilters() {
-      document.getElementById('filterPeriod').value = '';
-      document.getElementById('filterSearch').value = '';
-      document.getElementById('filterStatus').value = 'todos';
-      document.getElementById('filterTeam').value = 'todas';
-      document.getElementById('filterLinha').value = 'todas';
-      renderTable();
-    }
-
-    function renderTable() {
-      const tbody = document.getElementById('machinesTableBody');
-      const period = document.getElementById('filterPeriod').value;
-      const search = document.getElementById('filterSearch').value.toLowerCase().trim();
-      const statusFilter = document.getElementById('filterStatus').value;
-      const teamFilter = document.getElementById('filterTeam').value;
-      const linhaFilter = document.getElementById('filterLinha').value;
-
-      const filtered = appMachines.filter(item => {
-        const computedStatus = getMachineStatus(item);
-        if (search && !`${item.os} ${item.cliente} ${item.maquina} ${item.equipe} ${item.obs}`.toLowerCase().includes(search)) return false;
-        if (statusFilter !== 'todos' && computedStatus !== statusFilter) return false;
-        if (teamFilter !== 'todas' && item.equipe !== teamFilter) return false;
-        if (linhaFilter !== 'todas' && item.linha !== linhaFilter) return false;
-        if (period && !item.inicio?.startsWith(period) && !item.previsao?.startsWith(period) && !item.entregaReal?.startsWith(period)) return false;
-        return true;
-      });
-
-      document.getElementById('countShowing').textContent = `Mostrando ${filtered.length} de ${appMachines.length} máquinas`;
-      document.getElementById('countTotalBadge').textContent = `Total: ${appMachines.length} registos`;
-
-      if (filtered.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="12" style="text-align:center; padding:2.5rem; color:#64748b;">Nenhuma máquina encontrada.</td></tr>`;
-        return;
-      }
-
-      tbody.innerHTML = filtered.map(item => {
-        const status = getMachineStatus(item);
-        const isChecked = selectedMachineIds.has(item.id);
-        const linhaClass = item.linha === 'Pesada' ? 'pill-linha pesada' : 'pill-linha';
-        let osHtml = '<span class="text-muted">—</span>';
-        if (item.pdfData || item.hasPdf) {
-          osHtml = `<button type="button" class="btn-delta btn-indigo btn-sm" onclick="verPdfOs('${item.id}')" style="padding:0.25rem 0.55rem; font-size:0.75rem;">📄 Ver OS</button>`;
-        }
-        return `
-          <tr class="${isChecked ? 'selected-row' : ''}">
-            <td style="text-align:center;"><input type="checkbox" ${isChecked ? 'checked' : ''} onchange="toggleSelectMachine('${item.id}', this)"></td>
-            <td><strong>${escapeHtml(item.equipe)}</strong></td>
-            <td>${escapeHtml(item.cliente)}</td>
-            <td><span style="font-weight:600; color:#f1f5f9;">${escapeHtml(item.maquina)}</span></td>
-            <td><span class="${linhaClass}">${escapeHtml(item.linha)}</span></td>
-            <td>${formatDateDisplay(item.inicio)}</td>
-            <td>${formatDateDisplay(item.previsao)}</td>
-            <td><strong style="color:#10b981;">${formatDateDisplay(item.entregaReal)}</strong></td>
-            <td>${getStatusBadge(status)}</td>
-            <td style="max-width:220px; font-size:0.75rem; color:#94a3b8;" title="${escapeHtml(item.obs)}">${escapeHtml(item.obs || '—')}</td>
-            <td style="text-align:center;">${osHtml}</td>
-            <td style="text-align:right;"><button class="btn-delta btn-slate btn-sm editor-only" onclick="editMachine('${item.id}')">✏️</button></td>
-          </tr>
-        `;
-      }).join('');
-      setupPermissions();
-    }
-
-    function toggleSelectMachine(id, cb) {
-      if (cb.checked) selectedMachineIds.add(id); else selectedMachineIds.delete(id);
-      renderTable();
-    }
-
-    function toggleSelectAll(cb) {
-      if (cb.checked) appMachines.forEach(m => selectedMachineIds.add(m.id)); else selectedMachineIds.clear();
-      renderTable();
-    }
-
-    function deleteSelectedMachines() {
-      if (selectedMachineIds.size === 0) return alert('Selecione máquinas para excluir.');
-      if (!confirm(`Excluir ${selectedMachineIds.size} máquina(s)?`)) return;
-      appMachines = appMachines.filter(m => !selectedMachineIds.has(m.id));
-      selectedMachineIds.clear();
-      saveData();
-      renderTable();
-      updateDashboard();
-    }
-
-    function syncData() {
-      loadStorage();
-      renderTable();
-      updateDashboard();
-      alert('Base sincronizada!');
-    }
-
-    /* =================================================================
-       VISUALIZADOR DE PDF ANEXADO (CORRIGIDO E UNIFICADO)
-       ================================================================= */
-    async function verPdfOs(id) {
-      const item = appMachines.find(m => m.id === id);
-      if (!item) {
-        alert('Máquina não encontrada.');
-        return;
-      }
-      if (item.pdfData && item.pdfData.trim()) {
-        openPdfFromBase64(item.pdfData);
-        return;
-      }
-      if (item.hasPdf) {
-        try {
-          const storedPdf = await idbBuscarPdf(item.id);
-          if (storedPdf && storedPdf.trim()) {
-            openPdfFromBase64(storedPdf);
-            return;
-          }
-        } catch (err) {
-          console.warn('Erro ao carregar PDF do IndexedDB:', err);
-        }
-      }
-      alert('Documento PDF não encontrado para esta OS.');
-    }
-    window.verPdfOs = verPdfOs;
-    window.openPdfAttachment = verPdfOs;
-
-    function openPdfFromBase64(pdfDataUri) {
-      try {
-        const commaIdx = pdfDataUri.indexOf(',');
-        const base64 = commaIdx >= 0 ? pdfDataUri.slice(commaIdx + 1) : pdfDataUri;
-        const byteCharacters = atob(base64.trim());
-        const byteNumbers = new Uint8Array(byteCharacters.length);
-        for (let i = 0; i < byteCharacters.length; i++) {
-          byteNumbers[i] = byteCharacters.charCodeAt(i);
-        }
-        const blob = new Blob([byteNumbers], { type: 'application/pdf' });
-        const blobUrl = URL.createObjectURL(blob);
-        window.open(blobUrl, '_blank');
-        setTimeout(() => URL.revokeObjectURL(blobUrl), 120000);
-      } catch (err) {
-        window.open(pdfDataUri, '_blank');
-      }
-    }
-
-    function openMachineModal(id = null) {
-      populateTeamFilters();
-      const form = document.getElementById('machineForm');
-      form.reset();
-      document.getElementById('machPdfStatus').textContent = '';
-      if (id) {
-        const item = appMachines.find(m => m.id === id);
-        if (!item) return;
-        document.getElementById('machineModalTitle').textContent = `Editar Máquina — OS ${item.os}`;
-        document.getElementById('machId').value = item.id;
-        document.getElementById('machOs').value = item.os || '';
-        document.getElementById('machTeam').value = item.equipe || '';
-        document.getElementById('machClient').value = item.cliente || '';
-        document.getElementById('machModel').value = item.maquina || '';
-        document.getElementById('machLinha').value = item.linha || 'Leve';
-        document.getElementById('machStatusManual').value = item.statusManual || 'automatico';
-        document.getElementById('machStart').value = item.inicio || '';
-        document.getElementById('machForecast').value = item.previsao || '';
-        document.getElementById('machReal').value = item.entregaReal || '';
-        document.getElementById('machNotes').value = item.obs || '';
-      } else {
-        document.getElementById('machineModalTitle').textContent = 'Registar Máquina CNC';
-        document.getElementById('machId').value = '';
-      }
-      document.getElementById('machineModal').classList.add('open');
-    }
-
-    function editMachine(id) { openMachineModal(id); }
-    function closeMachineModal() { document.getElementById('machineModal').classList.remove('open'); }
-
-    async function saveMachine(e) {
-      e.preventDefault();
-      const id = document.getElementById('machId').value;
-      const os = document.getElementById('machOs').value.trim();
-      const equipe = document.getElementById('machTeam').value;
-      const cliente = document.getElementById('machClient').value.trim();
-      const maquina = document.getElementById('machModel').value.trim();
-      const linha = document.getElementById('machLinha').value;
-      const statusManual = document.getElementById('machStatusManual').value;
-      const inicio = document.getElementById('machStart').value;
-      const previsao = document.getElementById('machForecast').value;
-      const entregaReal = document.getElementById('machReal').value;
-      const obs = document.getElementById('machNotes').value.trim();
-      const pdfInput = document.getElementById('machPdf');
-      let newPdfData = null;
-
-      if (pdfInput.files && pdfInput.files[0]) {
-        try { newPdfData = await fileToDataUrl(pdfInput.files[0]); } catch (err) {}
-      }
-
-      if (id) {
-        const index = appMachines.findIndex(m => m.id === id);
-        if (index !== -1) {
-          const target = appMachines[index];
-          let hasPdf = target.hasPdf || false;
-          if (newPdfData) {
-            await idbSalvarPdf(id, newPdfData);
-            hasPdf = true;
-          }
-          appMachines[index] = { ...target, os, equipe, cliente, maquina, linha, statusManual, inicio, previsao, entregaReal, obs, pdfData: '', hasPdf };
-        }
-      } else {
-        const newId = 'M_' + Date.now();
-        let hasPdf = false;
-        if (newPdfData) {
-          await idbSalvarPdf(newId, newPdfData);
-          hasPdf = true;
-        }
-        appMachines.unshift({ id: newId, os, equipe, cliente, maquina, linha, statusManual, inicio, previsao, entregaReal, obs, pdfData: '', hasPdf });
-      }
-      await saveData();
-      renderTable();
-      updateDashboard();
-      closeMachineModal();
-    }
-
-    function fileToDataUrl(file) {
-      return new Promise((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onload = () => resolve(reader.result);
-        reader.onerror = reject;
-        reader.readAsDataURL(file);
-      });
-    }
-
-    function openMultiImportModal() {
-      currentPreviewRows = [];
-      document.getElementById('multiPdfInput').value = '';
-      document.getElementById('aiProgressBox').style.display = 'none';
-      document.getElementById('btnAiParse').disabled = true;
-      document.getElementById('btnSaveMulti').disabled = true;
-      renderImportPreviewTable();
-      document.getElementById('multiImportModal').classList.add('open');
-    }
-
-    function closeMultiImportModal() { document.getElementById('multiImportModal').classList.remove('open'); }
-
-    function onFilesSelected(input) {
-      const files = Array.from(input.files || []);
-      if (files.length === 0) return;
-      document.getElementById('btnAiParse').disabled = false;
-      document.getElementById('previewRowsCount').textContent = `${files.length} ficheiro(s)`;
-      currentPreviewRows = files.map((f, idx) => {
-        const nameWithoutExt = f.name.replace(/\.[^/.]+$/, "");
-        const row = {
-          id: 'import_' + idx, file: f, fileName: f.name, selected: true,
-          os: nameWithoutExt, equipe: '', cliente: '', maquina: 'CNC', linha: 'Leve',
-          inicio: '', previsao: '', obs: `OS: ${nameWithoutExt}`, base64: ''
-        };
-        fileToDataUrl(f).then(d => row.base64 = d).catch(e => {});
-        return row;
-      });
-      renderImportPreviewTable();
-    }
-
-    async function processPdfsWithGemini() {
-      if (!geminiApiKey) {
-        alert('Configure primeiro a sua Chave da API do Gemini!');
-        openConfigModal();
-        return;
-      }
-      const progressBox = document.getElementById('aiProgressBox');
-      const progressText = document.getElementById('aiProgressText');
-      const progressBar = document.getElementById('aiProgressBar');
-      progressBox.style.display = 'block';
-
-      const total = currentPreviewRows.length;
-      let completed = 0;
-
-      for (let i = 0; i < total; i++) {
-        const row = currentPreviewRows[i];
-        try {
-          const base64DataUrl = row.base64 || await fileToDataUrl(row.file);
-          const base64Raw = base64DataUrl.includes(',') ? base64DataUrl.split(',')[1] : base64DataUrl;
-          row.base64 = base64DataUrl;
-          const parsed = await lerPdfComIA(base64Raw, geminiApiKey);
-          row.os = parsed.os || row.os;
-          row.cliente = parsed.cliente || 'Cliente';
-          row.maquina = parsed.maquina || 'Máquina CNC';
-          row.linha = parsed.linha || 'Leve';
-          row.inicio = parsed.inicio || '';
-          row.previsao = parsed.previsao || '';
-          row.obs = parsed.obs || row.obs;
-          row.selected = true;
-        } catch (err) {
-          row.obs = 'Erro na leitura IA';
-        }
-        completed++;
-        progressBar.style.width = Math.round((completed / total) * 100) + '%';
-        progressText.textContent = `Lendo ${completed} de ${total}...`;
-        renderImportPreviewTable();
-      }
-      document.getElementById('btnSaveMulti').disabled = !currentPreviewRows.some(r => r.selected);
-    }
-
-    function renderImportPreviewTable() {
-      const tbody = document.getElementById('importPreviewBody');
-      if (currentPreviewRows.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="9" style="text-align:center; padding:2rem; color:#64748b;">Nenhum PDF carregado.</td></tr>`;
-        return;
-      }
-      tbody.innerHTML = currentPreviewRows.map((row, idx) => `
-        <tr>
-          <td style="text-align:center;"><input type="checkbox" ${row.selected ? 'checked' : ''} onchange="currentPreviewRows[${idx}].selected = this.checked"></td>
-          <td>${escapeHtml(row.fileName)}</td>
-          <td><input type="text" class="preview-input" value="${escapeHtml(row.equipe)}" onchange="currentPreviewRows[${idx}].equipe = this.value"></td>
-          <td><input type="text" class="preview-input" value="${escapeHtml(row.cliente)}" onchange="currentPreviewRows[${idx}].cliente = this.value"></td>
-          <td><input type="text" class="preview-input" value="${escapeHtml(row.maquina)}" onchange="currentPreviewRows[${idx}].maquina = this.value"></td>
-          <td>
-            <select class="preview-input" onchange="currentPreviewRows[${idx}].linha = this.value">
-              <option value="Leve" ${row.linha === 'Leve' ? 'selected' : ''}>Leve</option>
-              <option value="Intermediária" ${row.linha === 'Intermediária' ? 'selected' : ''}>Intermediária</option>
-              <option value="Pesada" ${row.linha === 'Pesada' ? 'selected' : ''}>Pesada</option>
-            </select>
-          </td>
-          <td><input type="date" class="preview-input" value="${row.inicio}" onchange="currentPreviewRows[${idx}].inicio = this.value"></td>
-          <td><input type="date" class="preview-input" value="${row.previsao}" onchange="currentPreviewRows[${idx}].previsao = this.value"></td>
-          <td><input type="text" class="preview-input" value="${escapeHtml(row.obs)}" onchange="currentPreviewRows[${idx}].obs = this.value"></td>
-        </tr>
-      `).join('');
-      document.getElementById('btnSaveMulti').disabled = !currentPreviewRows.some(r => r.selected);
-    }
-
-    async function saveImportedRows() {
-      const selected = currentPreviewRows.filter(r => r.selected);
-      if (selected.length === 0) return alert('Selecione linhas para importar.');
-
-      const dateRule = document.getElementById('importStartDateRule').value;
-      const todayIso = new Date().toISOString().split('T')[0];
-
-      for (let idx = 0; idx < selected.length; idx++) {
-        const item = selected[idx];
-        const newId = 'M_' + Date.now() + '_' + idx;
-        let fullPdfData = item.base64 || await fileToDataUrl(item.file);
-        if (!fullPdfData.startsWith('data:')) fullPdfData = 'data:application/pdf;base64,' + fullPdfData;
-
-        let hasPdf = false;
-        if (fullPdfData) {
-          await idbSalvarPdf(newId, fullPdfData);
-          hasPdf = true;
-        }
-
-        let finalInicio = dateRule === 'hoje' ? todayIso : (dateRule === 'nenhuma' ? '' : item.inicio);
-
-        appMachines.unshift({
-          id: newId,
-          os: item.os || 'DM00',
-          equipe: item.equipe || '—',
-          cliente: item.cliente || 'Cliente',
-          maquina: item.maquina || 'CNC',
-          linha: item.linha || 'Leve',
-          inicio: finalInicio,
-          previsao: item.previsao || '',
-          entregaReal: '',
-          statusManual: 'automatico',
-          obs: item.obs || '',
-          pdfData: '',
-          hasPdf: hasPdf
-        });
-      }
-
-      await saveData();
-      renderTable();
-      updateDashboard();
-      switchTab('acompanhamento');
-      closeMultiImportModal();
-      alert('OS importadas com sucesso!');
-    }
-    window.saveImportedRows = saveImportedRows;
-
-    function updateDashboard() {
-      const refMonth = '2026-09';
-      document.getElementById('kpiTotal').textContent = appMachines.length;
-      document.getElementById('kpiAndamento').textContent = appMachines.filter(m => getMachineStatus(m) === 'Em andamento').length;
-      document.getElementById('kpiEntreguesMes').textContent = appMachines.filter(m => m.entregaReal?.startsWith(refMonth)).length;
-      document.getElementById('kpiEficiencia').textContent = '100%';
-
-      const list = document.getElementById('dashTeamsList');
-      list.innerHTML = appTeams.map(t => `<div class="team-item"><strong>${t.name}</strong></div>`).join('');
-      renderAnnualChart();
-    }
-
-    function renderAnnualChart() {
-      const container = document.getElementById('annualChartBox');
-      container.innerHTML = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'].map((m, i) => `
-        <div class="svg-bar-col">
-          <span class="svg-bar-val">0</span>
-          <div class="svg-bar" style="height:10%;"></div>
-          <span class="svg-bar-label">${m}</span>
-        </div>
-      `).join('');
-    }
-
-    function renderTeams() {
-      document.getElementById('teamsContainer').innerHTML = appTeams.map((t, idx) => `
-        <div class="kpi-card">
-          <h3 style="margin:0; color:#f8fafc;">${escapeHtml(t.name)}</h3>
-          <div style="margin-top:0.5rem;">${(t.tags || []).map(tag => `<span class="team-badge-tag">${tag}</span>`).join('')}</div>
-        </div>
-      `).join('');
-    }
-
-    function openTeamModal() { document.getElementById('teamModal').classList.add('open'); }
-    function closeTeamModal() { document.getElementById('teamModal').classList.remove('open'); }
-    function saveTeamSubmit() {
-      const name = document.getElementById('teamNameInput').value.trim();
-      const tags = document.getElementById('teamTagsInput').value.split(',').map(s => s.trim()).filter(Boolean);
-      if (!name) return alert('Insira o nome!');
-      appTeams.push({ name, tags });
-      saveData();
-      populateTeamFilters();
-      renderTeams();
-      closeTeamModal();
-    }
-
-    function updatePodio() {
-      document.getElementById('podiumWrapper').innerHTML = `<div style="text-align:center; color:#94a3b8;">Classificação em atualização.</div>`;
-      document.getElementById('podiumTableBody').innerHTML = '';
-    }
-
-    function renderUsers() {
-      document.getElementById('usersTableBody').innerHTML = appUsers.map((u, idx) => `
-        <tr>
-          <td><strong>${escapeHtml(u.email)}</strong></td>
-          <td><span class="meta-tag">${escapeHtml(u.role)}</span></td>
-          <td style="text-align:right;"></td>
-        </tr>
-      `).join('');
-    }
-
-    function openUserModal() { document.getElementById('userModal').classList.add('open'); }
-    function closeUserModal() { document.getElementById('userModal').classList.remove('open'); }
-    function saveNewUserSubmit() {
-      const email = document.getElementById('newEditorEmail').value.trim();
-      const pass = document.getElementById('newEditorPass').value;
-      if (!email || !pass) return alert('Preencha os campos.');
-      appUsers.push({ email, pass, role: 'Editor' });
-      saveData();
-      renderUsers();
-      closeUserModal();
-    }
-
-    function openConfigModal() {
-      document.getElementById('geminiApiKeyInput').value = geminiApiKey;
-      document.getElementById('configModal').classList.add('open');
-    }
-    function closeConfigModal() { document.getElementById('configModal').classList.remove('open'); }
-    function saveGeminiKey() {
-      geminiApiKey = document.getElementById('geminiApiKeyInput').value.trim();
-      localStorage.setItem(STORAGE_KEYS.GEMINI_KEY, geminiApiKey);
-      checkGeminiBanner();
-      alert('Chave guardada!');
-    }
-    function checkGeminiBanner() {
-      const banner = document.getElementById('geminiAlertBanner');
-      if (banner) {
-        if (geminiApiKey) banner.classList.add('hidden'); else banner.classList.remove('hidden');
-      }
-    }
-
-    function exportBackup() {
-      const data = { machines: appMachines, teams: appTeams, users: appUsers };
-      const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = 'delta-backup.json';
-      a.click();
-    }
-
-    function importBackup(e) {
-      const file = e.target.files[0];
-      if (!file) return;
-      const reader = new FileReader();
-      reader.onload = (evt) => {
-        try {
-          const parsed = JSON.parse(evt.target.result);
-          if (parsed.machines) appMachines = parsed.machines;
-          if (parsed.teams) appTeams = parsed.teams;
-          if (parsed.users) appUsers = parsed.users;
-          saveData();
-          renderTable();
-          alert('Backup restaurado!');
-          closeConfigModal();
-        } catch (err) { alert('Erro no backup.'); }
-      };
-      reader.readAsText(file);
-    }
-
-    function exportCSV() {
-      if (appMachines.length === 0) return alert('Sem registos.');
-      const headers = ['OS', 'Equipa', 'Cliente', 'Maquina', 'Linha', 'Inicio', 'Previsao', 'EntregaReal', 'Status'];
-      const rows = appMachines.map(m => [m.os, m.equipe, m.cliente, m.maquina, m.linha, m.inicio, m.previsao, m.entregaReal, getMachineStatus(m)]);
-      const csv = '\uFEFF' + [headers.join(';'), ...rows.map(r => r.join(';'))].join('\r\n');
-      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = 'producao-delta.csv';
-      a.click();
-    }
-  </script>
-</body>
-</html>
+            let cleanJsonStr = rawText.replace(/```json/gi, '').replace(/
