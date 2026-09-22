@@ -1763,7 +1763,6 @@ body {
       if (item.entregaReal && item.entregaReal.trim() !== '') {
         return 'Entregue';
       }
-      // Regra de estado: se a data de previsão de entrega for maior que a data de hoje, o estado fica atrasado
       if (item.previsao && item.previsao.trim() !== '') {
         const hojeStr = new Date().toISOString().split('T')[0];
         if (item.previsao > hojeStr) {
@@ -2470,9 +2469,7 @@ body {
       document.querySelectorAll('.dashMonthName').forEach(el => el.textContent = monthNameStr);
       document.getElementById('dashRefMonthSub').textContent = `${monthNameStr}/${yearStr}`;
       document.getElementById('lblRefMonth').textContent = `${monthNameStr}/${yearStr}`;
-
-      const dashTeamsList = document.getElementById('dashTeamsList');
-      const teamStats = {};
+    }
   </script>
 </body>
 </html>
