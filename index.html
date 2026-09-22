@@ -388,36 +388,6 @@ table.shell-table tbody tr:hover { background: color-mix(in srgb, var(--accent) 
       background-color: rgba(99, 102, 241, 0.12);
     }
 
-    /* Estilos para truncar observação em 1 linha e link para abrir modal */
-    .obs-cell-wrapper {
-      max-width: 220px;
-      display: flex;
-      align-items: center;
-      gap: 6px;
-    }
-    .obs-truncated {
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      color: #94a3b8;
-      font-size: 0.78rem;
-      flex: 1;
-    }
-    .obs-btn-link {
-      background: transparent;
-      border: none;
-      color: #818cf8;
-      font-size: 0.75rem;
-      font-weight: 600;
-      cursor: pointer;
-      padding: 0;
-      white-space: nowrap;
-      text-decoration: underline;
-    }
-    .obs-btn-link:hover {
-      color: #a5b4fc;
-    }
-
     .badge-status {
       display: inline-flex;
       align-items: center;
@@ -854,24 +824,6 @@ table.shell-table tbody tr:hover { background: color-mix(in srgb, var(--accent) 
     </div>
   </div>
 
-  <!-- MODAL: VER OBSERVAÇÃO COMPLETA -->
-  <div id="obsModal" class="modal-overlay">
-    <div class="modal-dialog" style="max-width: 500px;">
-      <div class="modal-header">
-        <h3 id="obsModalTitle">Observações Técnicas</h3>
-        <button class="modal-close" onclick="closeObsModal()">&times;</button>
-      </div>
-      <div class="modal-body">
-        <div id="obsModalContent" style="background:#162036; border:1px solid #283548; padding:1rem; border-radius:8px; color:#f8fafc; font-size:0.9rem; white-space: pre-wrap; word-break: break-word; line-height: 1.5;">
-          <!-- Conteúdo completo da observação injetado via JS -->
-        </div>
-      </div>
-      <div class="modal-footer">
-        <button class="btn-delta btn-indigo" onclick="closeObsModal()">Fechar</button>
-      </div>
-    </div>
-  </div>
-
   <!-- MODAL: MÁQUINA -->
   <div id="machineModal" class="modal-overlay">
     <div class="modal-dialog">
@@ -1011,7 +963,7 @@ table.shell-table tbody tr:hover { background: color-mix(in srgb, var(--accent) 
             </div>
           </div>
 
-          <div id="aiProgressBox" style="margin-top:0.85rem; font-size:0.8; display:none;">
+          <div id="aiProgressBox" style="margin-top:0.85rem; font-size:0.8rem; display:none;">
             <div style="display:flex; justify-content:space-between; margin-bottom:0.25rem;">
               <span id="aiProgressText" style="color:#60a5fa; font-weight:600;">A analisar documentos...</span>
               <span id="aiProgressPercent" style="color:#94a3b8;">0%</span>
@@ -1217,18 +1169,6 @@ table.shell-table tbody tr:hover { background: color-mix(in srgb, var(--accent) 
       }
     }
 
-    // Função para abrir o Modal de Observação Completa
-    function openObsModal(obsText) {
-      const modal = document.getElementById('obsModal');
-      const content = document.getElementById('obsModalContent');
-      content.textContent = obsText && obsText.trim() !== '' ? obsText : 'Nenhuma observação registada.';
-      modal.classList.add('open');
-    }
-
-    function closeObsModal() {
-      document.getElementById('obsModal').classList.remove('open');
-    }
-
     const GEMINI_MODELS = ['gemini-3.5-flash-lite', 'gemini-3.6-flash', 'gemini-3.8-flash'];
 
     async function lerPdfComIA(base64Raw, apiKey, customPrompt) {
@@ -1272,23 +1212,4 @@ table.shell-table tbody tr:hover { background: color-mix(in srgb, var(--accent) 
               rawText = data.candidates[0].content.parts[0]?.text || data.candidates[0].content.parts.map(p => p.text).join('\n');
             }
 
-            let cleanJsonStr = rawText.replace(/```json/gi, '').replace(/```/g, '').trim();
-            const firstBrace = cleanJsonStr.indexOf('{');
-            const lastBrace = cleanJsonStr.lastIndexOf('}');
-            if (firstBrace !== -1 && lastBrace !== -1) {
-              cleanJsonStr = cleanJsonStr.substring(firstBrace, lastBrace + 1);
-            }
-            return JSON.parse(cleanJsonStr);
-          }
-        } catch (e) {
-          console.warn(`Tentativa falhou com modelo ${model}:`, e);
-        }
-      }
-      throw new Error('Falha ao comunicar com a API do Gemini ou chave inválida.');
-    }
-
-    // O restante das funções do sistema continuam integradas normalmente...
-    console.log("CP Delta - Sistema atualizado com sucesso com o modal de observações.");
-  </script>
-</body>
-</html>
+            let cleanJsonStr = rawText.replace(/```json/gi, '').replace(/
