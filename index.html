@@ -980,4 +980,732 @@
             if (data.candidates && data.candidates[0] && data.candidates[0].content && data.candidates[0].content.parts) {
               rawText = data.candidates[0].content.parts[0]?.text || data.candidates[0].content.parts.map(p => p.text).join('\n');
             }
-            let cleanJsonStr = rawText.replace(/```json/gi, '').replace(/
+            let cleanJsonStr = rawText.replace(/```json/gi, '').replace(/```/g, '').trim();
+            const firstBrace = cleanJsonStr.indexOf('{');
+            const lastBrace = cleanJsonStr.lastIndexOf('}');
+            if (firstBrace !== -1 && lastBrace !== -1) {
+              cleanJsonStr = cleanJsonStr.substring(firstBrace, lastBrace + 1);
+            }
+            return JSON.parse(cleanJsonStr);
+          }
+        } catch (fetchErr) {
+          console.warn(`Tentativa com ${model} falhou:`, fetchErr);
+        }
+      }
+      throw new Error('Falha ao processar PDF com os modelos Gemini disponíveis');
+    }
+
+    const SAMPLE_PDF_BASE64 = 'data:application/pdf;base64,JVBERi0xLjQKJcOkw7zDtsOfCjEgMCBvYmoKPDwKL1R5cGUgL0NhdGFsb2cKL1BhZ2VzIDIgMCBSCj4+CmVuZG9iagoyIDAgb2JqCjw8Ci9UeXBlIC9QYWdlcwovS2lkcyBbMyAwIFJdCi9Db3VudCAxCj4+CmVuZG9iagozIDAgb2JqCjw8Ci9UeXBlIC9QYWdlCi9QYXJlbnQgMiAwIFIKL01lZGlhQm94IFswIDAgNjEyIDc5Ml0KL1Jlc291cmNlcyA8PAovRm9udCA8PAovRjEgNCAwIFIKPj4KPj4KL0NvbnRlbnRzIDUgMCBSCj4+CmVuZG9iago0IDAgb2JqCjw8Ci9UeXBlIC9Gb250Ci9TdWJ0eXBlIC9UeXBlMQovQmFzZUZvbnQgL0hlbHZldGljYQo+PgplbmRvYmoKNSAwIG9iago8PAovTGVuZ3RoIDQ0Cj4+CnN0cmVhbQpCVAovRjEgMTIgVGYKNzIgNzIwIFRECihtYXF1aW5hIERFTFRBIENOQyAtIE9TIE1vZGVsbykgVGoKRVQKZW5kc3RyZWFtCmVuZG9iagp4cmVmCjAgNgowMDAwMDAwMDAwIDY1NTM1IGYgCjAwMDAwMDAwMTUgMDAwMDAgbiAKMDAwMDAwMDA2OCAwMDAwMCBuIAowMDAwMDAwMTI1IDAwMDAwIG4gCjAwMDAwMDAyMjUgMDAwMDAgbiAKMDAwMDAwMDI5NiAwMDAwMCBuIAp0cmFpbGVyCjw8Ci9TaXplIDYKL1Jvb3QgMSAwIFIKPj4Kc3RhcnR4cmVmCjM5MAolJUVPRg==';
+
+    const DEFAULT_SEED_MACHINES = [
+      { id: '1001', equipe: 'Felipe e Arthur', cliente: 'AC COMUNICACAO VISUAL LTDA', maquina: 'Fiber Split 50W', linha: 'Leve', inicio: '2026-09-17', previsao: '2026-09-18', entregaReal: '2026-09-18', statusManual: 'automatico', obs: 'OS: DM01 | Concluído', os: 'DM01', pdfData: SAMPLE_PDF_BASE64 },
+      { id: '1002', equipe: 'Felipe e Arthur', cliente: 'LAYSLA BRAGA', maquina: 'FIBER SPLIT 50W', linha: 'Leve', inicio: '2026-09-17', previsao: '2026-09-18', entregaReal: '', statusManual: 'automatico', obs: 'Em montagem', os: 'DM02' }
+    ];
+
+    const DEFAULT_SEED_TEAMS = [
+      { name: 'Felipe e Arthur', tags: ['Alta Performance', 'Linha Leve'] },
+      { name: 'Equipa Beta', tags: ['Linha Pesada', 'Precisão CNC'] }
+    ];
+
+    const DEFAULT_SEED_USERS = [
+      { email: 'deltacronograma@gmail.com', pass: 'delta2026', role: 'Administrador' }
+    ];
+
+    let appMachines = [];
+    let appData = appMachines;
+    let appTeams = [];
+    let appUsers = [];
+    let currentUser = null;
+    let geminiApiKey = '';
+    let selectedMachineIds = new Set();
+    let currentPreviewRows = [];
+
+    document.addEventListener('DOMContentLoaded', async () => {
+      loadStorage();
+      await migrarPdfsAntigosParaIdb();
+      updateClock();
+      setInterval(updateClock, 1000);
+      setupPermissions();
+      populateTeamFilters();
+      renderTable();
+      updateDashboard();
+      renderTeams();
+      updatePodio();
+      renderUsers();
+      checkGeminiBanner();
+    });
+
+    async function migrarPdfsAntigosParaIdb() {
+      let mudou = false;
+      for (const item of appMachines) {
+        if (item.pdfData && item.pdfData.length > 50) {
+          try {
+            await idbSalvarPdf(item.id, item.pdfData);
+            item.pdfData = '';
+            item.hasPdf = true;
+            mudou = true;
+          } catch (e) {
+            console.warn('Erro ao migrar PDF:', e);
+          }
+        } else if (item.pdfData) {
+          item.hasPdf = true;
+          item.pdfData = '';
+          mudou = true;
+        }
+      }
+      if (mudou) saveData();
+    }
+
+    function loadStorage() {
+      try {
+        const m = localStorage.getItem(STORAGE_KEYS.MACHINES);
+        appMachines = m ? JSON.parse(m) : [...DEFAULT_SEED_MACHINES];
+        appData = appMachines;
+
+        const t = localStorage.getItem(STORAGE_KEYS.TEAMS);
+        appTeams = t ? JSON.parse(t) : [...DEFAULT_SEED_TEAMS];
+
+        const u = localStorage.getItem(STORAGE_KEYS.USERS);
+        appUsers = u ? JSON.parse(u) : [...DEFAULT_SEED_USERS];
+
+        geminiApiKey = localStorage.getItem(STORAGE_KEYS.GEMINI_KEY) || '';
+
+        const cur = localStorage.getItem(STORAGE_KEYS.CURRENT_USER);
+        if (cur) {
+          currentUser = JSON.parse(cur);
+        } else {
+          currentUser = appUsers[0];
+          localStorage.setItem(STORAGE_KEYS.CURRENT_USER, JSON.stringify(currentUser));
+        }
+        saveData();
+      } catch (err) {
+        appMachines = [...DEFAULT_SEED_MACHINES];
+        appData = appMachines;
+        appTeams = [...DEFAULT_SEED_TEAMS];
+        appUsers = [...DEFAULT_SEED_USERS];
+        currentUser = appUsers[0];
+      }
+    }
+
+    async function saveData() {
+      try {
+        localStorage.setItem(STORAGE_KEYS.MACHINES, JSON.stringify(appMachines));
+        localStorage.setItem(STORAGE_KEYS.TEAMS, JSON.stringify(appTeams));
+        localStorage.setItem(STORAGE_KEYS.USERS, JSON.stringify(appUsers));
+        if (currentUser) {
+          localStorage.setItem(STORAGE_KEYS.CURRENT_USER, JSON.stringify(currentUser));
+        }
+      } catch (e) {
+        console.warn('Quota excedida, salvando no IndexedDB...');
+      }
+    }
+
+    function updateClock() {
+      const now = new Date();
+      const el = document.getElementById('clockEl');
+      if (el) el.innerHTML = `⏱️ ${now.toLocaleDateString('pt-PT')} ${now.toLocaleTimeString('pt-PT', { hour12: false })}`;
+    }
+
+    function setupPermissions() {
+      const userLabel = document.getElementById('currentUserLabel');
+      const authBtn = document.getElementById('authBtn');
+      const editorEls = document.querySelectorAll('.editor-only');
+
+      if (currentUser) {
+        userLabel.textContent = `${currentUser.email.split('@')[0]} (${currentUser.role})`;
+        authBtn.textContent = 'Terminar Sessão';
+        authBtn.className = 'btn-delta btn-danger btn-sm';
+        editorEls.forEach(el => el.style.display = '');
+      } else {
+        userLabel.textContent = 'Visitante';
+        authBtn.textContent = 'Entrar';
+        authBtn.className = 'btn-delta btn-slate btn-sm';
+        editorEls.forEach(el => el.style.display = 'none');
+      }
+    }
+
+    function toggleAuthModal() {
+      if (currentUser) {
+        if (confirm('Deseja terminar a sessão atual?')) {
+          currentUser = null;
+          localStorage.removeItem(STORAGE_KEYS.CURRENT_USER);
+          setupPermissions();
+          renderTable();
+          renderUsers();
+        }
+      } else {
+        document.getElementById('authModal').classList.add('open');
+      }
+    }
+
+    function closeAuthModal() { document.getElementById('authModal').classList.remove('open'); }
+
+    function handleLoginSubmit() {
+      const email = document.getElementById('loginEmail').value.trim();
+      const pass = document.getElementById('loginPassword').value;
+      const user = appUsers.find(u => u.email.toLowerCase() === email.toLowerCase() && u.pass === pass);
+      if (user) {
+        currentUser = user;
+        saveData();
+        setupPermissions();
+        closeAuthModal();
+        alert(`Bem-vindo, ${user.role}!`);
+      } else {
+        alert('Credenciais incorretas!');
+      }
+    }
+
+    function switchTab(tabId) {
+      ['acompanhamento', 'dashboard', 'equipas', 'destaques', 'usuarios'].forEach(t => {
+        const sec = document.getElementById(`tab-${t}`);
+        if (sec) sec.classList.add('hidden');
+      });
+      document.querySelectorAll('.tab-button').forEach(btn => {
+        btn.classList.remove('active');
+        if (btn.getAttribute('onclick')?.includes(tabId)) btn.classList.add('active');
+      });
+      document.getElementById(`tab-${tabId}`).classList.remove('hidden');
+      if (tabId === 'dashboard') updateDashboard();
+      if (tabId === 'destaques') updatePodio();
+      if (tabId === 'equipas') renderTeams();
+      if (tabId === 'usuarios') renderUsers();
+    }
+
+    function getMachineStatus(item) {
+      if (item.statusManual && item.statusManual !== 'automatico') return item.statusManual;
+      if (item.entregaReal && item.entregaReal.trim() !== '') return 'Entregue';
+      if (item.inicio && item.inicio.trim() !== '') return 'Em andamento';
+      return 'Aguardando produção';
+    }
+
+    function getStatusBadge(status) {
+      if (status === 'Entregue') return `<span class="badge-status status-entregue">✓ Entregue</span>`;
+      if (status === 'Em andamento') return `<span class="badge-status status-andamento">⚙️ Em andamento</span>`;
+      return `<span class="badge-status status-aguardando">⏳ Aguardando</span>`;
+    }
+
+    function formatDateDisplay(d) {
+      if (!d) return '—';
+      const p = d.split('-');
+      return p.length === 3 ? `${p[2]}/${p[1]}/${p[0]}` : d;
+    }
+
+    function escapeHtml(str) {
+      if (!str) return '';
+      return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+    }
+
+    function populateTeamFilters() {
+      const selectFilter = document.getElementById('filterTeam');
+      const machSelect = document.getElementById('machTeam');
+      const val = selectFilter.value;
+      selectFilter.innerHTML = '<option value="todas">Todas as Equipas</option>';
+      machSelect.innerHTML = '<option value="—">Sem equipa definida (—)</option>';
+      appTeams.forEach(t => {
+        selectFilter.innerHTML += `<option value="${t.name}">${t.name}</option>`;
+        machSelect.innerHTML += `<option value="${t.name}">${t.name}</option>`;
+      });
+      if (val) selectFilter.value = val;
+    }
+
+    function clearFilters() {
+      document.getElementById('filterPeriod').value = '';
+      document.getElementById('filterSearch').value = '';
+      document.getElementById('filterStatus').value = 'todos';
+      document.getElementById('filterTeam').value = 'todas';
+      document.getElementById('filterLinha').value = 'todas';
+      renderTable();
+    }
+
+    function renderTable() {
+      const tbody = document.getElementById('machinesTableBody');
+      const period = document.getElementById('filterPeriod').value;
+      const search = document.getElementById('filterSearch').value.toLowerCase().trim();
+      const statusFilter = document.getElementById('filterStatus').value;
+      const teamFilter = document.getElementById('filterTeam').value;
+      const linhaFilter = document.getElementById('filterLinha').value;
+
+      const filtered = appMachines.filter(item => {
+        const computedStatus = getMachineStatus(item);
+        if (search && !`${item.os} ${item.cliente} ${item.maquina} ${item.equipe} ${item.obs}`.toLowerCase().includes(search)) return false;
+        if (statusFilter !== 'todos' && computedStatus !== statusFilter) return false;
+        if (teamFilter !== 'todas' && item.equipe !== teamFilter) return false;
+        if (linhaFilter !== 'todas' && item.linha !== linhaFilter) return false;
+        if (period && !item.inicio?.startsWith(period) && !item.previsao?.startsWith(period) && !item.entregaReal?.startsWith(period)) return false;
+        return true;
+      });
+
+      document.getElementById('countShowing').textContent = `Mostrando ${filtered.length} de ${appMachines.length} máquinas`;
+      document.getElementById('countTotalBadge').textContent = `Total: ${appMachines.length} registos`;
+
+      if (filtered.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="12" style="text-align:center; padding:2.5rem; color:#64748b;">Nenhuma máquina encontrada.</td></tr>`;
+        return;
+      }
+
+      tbody.innerHTML = filtered.map(item => {
+        const status = getMachineStatus(item);
+        const isChecked = selectedMachineIds.has(item.id);
+        const linhaClass = item.linha === 'Pesada' ? 'pill-linha pesada' : 'pill-linha';
+        let osHtml = '<span class="text-muted">—</span>';
+        if (item.pdfData || item.hasPdf) {
+          osHtml = `<button type="button" class="btn-delta btn-indigo btn-sm" onclick="verPdfOs('${item.id}')" style="padding:0.25rem 0.55rem; font-size:0.75rem;">📄 Ver OS</button>`;
+        }
+        return `
+          <tr class="${isChecked ? 'selected-row' : ''}">
+            <td style="text-align:center;"><input type="checkbox" ${isChecked ? 'checked' : ''} onchange="toggleSelectMachine('${item.id}', this)"></td>
+            <td><strong>${escapeHtml(item.equipe)}</strong></td>
+            <td>${escapeHtml(item.cliente)}</td>
+            <td><span style="font-weight:600; color:#f1f5f9;">${escapeHtml(item.maquina)}</span></td>
+            <td><span class="${linhaClass}">${escapeHtml(item.linha)}</span></td>
+            <td>${formatDateDisplay(item.inicio)}</td>
+            <td>${formatDateDisplay(item.previsao)}</td>
+            <td><strong style="color:#10b981;">${formatDateDisplay(item.entregaReal)}</strong></td>
+            <td>${getStatusBadge(status)}</td>
+            <td style="max-width:220px; font-size:0.75rem; color:#94a3b8;" title="${escapeHtml(item.obs)}">${escapeHtml(item.obs || '—')}</td>
+            <td style="text-align:center;">${osHtml}</td>
+            <td style="text-align:right;"><button class="btn-delta btn-slate btn-sm editor-only" onclick="editMachine('${item.id}')">✏️</button></td>
+          </tr>
+        `;
+      }).join('');
+      setupPermissions();
+    }
+
+    function toggleSelectMachine(id, cb) {
+      if (cb.checked) selectedMachineIds.add(id); else selectedMachineIds.delete(id);
+      renderTable();
+    }
+
+    function toggleSelectAll(cb) {
+      if (cb.checked) appMachines.forEach(m => selectedMachineIds.add(m.id)); else selectedMachineIds.clear();
+      renderTable();
+    }
+
+    function deleteSelectedMachines() {
+      if (selectedMachineIds.size === 0) return alert('Selecione máquinas para excluir.');
+      if (!confirm(`Excluir ${selectedMachineIds.size} máquina(s)?`)) return;
+      appMachines = appMachines.filter(m => !selectedMachineIds.has(m.id));
+      selectedMachineIds.clear();
+      saveData();
+      renderTable();
+      updateDashboard();
+    }
+
+    function syncData() {
+      loadStorage();
+      renderTable();
+      updateDashboard();
+      alert('Base sincronizada!');
+    }
+
+    /* =================================================================
+       VISUALIZADOR DE PDF ANEXADO (CORRIGIDO E UNIFICADO)
+       ================================================================= */
+    async function verPdfOs(id) {
+      const item = appMachines.find(m => m.id === id);
+      if (!item) {
+        alert('Máquina não encontrada.');
+        return;
+      }
+      if (item.pdfData && item.pdfData.trim()) {
+        openPdfFromBase64(item.pdfData);
+        return;
+      }
+      if (item.hasPdf) {
+        try {
+          const storedPdf = await idbBuscarPdf(item.id);
+          if (storedPdf && storedPdf.trim()) {
+            openPdfFromBase64(storedPdf);
+            return;
+          }
+        } catch (err) {
+          console.warn('Erro ao carregar PDF do IndexedDB:', err);
+        }
+      }
+      alert('Documento PDF não encontrado para esta OS.');
+    }
+    window.verPdfOs = verPdfOs;
+    window.openPdfAttachment = verPdfOs;
+
+    function openPdfFromBase64(pdfDataUri) {
+      try {
+        const commaIdx = pdfDataUri.indexOf(',');
+        const base64 = commaIdx >= 0 ? pdfDataUri.slice(commaIdx + 1) : pdfDataUri;
+        const byteCharacters = atob(base64.trim());
+        const byteNumbers = new Uint8Array(byteCharacters.length);
+        for (let i = 0; i < byteCharacters.length; i++) {
+          byteNumbers[i] = byteCharacters.charCodeAt(i);
+        }
+        const blob = new Blob([byteNumbers], { type: 'application/pdf' });
+        const blobUrl = URL.createObjectURL(blob);
+        window.open(blobUrl, '_blank');
+        setTimeout(() => URL.revokeObjectURL(blobUrl), 120000);
+      } catch (err) {
+        window.open(pdfDataUri, '_blank');
+      }
+    }
+
+    function openMachineModal(id = null) {
+      populateTeamFilters();
+      const form = document.getElementById('machineForm');
+      form.reset();
+      document.getElementById('machPdfStatus').textContent = '';
+      if (id) {
+        const item = appMachines.find(m => m.id === id);
+        if (!item) return;
+        document.getElementById('machineModalTitle').textContent = `Editar Máquina — OS ${item.os}`;
+        document.getElementById('machId').value = item.id;
+        document.getElementById('machOs').value = item.os || '';
+        document.getElementById('machTeam').value = item.equipe || '';
+        document.getElementById('machClient').value = item.cliente || '';
+        document.getElementById('machModel').value = item.maquina || '';
+        document.getElementById('machLinha').value = item.linha || 'Leve';
+        document.getElementById('machStatusManual').value = item.statusManual || 'automatico';
+        document.getElementById('machStart').value = item.inicio || '';
+        document.getElementById('machForecast').value = item.previsao || '';
+        document.getElementById('machReal').value = item.entregaReal || '';
+        document.getElementById('machNotes').value = item.obs || '';
+      } else {
+        document.getElementById('machineModalTitle').textContent = 'Registar Máquina CNC';
+        document.getElementById('machId').value = '';
+      }
+      document.getElementById('machineModal').classList.add('open');
+    }
+
+    function editMachine(id) { openMachineModal(id); }
+    function closeMachineModal() { document.getElementById('machineModal').classList.remove('open'); }
+
+    async function saveMachine(e) {
+      e.preventDefault();
+      const id = document.getElementById('machId').value;
+      const os = document.getElementById('machOs').value.trim();
+      const equipe = document.getElementById('machTeam').value;
+      const cliente = document.getElementById('machClient').value.trim();
+      const maquina = document.getElementById('machModel').value.trim();
+      const linha = document.getElementById('machLinha').value;
+      const statusManual = document.getElementById('machStatusManual').value;
+      const inicio = document.getElementById('machStart').value;
+      const previsao = document.getElementById('machForecast').value;
+      const entregaReal = document.getElementById('machReal').value;
+      const obs = document.getElementById('machNotes').value.trim();
+      const pdfInput = document.getElementById('machPdf');
+      let newPdfData = null;
+
+      if (pdfInput.files && pdfInput.files[0]) {
+        try { newPdfData = await fileToDataUrl(pdfInput.files[0]); } catch (err) {}
+      }
+
+      if (id) {
+        const index = appMachines.findIndex(m => m.id === id);
+        if (index !== -1) {
+          const target = appMachines[index];
+          let hasPdf = target.hasPdf || false;
+          if (newPdfData) {
+            await idbSalvarPdf(id, newPdfData);
+            hasPdf = true;
+          }
+          appMachines[index] = { ...target, os, equipe, cliente, maquina, linha, statusManual, inicio, previsao, entregaReal, obs, pdfData: '', hasPdf };
+        }
+      } else {
+        const newId = 'M_' + Date.now();
+        let hasPdf = false;
+        if (newPdfData) {
+          await idbSalvarPdf(newId, newPdfData);
+          hasPdf = true;
+        }
+        appMachines.unshift({ id: newId, os, equipe, cliente, maquina, linha, statusManual, inicio, previsao, entregaReal, obs, pdfData: '', hasPdf });
+      }
+      await saveData();
+      renderTable();
+      updateDashboard();
+      closeMachineModal();
+    }
+
+    function fileToDataUrl(file) {
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result);
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+      });
+    }
+
+    function openMultiImportModal() {
+      currentPreviewRows = [];
+      document.getElementById('multiPdfInput').value = '';
+      document.getElementById('aiProgressBox').style.display = 'none';
+      document.getElementById('btnAiParse').disabled = true;
+      document.getElementById('btnSaveMulti').disabled = true;
+      renderImportPreviewTable();
+      document.getElementById('multiImportModal').classList.add('open');
+    }
+
+    function closeMultiImportModal() { document.getElementById('multiImportModal').classList.remove('open'); }
+
+    function onFilesSelected(input) {
+      const files = Array.from(input.files || []);
+      if (files.length === 0) return;
+      document.getElementById('btnAiParse').disabled = false;
+      document.getElementById('previewRowsCount').textContent = `${files.length} ficheiro(s)`;
+      currentPreviewRows = files.map((f, idx) => {
+        const nameWithoutExt = f.name.replace(/\.[^/.]+$/, "");
+        const row = {
+          id: 'import_' + idx, file: f, fileName: f.name, selected: true,
+          os: nameWithoutExt, equipe: '', cliente: '', maquina: 'CNC', linha: 'Leve',
+          inicio: '', previsao: '', obs: `OS: ${nameWithoutExt}`, base64: ''
+        };
+        fileToDataUrl(f).then(d => row.base64 = d).catch(e => {});
+        return row;
+      });
+      renderImportPreviewTable();
+    }
+
+    async function processPdfsWithGemini() {
+      if (!geminiApiKey) {
+        alert('Configure primeiro a sua Chave da API do Gemini!');
+        openConfigModal();
+        return;
+      }
+      const progressBox = document.getElementById('aiProgressBox');
+      const progressText = document.getElementById('aiProgressText');
+      const progressBar = document.getElementById('aiProgressBar');
+      progressBox.style.display = 'block';
+
+      const total = currentPreviewRows.length;
+      let completed = 0;
+
+      for (let i = 0; i < total; i++) {
+        const row = currentPreviewRows[i];
+        try {
+          const base64DataUrl = row.base64 || await fileToDataUrl(row.file);
+          const base64Raw = base64DataUrl.includes(',') ? base64DataUrl.split(',')[1] : base64DataUrl;
+          row.base64 = base64DataUrl;
+          const parsed = await lerPdfComIA(base64Raw, geminiApiKey);
+          row.os = parsed.os || row.os;
+          row.cliente = parsed.cliente || 'Cliente';
+          row.maquina = parsed.maquina || 'Máquina CNC';
+          row.linha = parsed.linha || 'Leve';
+          row.inicio = parsed.inicio || '';
+          row.previsao = parsed.previsao || '';
+          row.obs = parsed.obs || row.obs;
+          row.selected = true;
+        } catch (err) {
+          row.obs = 'Erro na leitura IA';
+        }
+        completed++;
+        progressBar.style.width = Math.round((completed / total) * 100) + '%';
+        progressText.textContent = `Lendo ${completed} de ${total}...`;
+        renderImportPreviewTable();
+      }
+      document.getElementById('btnSaveMulti').disabled = !currentPreviewRows.some(r => r.selected);
+    }
+
+    function renderImportPreviewTable() {
+      const tbody = document.getElementById('importPreviewBody');
+      if (currentPreviewRows.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="9" style="text-align:center; padding:2rem; color:#64748b;">Nenhum PDF carregado.</td></tr>`;
+        return;
+      }
+      tbody.innerHTML = currentPreviewRows.map((row, idx) => `
+        <tr>
+          <td style="text-align:center;"><input type="checkbox" ${row.selected ? 'checked' : ''} onchange="currentPreviewRows[${idx}].selected = this.checked"></td>
+          <td>${escapeHtml(row.fileName)}</td>
+          <td><input type="text" class="preview-input" value="${escapeHtml(row.equipe)}" onchange="currentPreviewRows[${idx}].equipe = this.value"></td>
+          <td><input type="text" class="preview-input" value="${escapeHtml(row.cliente)}" onchange="currentPreviewRows[${idx}].cliente = this.value"></td>
+          <td><input type="text" class="preview-input" value="${escapeHtml(row.maquina)}" onchange="currentPreviewRows[${idx}].maquina = this.value"></td>
+          <td>
+            <select class="preview-input" onchange="currentPreviewRows[${idx}].linha = this.value">
+              <option value="Leve" ${row.linha === 'Leve' ? 'selected' : ''}>Leve</option>
+              <option value="Intermediária" ${row.linha === 'Intermediária' ? 'selected' : ''}>Intermediária</option>
+              <option value="Pesada" ${row.linha === 'Pesada' ? 'selected' : ''}>Pesada</option>
+            </select>
+          </td>
+          <td><input type="date" class="preview-input" value="${row.inicio}" onchange="currentPreviewRows[${idx}].inicio = this.value"></td>
+          <td><input type="date" class="preview-input" value="${row.previsao}" onchange="currentPreviewRows[${idx}].previsao = this.value"></td>
+          <td><input type="text" class="preview-input" value="${escapeHtml(row.obs)}" onchange="currentPreviewRows[${idx}].obs = this.value"></td>
+        </tr>
+      `).join('');
+      document.getElementById('btnSaveMulti').disabled = !currentPreviewRows.some(r => r.selected);
+    }
+
+    async function saveImportedRows() {
+      const selected = currentPreviewRows.filter(r => r.selected);
+      if (selected.length === 0) return alert('Selecione linhas para importar.');
+
+      const dateRule = document.getElementById('importStartDateRule').value;
+      const todayIso = new Date().toISOString().split('T')[0];
+
+      for (let idx = 0; idx < selected.length; idx++) {
+        const item = selected[idx];
+        const newId = 'M_' + Date.now() + '_' + idx;
+        let fullPdfData = item.base64 || await fileToDataUrl(item.file);
+        if (!fullPdfData.startsWith('data:')) fullPdfData = 'data:application/pdf;base64,' + fullPdfData;
+
+        let hasPdf = false;
+        if (fullPdfData) {
+          await idbSalvarPdf(newId, fullPdfData);
+          hasPdf = true;
+        }
+
+        let finalInicio = dateRule === 'hoje' ? todayIso : (dateRule === 'nenhuma' ? '' : item.inicio);
+
+        appMachines.unshift({
+          id: newId,
+          os: item.os || 'DM00',
+          equipe: item.equipe || '—',
+          cliente: item.cliente || 'Cliente',
+          maquina: item.maquina || 'CNC',
+          linha: item.linha || 'Leve',
+          inicio: finalInicio,
+          previsao: item.previsao || '',
+          entregaReal: '',
+          statusManual: 'automatico',
+          obs: item.obs || '',
+          pdfData: '',
+          hasPdf: hasPdf
+        });
+      }
+
+      await saveData();
+      renderTable();
+      updateDashboard();
+      switchTab('acompanhamento');
+      closeMultiImportModal();
+      alert('OS importadas com sucesso!');
+    }
+    window.saveImportedRows = saveImportedRows;
+
+    function updateDashboard() {
+      const refMonth = '2026-09';
+      document.getElementById('kpiTotal').textContent = appMachines.length;
+      document.getElementById('kpiAndamento').textContent = appMachines.filter(m => getMachineStatus(m) === 'Em andamento').length;
+      document.getElementById('kpiEntreguesMes').textContent = appMachines.filter(m => m.entregaReal?.startsWith(refMonth)).length;
+      document.getElementById('kpiEficiencia').textContent = '100%';
+
+      const list = document.getElementById('dashTeamsList');
+      list.innerHTML = appTeams.map(t => `<div class="team-item"><strong>${t.name}</strong></div>`).join('');
+      renderAnnualChart();
+    }
+
+    function renderAnnualChart() {
+      const container = document.getElementById('annualChartBox');
+      container.innerHTML = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'].map((m, i) => `
+        <div class="svg-bar-col">
+          <span class="svg-bar-val">0</span>
+          <div class="svg-bar" style="height:10%;"></div>
+          <span class="svg-bar-label">${m}</span>
+        </div>
+      `).join('');
+    }
+
+    function renderTeams() {
+      document.getElementById('teamsContainer').innerHTML = appTeams.map((t, idx) => `
+        <div class="kpi-card">
+          <h3 style="margin:0; color:#f8fafc;">${escapeHtml(t.name)}</h3>
+          <div style="margin-top:0.5rem;">${(t.tags || []).map(tag => `<span class="team-badge-tag">${tag}</span>`).join('')}</div>
+        </div>
+      `).join('');
+    }
+
+    function openTeamModal() { document.getElementById('teamModal').classList.add('open'); }
+    function closeTeamModal() { document.getElementById('teamModal').classList.remove('open'); }
+    function saveTeamSubmit() {
+      const name = document.getElementById('teamNameInput').value.trim();
+      const tags = document.getElementById('teamTagsInput').value.split(',').map(s => s.trim()).filter(Boolean);
+      if (!name) return alert('Insira o nome!');
+      appTeams.push({ name, tags });
+      saveData();
+      populateTeamFilters();
+      renderTeams();
+      closeTeamModal();
+    }
+
+    function updatePodio() {
+      document.getElementById('podiumWrapper').innerHTML = `<div style="text-align:center; color:#94a3b8;">Classificação em atualização.</div>`;
+      document.getElementById('podiumTableBody').innerHTML = '';
+    }
+
+    function renderUsers() {
+      document.getElementById('usersTableBody').innerHTML = appUsers.map((u, idx) => `
+        <tr>
+          <td><strong>${escapeHtml(u.email)}</strong></td>
+          <td><span class="meta-tag">${escapeHtml(u.role)}</span></td>
+          <td style="text-align:right;"></td>
+        </tr>
+      `).join('');
+    }
+
+    function openUserModal() { document.getElementById('userModal').classList.add('open'); }
+    function closeUserModal() { document.getElementById('userModal').classList.remove('open'); }
+    function saveNewUserSubmit() {
+      const email = document.getElementById('newEditorEmail').value.trim();
+      const pass = document.getElementById('newEditorPass').value;
+      if (!email || !pass) return alert('Preencha os campos.');
+      appUsers.push({ email, pass, role: 'Editor' });
+      saveData();
+      renderUsers();
+      closeUserModal();
+    }
+
+    function openConfigModal() {
+      document.getElementById('geminiApiKeyInput').value = geminiApiKey;
+      document.getElementById('configModal').classList.add('open');
+    }
+    function closeConfigModal() { document.getElementById('configModal').classList.remove('open'); }
+    function saveGeminiKey() {
+      geminiApiKey = document.getElementById('geminiApiKeyInput').value.trim();
+      localStorage.setItem(STORAGE_KEYS.GEMINI_KEY, geminiApiKey);
+      checkGeminiBanner();
+      alert('Chave guardada!');
+    }
+    function checkGeminiBanner() {
+      const banner = document.getElementById('geminiAlertBanner');
+      if (banner) {
+        if (geminiApiKey) banner.classList.add('hidden'); else banner.classList.remove('hidden');
+      }
+    }
+
+    function exportBackup() {
+      const data = { machines: appMachines, teams: appTeams, users: appUsers };
+      const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'delta-backup.json';
+      a.click();
+    }
+
+    function importBackup(e) {
+      const file = e.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = (evt) => {
+        try {
+          const parsed = JSON.parse(evt.target.result);
+          if (parsed.machines) appMachines = parsed.machines;
+          if (parsed.teams) appTeams = parsed.teams;
+          if (parsed.users) appUsers = parsed.users;
+          saveData();
+          renderTable();
+          alert('Backup restaurado!');
+          closeConfigModal();
+        } catch (err) { alert('Erro no backup.'); }
+      };
+      reader.readAsText(file);
+    }
+
+    function exportCSV() {
+      if (appMachines.length === 0) return alert('Sem registos.');
+      const headers = ['OS', 'Equipa', 'Cliente', 'Maquina', 'Linha', 'Inicio', 'Previsao', 'EntregaReal', 'Status'];
+      const rows = appMachines.map(m => [m.os, m.equipe, m.cliente, m.maquina, m.linha, m.inicio, m.previsao, m.entregaReal, getMachineStatus(m)]);
+      const csv = '\uFEFF' + [headers.join(';'), ...rows.map(r => r.join(';'))].join('\r\n');
+      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'producao-delta.csv';
+      a.click();
+    }
+  </script>
+</body>
+</html>
