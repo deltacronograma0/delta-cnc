@@ -409,11 +409,6 @@ body {
   color: #fbbf24;
   border: 1px solid rgba(245, 158, 11, 0.3);
 }
-.status-atrasado {
-  background: rgba(239, 68, 68, 0.12);
-  color: #fca5a5;
-  border: 1px solid rgba(239, 68, 68, 0.3);
-}
 
 /* Linha Pill */
 .pill-linha {
@@ -488,13 +483,18 @@ body {
   margin-top: 0.5rem;
 }
 
-.dash-sections-stack {
-  display: flex;
-  flex-direction: column;
-  gap: 1.75rem;
+.dash-sections-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.5rem;
+}
+@media (max-width: 1024px) {
+  .dash-sections-grid {
+    grid-template-columns: 1fr;
+  }
 }
 
-.dash-card-box {
+.teams-production-card {
   background: var(--card-bg);
   border: 1px solid var(--card-border);
   border-radius: var(--radius);
@@ -502,74 +502,16 @@ body {
   box-shadow: var(--shadow);
 }
 
-/* Advanced Team Dashboard Grid */
-.dash-teams-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
-  gap: 1.25rem;
-  margin-top: 1rem;
-}
-.dash-team-card {
-  background: rgba(11, 15, 23, 0.7);
+.team-item {
+  background: rgba(11, 15, 23, 0.5);
   border: 1px solid var(--border);
-  border-radius: 12px;
-  padding: 1.25rem;
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-  transition: all 0.2s ease;
+  border-radius: 10px;
+  padding: 1rem;
+  margin-bottom: 0.85rem;
+  transition: background 0.15s ease;
 }
-.dash-team-card:hover {
-  border-color: rgba(99, 102, 241, 0.4);
-  background: rgba(11, 15, 23, 0.95);
-}
-.dash-team-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  border-bottom: 1px solid var(--border);
-  padding-bottom: 0.75rem;
-}
-.dash-team-metrics {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 0.5rem;
-  background: rgba(17, 24, 39, 0.8);
-  padding: 0.75rem;
-  border-radius: 8px;
-  text-align: center;
-  border: 1px solid rgba(255, 255, 255, 0.04);
-}
-.metric-box-title {
-  font-size: 0.68rem;
-  color: var(--text-muted);
-  text-transform: uppercase;
-  font-weight: 700;
-}
-.metric-box-val {
-  font-size: 1.1rem;
-  font-weight: 800;
-  color: #fff;
-  margin-top: 0.2rem;
-}
-.dash-machines-list {
-  display: flex;
-  flex-direction: column;
-  gap: 0.6rem;
-  max-height: 220px;
-  overflow-y: auto;
-  padding-right: 2px;
-}
-.dash-machine-row {
-  background: rgba(255, 255, 255, 0.02);
-  border: 1px solid rgba(255, 255, 255, 0.05);
-  padding: 0.65rem 0.85rem;
-  border-radius: 8px;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 0.75rem;
-  font-size: 0.8rem;
+.team-item:hover {
+  background: rgba(11, 15, 23, 0.8);
 }
 
 /* Podium */
@@ -687,6 +629,23 @@ body {
   gap: 0.85rem;
   background: #0d131f;
   border-radius: 0 0 16px 16px;
+}
+
+/* Import Table Inputs */
+.preview-input {
+  background: rgba(11, 15, 23, 0.8);
+  border: 1px solid var(--border);
+  color: var(--text);
+  padding: 0.35rem 0.5rem;
+  border-radius: 6px;
+  font-size: 0.78rem;
+  width: 100%;
+  box-sizing: border-box;
+  outline: none;
+}
+.preview-input:focus {
+  border-color: #6366f1;
+  box-shadow: 0 0 0 1px #6366f1;
 }
 
 /* Grid layout for forms */
@@ -814,7 +773,7 @@ body {
     </div>
   </header>
 
-  <!-- Gemini Key Warning Banner -->
+  <!-- Gemini Key Warning Banner (auto-hidden when key exists) -->
   <div id="geminiAlertBanner" class="gemini-alert">
     <span>⚠️ <strong>Atenção:</strong> Chave da API do Gemini necessária para leitura inteligente de PDFs de OS.</span>
     <button class="btn-delta btn-amber btn-sm" onclick="openConfigModal()">Configurar Chave</button>
@@ -979,50 +938,19 @@ body {
         </div>
       </div>
 
-      <!-- Enhanced Dashboard Layout -->
-      <div class="dash-sections-stack">
-        <!-- TOP SECTION: Equipas, Maquinas, OS Anexadas, Datas -->
-        <div class="dash-card-box">
-          <h3 style="margin-top:0; margin-bottom:0.4rem; font-size:1.1rem; color:#ffffff; display:flex; justify-content:space-between; align-items:center;">
-            <span>📋 Acompanhamento por Equipa &amp; Ordens de Serviço (OS)</span>
-            <span style="font-size:0.78rem; color:#818cf8; font-weight:600;" id="dashRefMonthSub">Setembro/2026</span>
+      <!-- Detailed Layout: Team Cards and Annual Chart -->
+      <div class="dash-sections-grid">
+        <div class="teams-production-card">
+          <h3 style="margin-top:0; margin-bottom:1.25rem; font-size:1.05rem; color:#ffffff; display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid var(--border); padding-bottom:0.75rem;">
+            <span>👥 Produção por Equipa no Mês</span>
+            <span style="font-size:0.75rem; color:var(--text-muted); font-weight:normal;" id="dashRefMonthSub">Setembro/2026</span>
           </h3>
-          <p style="font-size:0.78rem; color:var(--text-muted); margin-top:0; margin-bottom:1.25rem;">
-            Visão detalhada das máquinas atribuídas a cada equipa, suas respetivas OS anexadas, datas de início e fim.
-          </p>
-          <div class="dash-teams-grid" id="dashTeamsAdvancedGrid">
-            <!-- Rendered via JS -->
+          <div id="dashTeamsList">
+            <!-- Dynamic team items -->
           </div>
         </div>
 
-        <!-- BOTTOM SECTION: Métricas consolidadas (Feitas no mês, Atrasadas, Entregues, % por equipa) -->
-        <div class="dash-card-box">
-          <h3 style="margin-top:0; margin-bottom:0.4rem; font-size:1.1rem; color:#ffffff;">
-            📊 Indicadores de Desempenho e Eficiência por Equipa (Mês Atual)
-          </h3>
-          <p style="font-size:0.78rem; color:var(--text-muted); margin-top:0; margin-bottom:1.25rem;">
-            Resumo estatístico de volume produtivo, entregas no prazo, itens em atraso e percentual de participação.
-          </p>
-          <div id="dashTeamSummaryTableContainer">
-            <table class="delta-table">
-              <thead>
-                <tr>
-                  <th>Equipa</th>
-                  <th>Produzidas no Mês</th>
-                  <th>Entregues</th>
-                  <th>Em Atraso</th>
-                  <th>Participação / Porcentagem</th>
-                </tr>
-              </thead>
-              <tbody id="dashTeamSummaryBody">
-                <!-- JS -->
-              </tbody>
-            </table>
-          </div>
-        </div>
-
-        <!-- ANNUAL CHART -->
-        <div class="dash-card-box">
+        <div class="teams-production-card">
           <h3 style="margin-top:0; margin-bottom:0.3rem; font-size:1.05rem; color:#ffffff;">
             📈 Arranques de Produção Anual (2026)
           </h3>
@@ -1030,7 +958,7 @@ body {
             Evolução de novas máquinas iniciadas ao longo dos meses
           </p>
           <div class="svg-chart-container" id="annualChartBox">
-            <!-- Built dynamically via JS -->
+            <!-- Built dynamically via JS with accessible SVG bars -->
           </div>
         </div>
       </div>
@@ -1123,7 +1051,7 @@ body {
           Detalhes e especificações técnicas registadas:
         </div>
         <div id="obsModalContent" style="background: rgba(11, 15, 23, 0.8); border: 1px solid var(--border); border-radius: 8px; padding: 1.15rem; color: #f3f4f6; font-size: 0.9rem; line-height: 1.6; white-space: pre-wrap; word-break: break-word;">
-          <!-- Texto completo -->
+          <!-- Texto completo de observações aqui -->
         </div>
       </div>
       <div class="modal-footer">
@@ -1248,7 +1176,7 @@ body {
     </div>
   </div>
 
-  <!-- MODAL: IMPORTAR VÁRIAS OS (COM IA GEMINI) -->
+  <!-- MODAL: IMPORTAR VÁRIAS OS (COM IA GEMINI) - RECURSO PRINCIPAL -->
   <div id="multiImportModal" class="modal-overlay">
     <div class="modal-dialog wide">
       <div class="modal-header">
@@ -1265,6 +1193,7 @@ body {
       </div>
 
       <div class="modal-body">
+        <!-- Upload Bar -->
         <div style="background:rgba(11, 15, 23, 0.6); border:1px dashed rgba(99, 102, 241, 0.4); border-radius:12px; padding:1.35rem; margin-bottom:1.35rem;">
           <div style="display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:1.25rem;">
             <div style="flex:1; min-width:280px;">
@@ -1284,6 +1213,7 @@ body {
             </div>
           </div>
 
+          <!-- Data de Início Selection Rule -->
           <div style="display:flex; flex-wrap:wrap; align-items:flex-end; gap:1.25rem; margin-top:1rem; padding-top:1rem; border-top:1px solid var(--border);">
             <div style="min-width:250px;">
               <label for="importStartDateRule" style="font-size:0.74rem; font-weight:700; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.04em; display:block; margin-bottom:0.4rem;">
@@ -1300,6 +1230,7 @@ body {
             </div>
           </div>
 
+          <!-- Progress status text -->
           <div id="aiProgressBox" style="margin-top:1rem; font-size:0.82rem; display:none;">
             <div style="display:flex; justify-content:space-between; margin-bottom:0.35rem;">
               <span id="aiProgressText" style="color:#60a5fa; font-weight:700;">A analisar documentos...</span>
@@ -1311,6 +1242,7 @@ body {
           </div>
         </div>
 
+        <!-- Preview Table -->
         <div style="margin-bottom:0.65rem; display:flex; justify-content:space-between; align-items:center;">
           <h4 style="margin:0; font-size:0.92rem; color:#ffffff; font-weight:700;">
             Prévia de Dados Extraídos (Células editáveis)
@@ -1451,6 +1383,9 @@ body {
 
   <!-- CORE LOGIC SCRIPTS -->
   <script>
+    /* =================================================================
+       CONSTANTS & SEED DATA
+       ================================================================= */
     const STORAGE_KEYS = {
       MACHINES: 'DELTA_MACHINES_DATA',
       TEAMS: 'DELTA_TEAMS_DATA',
@@ -1459,6 +1394,9 @@ body {
       CURRENT_USER: 'DELTA_CURRENT_USER'
     };
 
+    /* =================================================================
+       INDEXEDDB HELPERS PARA ARMAZENAMENTO DE PDFS
+       ================================================================= */
     const IDB_NAME = 'delta-cnc-db';
     const IDB_VERSION = 1;
     const IDB_STORE = 'pdfs';
@@ -1507,6 +1445,7 @@ body {
     }
 
     const GEMINI_MODELS = ['gemini-3.5-flash-lite', 'gemini-3.6-flash', 'gemini-3.8-flash'];
+    const MODELO_GEMINI = GEMINI_MODELS[0];
 
     async function lerPdfComIA(base64Raw, apiKey, customPrompt) {
       const prompt = customPrompt || 'Extraia desta OS em JSON puro: {"os":"número da OS","cliente":"nome","maquina":"modelo","linha":"Leve|Intermediária|Pesada","inicio":"YYYY-MM-DD","previsao":"YYYY-MM-DD","obs":"CNPJ | TAG | contato | especificações"}. Apenas JSON sem markdown.';
@@ -1538,7 +1477,10 @@ body {
             body: JSON.stringify(payload)
           });
 
-          if (response.status === 404) continue;
+          if (response.status === 404) {
+            console.warn(`Modelo ${model} retornou 404. Tentando próximo modelo...`);
+            continue;
+          }
 
           if (response.ok) {
             const data = await response.json();
@@ -1547,4 +1489,1327 @@ body {
               rawText = data.candidates[0].content.parts[0]?.text || data.candidates[0].content.parts.map(p => p.text).join('\n');
             }
 
-            let cleanJsonStr = rawText.replace(/```json/gi, '').replace(/
+            let cleanJsonStr = rawText.replace(/```json/gi, '').replace(/```/g, '').trim();
+            const firstBrace = cleanJsonStr.indexOf('{');
+            const lastBrace = cleanJsonStr.lastIndexOf('}');
+            if (firstBrace !== -1 && lastBrace !== -1) {
+              cleanJsonStr = cleanJsonStr.substring(firstBrace, lastBrace + 1);
+            }
+
+            return JSON.parse(cleanJsonStr);
+          } else {
+            console.warn(`Modelo ${model} retornou status ${response.status}. Tentando próximo...`);
+            continue;
+          }
+        } catch (fetchErr) {
+          console.warn(`Tentativa com ${model} falhou:`, fetchErr);
+        }
+      }
+
+      throw new Error('Falha ao processar PDF com os modelos Gemini disponíveis');
+    }
+
+    const SAMPLE_PDF_BASE64 = 'data:application/pdf;base64,JVBERi0xLjQKJcOkw7zDtsOfCjEgMCBvYmoKPDwKL1R5cGUgL0NhdGFsb2cKL1BhZ2VzIDIgMCBSCj4+CmVuZG9iagoyIDAgb2JqCjw8Ci9UeXBlIC9QYWdlcwovS2lkcyBbMyAwIFJdCi9Db3VudCAxCj4+CmVuZG9iagozIDAgb2JqCjw8Ci9UeXBlIC9QYWdlCi9QYXJlbnQgMiAwIFIKL01lZGlhQm94IFswIDAgNjEyIDc5Ml0KL1Jlc291cmNlcyA8PAovRm9udCA8PAovRjEgNCAwIFIKPj4KPj4KL0NvbnRlbnRzIDUgMCBSCj4+CmVuZG9iago0IDAgb2JqCjw8Ci9UeXBlIC9Gb250Ci9TdWJ0eXBlIC9UeXBlMQovQmFzZUZvbnQgL0hlbHZldGljYQo+PgplbmRvYmoKNSAwIG9iago8PAovTGVuZ3RoIDQ0Cj4+CnN0cmVhbQpCVAovRjEgMTIgVGYKNzIgNzIwIFRECihtYXF1aW5hIERFTFRBIENOQyAtIE9TIE1vZGVsbykgVGoKRVQKZW5kc3RyZWFtCmVuZG9iagp4cmVmCjAgNgowMDAwMDAwMDAwIDY1NTM1IGYgCjAwMDAwMDAwMTUgMDAwMDAgbiAKMDAwMDAwMDA2OCAwMDAwMCBuIAowMDAwMDAwMTI1IDAwMDAwIG4gCjAwMDAwMDAyMjUgMDAwMDAgbiAKMDAwMDAwMDI5NiAwMDAwMCBuIAp0cmFpbGVyCjw8Ci9TaXplIDYKL1Jvb3QgMSAwIFIKPj4Kc3RhcnR4cmVmCjM5MAolJUVPRg==';
+
+    const DEFAULT_SEED_MACHINES = [
+      { id: '1001', equipe: 'Felipe e Arthur', cliente: 'AC COMUNICACAO VISUAL LTDA', maquina: 'Fiber Split 50W + 4º Eixo + Estabilizador', linha: 'Leve', inicio: '2026-09-17', previsao: '2026-09-18', entregaReal: '2026-09-18', statusManual: 'automatico', obs: 'OS: DM01 | Concluído com testes óticos e alinhamento de espelhos galvo de alta precisão em laboratório.', os: 'DM01', pdfData: SAMPLE_PDF_BASE64 },
+      { id: '1002', equipe: 'Felipe e Arthur', cliente: 'LAYSLA BRAGA DA SILVA', maquina: 'FIBER SPLIT 50W', linha: 'Leve', inicio: '2026-09-17', previsao: '2026-09-18', entregaReal: '', statusManual: 'automatico', obs: 'Em montagem de carcaça e testes de fonte laser.', os: 'DM02' },
+      { id: '1003', equipe: 'Equipa Beta', cliente: 'JPX TECHNOLOGY LTDA', maquina: 'Centro de Usinagem Easy 2030, Spindle 12cv', linha: 'Pesada', inicio: '', previsao: '', entregaReal: '', statusManual: 'automatico', obs: 'Aguardando barramentos importados e revisão elétrica do painel CNC.', os: 'DM03' },
+      { id: '1004', equipe: 'Equipa Alfa', cliente: 'METALURGICA SUL BRASIL', maquina: 'Router CNC Industrial 1530', linha: 'Pesada', inicio: '2026-09-02', previsao: '2026-09-12', entregaReal: '2026-09-11', statusManual: 'automatico', obs: 'Entregue com calibração a laser e trecho de teste completo.', os: 'DM04' },
+      { id: '1005', equipe: 'Carlos e Renato', cliente: 'MÓVEIS PLANEJADOS ARTÍSTICA', maquina: 'Router Wood PRO 1325 Spindle 6kw', linha: 'Intermediária', inicio: '2026-09-10', previsao: '2026-09-22', entregaReal: '', statusManual: 'automatico', obs: 'Testes de vácuo em andamento e fixação da mesa.', os: 'DM05' }
+    ];
+
+    const DEFAULT_SEED_TEAMS = [
+      { name: 'Felipe e Arthur', tags: ['Alta Performance', 'Linha Leve', 'Fibras Laser'] },
+      { name: 'Equipa Beta', tags: ['Linha Pesada', 'Precisão CNC', 'Centros Usinagem'] },
+      { name: 'Equipa Alfa', tags: ['Linha Pesada', 'Corte Plasma', 'Routers Alta Potência'] },
+      { name: 'Carlos e Renato', tags: ['Linha Intermediária', 'Routers Madeira', 'Sistemas Vácuo'] }
+    ];
+
+    const DEFAULT_SEED_USERS = [
+      { email: 'deltacronograma@gmail.com', pass: 'delta2026', role: 'Administrador' },
+      { email: 'producao@deltacnc.pt', pass: 'delta123', role: 'Editor' }
+    ];
+
+    /* =================================================================
+       STATE MANAGEMENT
+       ================================================================= */
+    let appMachines = [];
+    let appData = appMachines;
+    let appTeams = [];
+    let appUsers = [];
+    let currentUser = null;
+    let geminiApiKey = '';
+    let selectedMachineIds = new Set();
+    let currentPreviewRows = [];
+
+    document.addEventListener('DOMContentLoaded', async () => {
+      loadStorage();
+      await migrarPdfsAntigosParaIdb();
+      updateClock();
+      setInterval(updateClock, 1000);
+      setupPermissions();
+      populateTeamFilters();
+      renderTable();
+      updateDashboard();
+      renderTeams();
+      updatePodio();
+      renderUsers();
+      checkGeminiBanner();
+    });
+
+    async function migrarPdfsAntigosParaIdb() {
+      let mudou = false;
+      for (const item of appMachines) {
+        if (item.pdfData && item.pdfData.length > 50) {
+          try {
+            await idbSalvarPdf(item.id, item.pdfData);
+            item.pdfData = '';
+            item.hasPdf = true;
+            mudou = true;
+          } catch (e) {
+            console.warn('Erro ao migrar PDF para IndexedDB no carregamento:', e);
+          }
+        } else if (item.pdfData) {
+          item.hasPdf = true;
+          item.pdfData = '';
+          mudou = true;
+        }
+      }
+      if (mudou) {
+        saveData();
+      }
+    }
+
+    function loadStorage() {
+      try {
+        const m = localStorage.getItem(STORAGE_KEYS.MACHINES);
+        appMachines = m ? JSON.parse(m) : [...DEFAULT_SEED_MACHINES];
+        appData = appMachines;
+
+        const t = localStorage.getItem(STORAGE_KEYS.TEAMS);
+        appTeams = t ? JSON.parse(t) : [...DEFAULT_SEED_TEAMS];
+
+        const u = localStorage.getItem(STORAGE_KEYS.USERS);
+        appUsers = u ? JSON.parse(u) : [...DEFAULT_SEED_USERS];
+
+        geminiApiKey = localStorage.getItem(STORAGE_KEYS.GEMINI_KEY) || '';
+
+        const cur = localStorage.getItem(STORAGE_KEYS.CURRENT_USER);
+        if (cur) {
+          currentUser = JSON.parse(cur);
+        } else {
+          currentUser = appUsers[0];
+          localStorage.setItem(STORAGE_KEYS.CURRENT_USER, JSON.stringify(currentUser));
+        }
+
+        saveData();
+      } catch (err) {
+        console.error('Erro ao ler storage, aplicando valores padrão:', err);
+        appMachines = [...DEFAULT_SEED_MACHINES];
+        appData = appMachines;
+        appTeams = [...DEFAULT_SEED_TEAMS];
+        appUsers = [...DEFAULT_SEED_USERS];
+        currentUser = appUsers[0];
+      }
+    }
+
+    async function saveData() {
+      try {
+        localStorage.setItem(STORAGE_KEYS.MACHINES, JSON.stringify(appMachines));
+        localStorage.setItem(STORAGE_KEYS.TEAMS, JSON.stringify(appTeams));
+        localStorage.setItem(STORAGE_KEYS.USERS, JSON.stringify(appUsers));
+        if (currentUser) {
+          localStorage.setItem(STORAGE_KEYS.CURRENT_USER, JSON.stringify(currentUser));
+        } else {
+          localStorage.removeItem(STORAGE_KEYS.CURRENT_USER);
+        }
+      } catch (e) {
+        console.warn('Erro de gravação no localStorage (possível quota excedida):', e);
+        let limpouAlgo = false;
+        try {
+          for (const item of appMachines) {
+            if (item.pdfData && item.pdfData.length > 0) {
+              await idbSalvarPdf(item.id, item.pdfData);
+              item.pdfData = '';
+              item.hasPdf = true;
+              limpouAlgo = true;
+            }
+          }
+        } catch (idbErr) {
+          console.error('Falha ao transferir para IndexedDB na recuperação de quota:', idbErr);
+        }
+
+        if (limpouAlgo) {
+          try {
+            localStorage.setItem(STORAGE_KEYS.MACHINES, JSON.stringify(appMachines));
+            localStorage.setItem(STORAGE_KEYS.TEAMS, JSON.stringify(appTeams));
+            localStorage.setItem(STORAGE_KEYS.USERS, JSON.stringify(appUsers));
+            return;
+          } catch (retryErr) {
+            console.error('Ainda sem quota após limpeza:', retryErr);
+          }
+        }
+
+        alert('Não foi possível salvar: espaço de armazenamento cheio. Remova PDFs antigos ou exporte um backup.');
+      }
+    }
+
+    /* =================================================================
+       CLOCK & AUTH
+       ================================================================= */
+    function updateClock() {
+      const now = new Date();
+      const timeStr = now.toLocaleTimeString('pt-PT', { hour12: false });
+      const dateStr = now.toLocaleDateString('pt-PT', { day: '2-digit', month: '2-digit', year: 'numeric' });
+      const el = document.getElementById('clockEl');
+      if (el) el.innerHTML = `⏱️ ${dateStr} ${timeStr}`;
+    }
+
+    function setupPermissions() {
+      const userLabel = document.getElementById('currentUserLabel');
+      const authBtn = document.getElementById('authBtn');
+      const editorEls = document.querySelectorAll('.editor-only');
+
+      if (currentUser) {
+        userLabel.textContent = `${currentUser.email.split('@')[0]} (${currentUser.role})`;
+        authBtn.textContent = 'Terminar Sessão';
+        authBtn.className = 'btn-delta btn-danger btn-sm';
+        editorEls.forEach(el => el.style.display = '');
+      } else {
+        userLabel.textContent = 'Visitante (Leitura)';
+        authBtn.textContent = 'Entrar';
+        authBtn.className = 'btn-delta btn-slate btn-sm';
+        editorEls.forEach(el => el.style.display = 'none');
+      }
+    }
+
+    function toggleAuthModal() {
+      if (currentUser) {
+        if (confirm('Deseja terminar a sessão atual?')) {
+          currentUser = null;
+          localStorage.removeItem(STORAGE_KEYS.CURRENT_USER);
+          setupPermissions();
+          renderTable();
+          renderUsers();
+        }
+      } else {
+        document.getElementById('loginEmail').value = '';
+        document.getElementById('loginPassword').value = '';
+        document.getElementById('authModal').classList.add('open');
+      }
+    }
+
+    function closeAuthModal() {
+      document.getElementById('authModal').classList.remove('open');
+    }
+
+    function handleLoginSubmit() {
+      const email = document.getElementById('loginEmail').value.trim();
+      const pass = document.getElementById('loginPassword').value;
+
+      const user = appUsers.find(u => u.email.toLowerCase() === email.toLowerCase() && u.pass === pass);
+      if (user) {
+        currentUser = user;
+        saveData();
+        setupPermissions();
+        closeAuthModal();
+        alert(`Bem-vindo, ${user.role}!`);
+      } else {
+        alert('Credenciais incorretas! Verifique o e-mail e a palavra-passe.');
+      }
+    }
+
+    /* =================================================================
+       NAVIGATION
+       ================================================================= */
+    function switchTab(tabId) {
+      const tabs = ['acompanhamento', 'dashboard', 'equipas', 'destaques', 'usuarios'];
+      tabs.forEach(t => {
+        const sec = document.getElementById(`tab-${t}`);
+        if (sec) sec.classList.add('hidden');
+      });
+
+      document.querySelectorAll('.tab-button').forEach(btn => {
+        btn.classList.remove('active');
+        if (btn.getAttribute('onclick') && btn.getAttribute('onclick').includes(tabId)) {
+          btn.classList.add('active');
+        }
+      });
+
+      const activeSec = document.getElementById(`tab-${tabId}`);
+      if (activeSec) activeSec.classList.remove('hidden');
+
+      if (tabId === 'dashboard') updateDashboard();
+      if (tabId === 'destaques') updatePodio();
+      if (tabId === 'equipas') renderTeams();
+      if (tabId === 'usuarios') renderUsers();
+    }
+
+    /* =================================================================
+       STATUS RULES & FORMATTERS
+       ================================================================= */
+    function getMachineStatus(item) {
+      if (item.statusManual && item.statusManual !== 'automatico') {
+        return item.statusManual;
+      }
+      if (item.entregaReal && item.entregaReal.trim() !== '') {
+        return 'Entregue';
+      }
+      if (item.inicio && item.inicio.trim() !== '') {
+        return 'Em andamento';
+      }
+      return 'Aguardando produção';
+    }
+
+    function getStatusBadge(status) {
+      if (status === 'Entregue') {
+        return `<span class="badge-status status-entregue">✓ Entregue</span>`;
+      } else if (status === 'Em andamento') {
+        return `<span class="badge-status status-andamento">⚙️ Em andamento</span>`;
+      }
+      return `<span class="badge-status status-aguardando">⏳ Aguardando</span>`;
+    }
+
+    function formatDateDisplay(d) {
+      if (!d) return '—';
+      const parts = d.split('-');
+      if (parts.length === 3) {
+        return `${parts[2]}/${parts[1]}/${parts[0]}`;
+      }
+      return d;
+    }
+
+    function escapeHtml(str) {
+      if (!str) return '';
+      return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+    }
+
+    /* =================================================================
+       MODAL DE OBSERVAÇÕES (NOVO)
+       ================================================================= */
+    function abrirObservacao(id) {
+      const item = appMachines.find(m => m.id === id);
+      if (!item) return;
+      
+      const titleEl = document.getElementById('obsModalTitle');
+      const subtitleEl = document.getElementById('obsModalSubtitle');
+      const contentEl = document.getElementById('obsModalContent');
+
+      titleEl.textContent = `Observações — OS ${item.os || 'N/A'} (${item.maquina || 'Máquina'})`;
+      subtitleEl.textContent = `Cliente: ${item.cliente || '—'} | Equipa: ${item.equipe || '—'}`;
+      contentEl.textContent = item.obs && item.obs.trim() !== '' ? item.obs : 'Sem observações registadas para esta máquina.';
+
+      document.getElementById('obsModal').classList.add('open');
+    }
+
+    function closeObsModal() {
+      document.getElementById('obsModal').classList.remove('open');
+    }
+
+    /* =================================================================
+       TABELA DE ACOMPANHAMENTO & FILTROS
+       ================================================================= */
+    function populateTeamFilters() {
+      const selectFilter = document.getElementById('filterTeam');
+      const machSelect = document.getElementById('machTeam');
+      const val = selectFilter.value;
+
+      selectFilter.innerHTML = '<option value="todas">Todas as Equipas</option>';
+      machSelect.innerHTML = '<option value="—">Sem equipa definida (—)</option>';
+
+      appTeams.forEach(t => {
+        const opt1 = document.createElement('option');
+        opt1.value = t.name;
+        opt1.textContent = t.name;
+        selectFilter.appendChild(opt1);
+
+        const opt2 = document.createElement('option');
+        opt2.value = t.name;
+        opt2.textContent = t.name;
+        machSelect.appendChild(opt2);
+      });
+
+      if (val) selectFilter.value = val;
+    }
+
+    function clearFilters() {
+      document.getElementById('filterPeriod').value = '';
+      document.getElementById('filterSearch').value = '';
+      document.getElementById('filterStatus').value = 'todos';
+      document.getElementById('filterTeam').value = 'todas';
+      document.getElementById('filterLinha').value = 'todas';
+      renderTable();
+    }
+
+    function renderTable() {
+      const tbody = document.getElementById('machinesTableBody');
+      const period = document.getElementById('filterPeriod').value;
+      const search = document.getElementById('filterSearch').value.toLowerCase().trim();
+      const statusFilter = document.getElementById('filterStatus').value;
+      const teamFilter = document.getElementById('filterTeam').value;
+      const linhaFilter = document.getElementById('filterLinha').value;
+
+      const filtered = appMachines.filter(item => {
+        const computedStatus = getMachineStatus(item);
+
+        if (search) {
+          const hay = `${item.os || ''} ${item.cliente || ''} ${item.maquina || ''} ${item.equipe || ''} ${item.obs || ''}`.toLowerCase();
+          if (!hay.includes(search)) return false;
+        }
+
+        if (statusFilter !== 'todos' && computedStatus !== statusFilter) return false;
+        if (teamFilter !== 'todas' && item.equipe !== teamFilter) return false;
+        if (linhaFilter !== 'todas' && item.linha !== linhaFilter) return false;
+
+        if (period) {
+          const inStart = item.inicio && item.inicio.startsWith(period);
+          const inPrev = item.previsao && item.previsao.startsWith(period);
+          const inReal = item.entregaReal && item.entregaReal.startsWith(period);
+          if (!inStart && !inPrev && !inReal) return false;
+        }
+
+        return true;
+      });
+
+      document.getElementById('countShowing').textContent = `Mostrando ${filtered.length} de ${appMachines.length} máquinas`;
+      document.getElementById('countTotalBadge').textContent = `Total: ${appMachines.length} registos`;
+
+      if (filtered.length === 0) {
+        tbody.innerHTML = `
+          <tr>
+            <td colspan="12" style="text-align:center; padding:3rem; color:var(--text-muted);">
+              Nenhuma máquina encontrada com os filtros aplicados.
+            </td>
+          </tr>
+        `;
+        return;
+      }
+
+      tbody.innerHTML = filtered.map(item => {
+        const status = getMachineStatus(item);
+        const isChecked = selectedMachineIds.has(item.id);
+        const linhaClass = item.linha === 'Pesada' ? 'pill-linha pesada' : 'pill-linha';
+
+        let osHtml = '<span class="text-muted" style="color:#4b5563;">—</span>';
+        if ((item.pdfData && item.pdfData.trim()) || item.hasPdf) {
+          osHtml = `<button type="button" class="btn-delta btn-indigo btn-sm" onclick="verPdfOs('${item.id}')" title="Ver PDF da Ordem de Serviço em nova aba" style="padding:0.3rem 0.6rem; font-size:0.75rem; gap:0.35rem;">
+            📄 Ver OS
+          </button>`;
+        }
+
+        const obsText = item.obs ? (item.obs.length > 38 ? item.obs.substring(0, 38) + '...' : item.obs) : '—';
+
+        return `
+          <tr class="${isChecked ? 'selected-row' : ''}">
+            <td style="text-align:center;">
+              <input type="checkbox" ${isChecked ? 'checked' : ''} onchange="toggleSelectMachine('${item.id}', this)" style="cursor:pointer; accent-color:#6366f1;">
+            </td>
+            <td><strong style="color:#ffffff;">${escapeHtml(item.equipe || '—')}</strong></td>
+            <td>${escapeHtml(item.cliente || '—')}</td>
+            <td><span style="font-weight:600; color:#f3f4f6;">${escapeHtml(item.maquina || '—')}</span></td>
+            <td><span class="${linhaClass}">${escapeHtml(item.linha || 'Leve')}</span></td>
+            <td>${formatDateDisplay(item.inicio)}</td>
+            <td>${formatDateDisplay(item.previsao)}</td>
+            <td><strong style="color:#34d399;">${formatDateDisplay(item.entregaReal)}</strong></td>
+            <td>${getStatusBadge(status)}</td>
+            <td>
+              <span onclick="abrirObservacao('${item.id}')" style="cursor:pointer; color:#818cf8; text-decoration:underline; font-size:0.78rem;" title="Clique para ver a observação completa">
+                ${escapeHtml(obsText)}
+              </span>
+            </td>
+            <td style="text-align:center;">${osHtml}</td>
+            <td style="text-align:right; white-space:nowrap;">
+              <button class="btn-delta btn-slate btn-sm editor-only" onclick="editMachine('${item.id}')" title="Editar">
+                ✏️
+              </button>
+            </td>
+          </tr>
+        `;
+      }).join('');
+
+      setupPermissions();
+    }
+
+    function toggleSelectMachine(id, checkbox) {
+      if (checkbox.checked) {
+        selectedMachineIds.add(id);
+      } else {
+        selectedMachineIds.delete(id);
+      }
+      renderTable();
+    }
+
+    function toggleSelectAll(masterCheckbox) {
+      if (masterCheckbox.checked) {
+        appMachines.forEach(m => selectedMachineIds.add(m.id));
+      } else {
+        selectedMachineIds.clear();
+      }
+      renderTable();
+    }
+
+    function deleteSelectedMachines() {
+      if (selectedMachineIds.size === 0) {
+        alert('Selecione pelo menos uma máquina para excluir.');
+        return;
+      }
+      if (!confirm(`Deseja realmente excluir as ${selectedMachineIds.size} máquina(s) selecionada(s)?`)) {
+        return;
+      }
+
+      appMachines = appMachines.filter(m => !selectedMachineIds.has(m.id));
+      selectedMachineIds.clear();
+      saveData();
+      renderTable();
+      updateDashboard();
+      updatePodio();
+    }
+
+    function syncData() {
+      loadStorage();
+      renderTable();
+      updateDashboard();
+      updatePodio();
+      alert('Base sincronizada com sucesso!');
+    }
+
+    /* =================================================================
+       VISUALIZADOR DE PDF ANEXADO
+       ================================================================= */
+    async function verPdfOs(id) {
+      const item = appMachines.find(m => m.id === id);
+      if (!item) {
+        alert('Máquina não encontrada.');
+        return;
+      }
+
+      if (item.pdfData && item.pdfData.trim()) {
+        openPdfFromBase64(item.pdfData);
+        return;
+      }
+
+      if (item.hasPdf) {
+        try {
+          const storedPdf = await idbBuscarPdf(item.id);
+          if (storedPdf && storedPdf.trim()) {
+            openPdfFromBase64(storedPdf);
+            return;
+          }
+        } catch (err) {
+          console.warn('Erro ao carregar PDF do IndexedDB:', err);
+        }
+      }
+
+      alert('Documento PDF não encontrado para esta OS. O ficheiro pode ter sido removido ou não foi guardado corretamente.');
+    }
+    window.verPdfOs = verPdfOs;
+    window.openPdfAttachment = verPdfOs;
+
+    function openPdfFromBase64(pdfDataUri) {
+      try {
+        const commaIdx = pdfDataUri.indexOf(',');
+        const base64 = commaIdx >= 0 ? pdfDataUri.slice(commaIdx + 1) : pdfDataUri;
+        const byteCharacters = atob(base64.trim());
+        const byteNumbers = new Uint8Array(byteCharacters.length);
+        for (let i = 0; i < byteCharacters.length; i++) {
+          byteNumbers[i] = byteCharacters.charCodeAt(i);
+        }
+        const blob = new Blob([byteNumbers], { type: 'application/pdf' });
+        const blobUrl = URL.createObjectURL(blob);
+        window.open(blobUrl, '_blank');
+        setTimeout(() => URL.revokeObjectURL(blobUrl), 120000);
+      } catch (err) {
+        console.warn('Erro ao abrir PDF via Blob, a recorrer à abertura direta:', err);
+        window.open(pdfDataUri, '_blank');
+      }
+    }
+
+    /* =================================================================
+       MODAL MÁQUINA (CADASTRAR / EDITAR)
+       ================================================================= */
+    function openMachineModal(id = null) {
+      populateTeamFilters();
+      const form = document.getElementById('machineForm');
+      form.reset();
+      document.getElementById('machPdfStatus').textContent = '';
+
+      if (id) {
+        const item = appMachines.find(m => m.id === id);
+        if (!item) return;
+        document.getElementById('machineModalTitle').textContent = `Editar Máquina — OS ${item.os || ''}`;
+        document.getElementById('machId').value = item.id;
+        document.getElementById('machOs').value = item.os || '';
+        document.getElementById('machTeam').value = item.equipe || '—';
+        document.getElementById('machClient').value = item.cliente || '';
+        document.getElementById('machModel').value = item.maquina || '';
+        document.getElementById('machLinha').value = item.linha || 'Leve';
+        document.getElementById('machStatusManual').value = item.statusManual || 'automatico';
+        document.getElementById('machStart').value = item.inicio || '';
+        document.getElementById('machForecast').value = item.previsao || '';
+        document.getElementById('machReal').value = item.entregaReal || '';
+        document.getElementById('machNotes').value = item.obs || '';
+        if (item.pdfData || item.hasPdf) {
+          document.getElementById('machPdfStatus').textContent = 'Ficheiro PDF anexado presente.';
+        }
+      } else {
+        document.getElementById('machineModalTitle').textContent = 'Registar Máquina CNC';
+        document.getElementById('machId').value = '';
+      }
+
+      document.getElementById('machineModal').classList.add('open');
+    }
+
+    function editMachine(id) {
+      openMachineModal(id);
+    }
+
+    function closeMachineModal() {
+      document.getElementById('machineModal').classList.remove('open');
+    }
+
+    async function saveMachine(e) {
+      e.preventDefault();
+      const id = document.getElementById('machId').value;
+      const os = document.getElementById('machOs').value.trim();
+      const equipe = document.getElementById('machTeam').value;
+      const cliente = document.getElementById('machClient').value.trim();
+      const maquina = document.getElementById('machModel').value.trim();
+      const linha = document.getElementById('machLinha').value;
+      const statusManual = document.getElementById('machStatusManual').value;
+      const inicio = document.getElementById('machStart').value;
+      const previsao = document.getElementById('machForecast').value;
+      const entregaReal = document.getElementById('machReal').value;
+      const obs = document.getElementById('machNotes').value.trim();
+
+      const pdfInput = document.getElementById('machPdf');
+      let newPdfData = null;
+
+      if (pdfInput.files && pdfInput.files[0]) {
+        try {
+          newPdfData = await fileToDataUrl(pdfInput.files[0]);
+        } catch (err) {
+          console.error('Erro ao ler PDF:', err);
+        }
+      }
+
+      if (id) {
+        const index = appMachines.findIndex(m => m.id === id);
+        if (index !== -1) {
+          const target = appMachines[index];
+          let hasPdf = target.hasPdf || false;
+          if (newPdfData) {
+            try {
+              await idbSalvarPdf(id, newPdfData);
+              hasPdf = true;
+            } catch (idbErr) {
+              console.warn('Erro ao salvar PDF no IndexedDB:', idbErr);
+            }
+          }
+          appMachines[index] = {
+            ...target,
+            os, equipe, cliente, maquina, linha, statusManual,
+            inicio, previsao, entregaReal, obs,
+            pdfData: '',
+            hasPdf
+          };
+        }
+      } else {
+        const newId = 'M_' + Date.now() + '_' + Math.floor(Math.random() * 1000);
+        let hasPdf = false;
+        if (newPdfData) {
+          try {
+            await idbSalvarPdf(newId, newPdfData);
+            hasPdf = true;
+          } catch (idbErr) {
+            console.warn('Erro ao salvar PDF no IndexedDB:', idbErr);
+          }
+        }
+        const newMachine = {
+          id: newId,
+          os, equipe, cliente, maquina, linha, statusManual,
+          inicio, previsao, entregaReal, obs,
+          pdfData: '',
+          hasPdf
+        };
+        appMachines.unshift(newMachine);
+      }
+
+      await saveData();
+      renderTable();
+      updateDashboard();
+      updatePodio();
+      closeMachineModal();
+    }
+
+    function fileToDataUrl(file) {
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result);
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+      });
+    }
+
+    /* =================================================================
+       IMPORTAR VÁRIAS OS COM IA GEMINI
+       ================================================================= */
+    function openMultiImportModal() {
+      currentPreviewRows = [];
+      document.getElementById('multiPdfInput').value = '';
+      const dateRuleSelect = document.getElementById('importStartDateRule');
+      if (dateRuleSelect) dateRuleSelect.value = 'hoje';
+      document.getElementById('aiProgressBox').style.display = 'none';
+      document.getElementById('btnAiParse').disabled = true;
+      document.getElementById('btnSaveMulti').disabled = true;
+      document.getElementById('previewRowsCount').textContent = '0 ficheiros na fila';
+      renderImportPreviewTable();
+      document.getElementById('multiImportModal').classList.add('open');
+    }
+
+    function closeMultiImportModal() {
+      document.getElementById('multiImportModal').classList.remove('open');
+    }
+
+    function onFilesSelected(input) {
+      const files = Array.from(input.files || []);
+      if (files.length === 0) {
+        document.getElementById('btnAiParse').disabled = true;
+        return;
+      }
+      document.getElementById('btnAiParse').disabled = false;
+      document.getElementById('previewRowsCount').textContent = `${files.length} ficheiro(s) selecionado(s)`;
+
+      currentPreviewRows = files.map((f, idx) => {
+        const nameWithoutExt = f.name.replace(/\.[^/.]+$/, "");
+        const initialOs = nameWithoutExt.toUpperCase().startsWith('DM') ? nameWithoutExt : ('DM' + (appMachines.length + idx + 1));
+        const row = {
+          id: 'import_' + idx,
+          file: f,
+          fileName: f.name,
+          selected: true,
+          os: initialOs,
+          equipe: '',
+          cliente: '',
+          maquina: 'Máquina CNC (A aguardar IA)',
+          linha: 'Leve',
+          inicio: '',
+          previsao: '',
+          obs: `OS: ${initialOs} | Ficheiro: ${f.name}`,
+          base64: ''
+        };
+
+        fileToDataUrl(f).then(dataUrl => {
+          row.base64 = dataUrl;
+        }).catch(err => console.error('Erro ao ler base64 do ficheiro:', err));
+
+        return row;
+      });
+
+      renderImportPreviewTable();
+    }
+
+    async function processPdfsWithGemini() {
+      const files = Array.from(document.getElementById('multiPdfInput').files || []);
+      if (files.length === 0) return;
+
+      if (!geminiApiKey) {
+        alert('Por favor configure primeiro a sua Chave da API do Gemini nas Definições!');
+        openConfigModal();
+        return;
+      }
+
+      const progressBox = document.getElementById('aiProgressBox');
+      const progressText = document.getElementById('aiProgressText');
+      const progressPercent = document.getElementById('aiProgressPercent');
+      const progressBar = document.getElementById('aiProgressBar');
+      const btnParse = document.getElementById('btnAiParse');
+
+      progressBox.style.display = 'block';
+      btnParse.disabled = true;
+
+      const total = currentPreviewRows.length;
+      let completed = 0;
+      progressText.textContent = `Lendo 0 de ${total}...`;
+      progressBar.style.width = '0%';
+      progressPercent.textContent = '0%';
+
+      const aiPrompt = 'Extraia desta OS em JSON puro: {"os":"número da OS","cliente":"nome","maquina":"modelo","linha":"Leve|Intermediária|Pesada","inicio":"YYYY-MM-DD","previsao":"YYYY-MM-DD","obs":"CNPJ | TAG | contato | especificações"}. Apenas JSON sem markdown.';
+
+      const CONCURRENCY_LIMIT = 4;
+      let queueIndex = 0;
+
+      async function processSingleItem(i) {
+        const row = currentPreviewRows[i];
+        const file = row.file;
+
+        try {
+          const base64DataUrl = row.base64 || await fileToDataUrl(file);
+          const base64Raw = base64DataUrl.includes(',') ? base64DataUrl.split(',')[1] : base64DataUrl;
+          row.base64 = base64DataUrl;
+
+          const parsed = await lerPdfComIA(base64Raw, geminiApiKey, aiPrompt);
+
+          const extractedOs = (parsed.os || row.os || '').trim();
+          row.os = extractedOs;
+          row.cliente = parsed.cliente || 'Cliente Identificado';
+          row.maquina = parsed.maquina || 'Router / Laser CNC';
+          row.linha = ['Leve', 'Intermediária', 'Pesada'].includes(parsed.linha) ? parsed.linha : 'Leve';
+          row.equipe = '';
+          row.inicio = parsed.inicio || '';
+          row.previsao = parsed.previsao || '';
+
+          let parsedObs = (parsed.obs || '').trim();
+          if (parsedObs.toLowerCase().startsWith('os:')) {
+            row.obs = parsedObs;
+          } else if (extractedOs) {
+            row.obs = parsedObs ? `OS: ${extractedOs} | ${parsedObs}` : `OS: ${extractedOs}`;
+          } else {
+            row.obs = parsedObs || 'Processado com Gemini IA';
+          }
+
+          row.selected = true;
+        } catch (err) {
+          console.warn(`Falha na leitura IA de ${row.fileName}:`, err);
+          row.obs = `⚠️ Erro na IA: ${err.message || 'Falha ao analisar'}`;
+          row.selected = false;
+        } finally {
+          completed++;
+          const pct = Math.round((completed / total) * 100);
+          progressBar.style.width = pct + '%';
+          progressPercent.textContent = pct + '%';
+          progressText.textContent = `Lendo ${completed} de ${total}...`;
+          renderImportPreviewTable();
+        }
+      }
+
+      const poolSize = Math.min(CONCURRENCY_LIMIT, total);
+      const workers = Array.from({ length: poolSize }, async () => {
+        while (queueIndex < total) {
+          const currentIdx = queueIndex++;
+          await processSingleItem(currentIdx);
+        }
+      });
+
+      await Promise.all(workers);
+
+      progressText.textContent = `✅ Concluído: ${completed} de ${total} ficheiro(s) analisado(s).`;
+      document.getElementById('btnSaveMulti').disabled = !currentPreviewRows.some(r => r.selected);
+      btnParse.disabled = false;
+    }
+
+    function renderImportPreviewTable() {
+      const tbody = document.getElementById('importPreviewBody');
+      if (currentPreviewRows.length === 0) {
+        tbody.innerHTML = `
+          <tr>
+            <td colspan="9" style="text-align:center; padding:2.5rem; color:var(--text-muted);">
+              Nenhum PDF carregado ainda. Escolha ficheiros PDF acima para pré-visualizar e extrair.
+            </td>
+          </tr>
+        `;
+        document.getElementById('btnSaveMulti').disabled = true;
+        return;
+      }
+
+      tbody.innerHTML = currentPreviewRows.map((row, idx) => {
+        const displayName = row.fileName || (row.file && row.file.name) || (row.os ? `${row.os}.pdf` : 'OS.pdf');
+        return `
+          <tr>
+            <td style="text-align:center;">
+              <input type="checkbox" ${row.selected ? 'checked' : ''} onchange="updatePreviewRowValue(${idx}, 'selected', this.checked)" style="cursor:pointer; accent-color:#6366f1;">
+            </td>
+            <td style="max-width:140px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" title="${escapeHtml(displayName)}">
+              <span style="font-size:0.75rem; color:#93c5fd; font-weight:600; display:inline-flex; align-items:center; gap:0.35rem;">
+                📄 ${escapeHtml(displayName)}
+              </span>
+            </td>
+            <td><input type="text" class="preview-input" value="${escapeHtml(row.equipe)}" onchange="updatePreviewRowValue(${idx}, 'equipe', this.value)" placeholder="Equipa"></td>
+            <td><input type="text" class="preview-input" value="${escapeHtml(row.cliente)}" onchange="updatePreviewRowValue(${idx}, 'cliente', this.value)" placeholder="Cliente"></td>
+            <td><input type="text" class="preview-input" value="${escapeHtml(row.maquina)}" onchange="updatePreviewRowValue(${idx}, 'maquina', this.value)" placeholder="Modelo"></td>
+            <td>
+              <select class="preview-input" onchange="updatePreviewRowValue(${idx}, 'linha', this.value)">
+                <option value="Leve" ${row.linha === 'Leve' ? 'selected' : ''}>Leve</option>
+                <option value="Intermediária" ${row.linha === 'Intermediária' ? 'selected' : ''}>Intermediária</option>
+                <option value="Pesada" ${row.linha === 'Pesada' ? 'selected' : ''}>Pesada</option>
+              </select>
+            </td>
+            <td><input type="date" class="preview-input" value="${row.inicio || ''}" onchange="updatePreviewRowValue(${idx}, 'inicio', this.value)"></td>
+            <td><input type="date" class="preview-input" value="${row.previsao || ''}" onchange="updatePreviewRowValue(${idx}, 'previsao', this.value)"></td>
+            <td><input type="text" class="preview-input" value="${escapeHtml(row.obs)}" onchange="updatePreviewRowValue(${idx}, 'obs', this.value)"></td>
+          </tr>
+        `;
+      }).join('');
+
+      document.getElementById('btnSaveMulti').disabled = !currentPreviewRows.some(r => r.selected);
+    }
+
+    function updatePreviewRowValue(idx, key, val) {
+      if (currentPreviewRows[idx]) {
+        currentPreviewRows[idx][key] = val;
+      }
+      document.getElementById('btnSaveMulti').disabled = !currentPreviewRows.some(r => r.selected);
+    }
+
+    function toggleSelectAllPreview(masterCheckbox) {
+      const isChecked = masterCheckbox.checked;
+      currentPreviewRows.forEach(row => row.selected = isChecked);
+      renderImportPreviewTable();
+    }
+
+    async function saveImportedRows() {
+      const selectedRows = currentPreviewRows.filter(r => r.selected);
+      if (selectedRows.length === 0) {
+        alert('Nenhum registo selecionado para salvar.');
+        return;
+      }
+
+      const dateRule = document.getElementById('importStartDateRule').value;
+      const todayStr = new Date().toISOString().split('T')[0];
+
+      for (const row of selectedRows) {
+        let finalInicio = row.inicio;
+        if (dateRule === 'hoje') {
+          finalInicio = todayStr;
+        } else if (dateRule === 'nenhuma') {
+          finalInicio = '';
+        }
+
+        const newId = 'M_' + Date.now() + '_' + Math.floor(Math.random() * 10000);
+        let hasPdf = false;
+        if (row.base64) {
+          try {
+            await idbSalvarPdf(newId, row.base64);
+            hasPdf = true;
+          } catch (idbErr) {
+            console.warn('Erro ao salvar PDF em lote no IndexedDB:', idbErr);
+          }
+        }
+
+        const newMach = {
+          id: newId,
+          os: row.os || 'DM_NEW',
+          equipe: row.equipe || '—',
+          cliente: row.cliente || 'Cliente Novo',
+          maquina: row.maquina || 'Router CNC',
+          linha: row.linha || 'Leve',
+          statusManual: 'automatico',
+          inicio: finalInicio,
+          previsao: row.previsao || '',
+          entregaReal: '',
+          obs: row.obs || '',
+          pdfData: '',
+          hasPdf
+        };
+
+        appMachines.unshift(newMach);
+      }
+
+      await saveData();
+      closeMultiImportModal();
+      renderTable();
+      updateDashboard();
+      updatePodio();
+      alert(`Sucesso! ${selectedRows.length} nova(s) máquina(s) importada(s) para o sistema.`);
+    }
+
+    /* =================================================================
+       DASHBOARD LOGIC
+       ================================================================= */
+    function updateDashboard() {
+      const total = appMachines.length;
+      const andamento = appMachines.filter(m => getMachineStatus(m) === 'Em andamento').length;
+
+      const filterPeriodVal = document.getElementById('filterPeriod').value || '2026-09';
+      const [yearStr, monthStr] = filterPeriodVal.split('-');
+
+      const entreguesMes = appMachines.filter(m => {
+        if (!m.entregaReal) return false;
+        return m.entregaReal.startsWith(filterPeriodVal);
+      }).length;
+
+      const previstosMes = appMachines.filter(m => {
+        if (!m.previsao) return false;
+        return m.previsao.startsWith(filterPeriodVal);
+      }).length;
+
+      const eficiencia = previstosMes > 0 ? Math.min(100, Math.round((entreguesMes / previstosMes) * 100)) : (entreguesMes > 0 ? 100 : 0);
+
+      document.getElementById('kpiTotal').textContent = total;
+      document.getElementById('kpiAndamento').textContent = andamento;
+      document.getElementById('kpiEntreguesMes').textContent = entreguesMes;
+      document.getElementById('kpiEficiencia').textContent = eficiencia + '%';
+
+      const monthNames = {
+        '01': 'Janeiro', '02': 'Fevereiro', '03': 'Março', '04': 'Abril',
+        '05': 'Maio', '06': 'Junho', '07': 'Julho', '08': 'Agosto',
+        '09': 'Setembro', '10': 'Outubro', '11': 'Novembro', '12': 'Dezembro'
+      };
+      const monthNameStr = monthNames[monthStr] || 'Setembro';
+      document.querySelectorAll('.dashMonthName').forEach(el => el.textContent = monthNameStr);
+      document.getElementById('dashRefMonthSub').textContent = `${monthNameStr}/${yearStr}`;
+      document.getElementById('lblRefMonth').textContent = `${monthNameStr}/${yearStr}`;
+
+      const dashTeamsList = document.getElementById('dashTeamsList');
+      const teamStats = {};
+      appTeams.forEach(t => {
+        teamStats[t.name] = { total: 0, entregues: 0, andamento: 0 };
+      });
+
+      appMachines.forEach(m => {
+        const eq = m.equipe || 'Sem Equipa';
+        if (!teamStats[eq]) {
+          teamStats[eq] = { total: 0, entregues: 0, andamento: 0 };
+        }
+        teamStats[eq].total++;
+        const st = getMachineStatus(m);
+        if (st === 'Entregue' && m.entregaReal && m.entregaReal.startsWith(filterPeriodVal)) {
+          teamStats[eq].entregues++;
+        }
+        if (st === 'Em andamento') {
+          teamStats[eq].andamento++;
+        }
+      });
+
+      dashTeamsList.innerHTML = Object.keys(teamStats).map(eqName => {
+        const st = teamStats[eqName];
+        return `
+          <div class="team-item">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.35rem;">
+              <strong style="color:#ffffff; font-size:0.9rem;">${escapeHtml(eqName)}</strong>
+              <span class="badge-status status-andamento">${st.entregues} entregues no mês</span>
+            </div>
+            <div style="font-size:0.76rem; color:var(--text-muted); display:flex; gap:1rem;">
+              <span>Total registadas: <strong style="color:#e5e7eb;">${st.total}</strong></span>
+              <span>Em fabrico ativo: <strong style="color:#60a5fa;">${st.andamento}</strong></span>
+            </div>
+          </div>
+        `;
+      }).join('');
+
+      const annualBox = document.getElementById('annualChartBox');
+      const monthlyCounts = { '01':0, '02':0, '03':0, '04':0, '05':0, '06':0, '07':0, '08':0, '09':0, '10':0, '11':0, '12':0 };
+
+      appMachines.forEach(m => {
+        const dateToCheck = m.inicio || m.previsao || '';
+        if (dateToCheck && dateToCheck.startsWith('2026-')) {
+          const mPart = dateToCheck.substring(5, 7);
+          if (monthlyCounts[mPart] !== undefined) {
+            monthlyCounts[mPart]++;
+          }
+        }
+      });
+
+      const maxVal = Math.max(...Object.values(monthlyCounts), 5);
+      const shortMonths = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
+      const keys = ['01', '02', '03', '04', '05', '06', '07', '08', '09', '10', '11', '12'];
+
+      annualBox.innerHTML = keys.map((k, idx) => {
+        const val = monthlyCounts[k];
+        const heightPct = Math.max(12, Math.round((val / maxVal) * 100));
+        return `
+          <div class="svg-bar-col">
+            <div class="svg-bar-val">${val}</div>
+            <div class="svg-bar" style="height: ${heightPct}%;" title="${shortMonths[idx]}: ${val} máquinas"></div>
+            <div class="svg-bar-label">${shortMonths[idx]}</div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    /* =================================================================
+       EQUIPAS, PODIO, UTILIZADORES & CONFIG
+       ================================================================= */
+    function renderTeams() {
+      const container = document.getElementById('teamsContainer');
+      container.innerHTML = appTeams.map((t, idx) => {
+        const tagsHtml = (t.tags || []).map(tag => `<span class="team-badge-tag">${escapeHtml(tag)}</span>`).join('');
+        return `
+          <div class="table-card" style="padding:1.35rem; display:flex; flex-direction:column; justify-content:space-between;">
+            <div>
+              <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:0.75rem;">
+                <h3 style="margin:0; font-size:1.05rem; color:#ffffff; font-weight:700;">👥 ${escapeHtml(t.name)}</h3>
+                <button class="btn-delta btn-slate btn-sm editor-only" onclick="openTeamModal(${idx})" title="Editar Equipa">✏️</button>
+              </div>
+              <div style="margin-bottom:1.25rem;">
+                ${tagsHtml || '<span style="font-size:0.75rem; color:var(--text-muted);">Sem tags</span>'}
+              </div>
+            </div>
+            <div style="border-top:1px solid var(--border); padding-top:0.75rem; font-size:0.76rem; color:var(--text-muted); display:flex; justify-content:space-between;">
+              <span>Membros / Responsáveis</span>
+              <span style="color:#818cf8; font-weight:600;">Ativo</span>
+            </div>
+          </div>
+        `;
+      }).join('');
+      setupPermissions();
+    }
+
+    function openTeamModal(index = -1) {
+      document.getElementById('teamEditIndex').value = index;
+      if (index >= 0 && appTeams[index]) {
+        document.getElementById('teamModalTitle').textContent = 'Editar Equipa';
+        document.getElementById('teamNameInput').value = appTeams[index].name || '';
+        document.getElementById('teamTagsInput').value = (appTeams[index].tags || []).join(', ');
+      } else {
+        document.getElementById('teamModalTitle').textContent = 'Registar Nova Equipa';
+        document.getElementById('teamNameInput').value = '';
+        document.getElementById('teamTagsInput').value = '';
+      }
+      document.getElementById('teamModal').classList.add('open');
+    }
+
+    function closeTeamModal() {
+      document.getElementById('teamModal').classList.remove('open');
+    }
+
+    function saveTeamSubmit() {
+      const index = parseInt(document.getElementById('teamEditIndex').value, 10);
+      const name = document.getElementById('teamNameInput').value.trim();
+      const tagsStr = document.getElementById('teamTagsInput').value.trim();
+      const tags = tagsStr ? tagsStr.split(',').map(s => s.trim()).filter(Boolean) : [];
+
+      if (!name) {
+        alert('Por favor, informe o nome da equipa.');
+        return;
+      }
+
+      if (index >= 0 && appTeams[index]) {
+        appTeams[index] = { name, tags };
+      } else {
+        appTeams.push({ name, tags });
+      }
+
+      saveData();
+      populateTeamFilters();
+      renderTeams();
+      closeTeamModal();
+    }
+
+    function updatePodio() {
+      const filterPeriodVal = document.getElementById('filterPeriod').value || '2026-09';
+      const teamCounts = {};
+
+      appTeams.forEach(t => teamCounts[t.name] = { entregues: 0, andamento: 0 });
+
+      appMachines.forEach(m => {
+        const eq = m.equipe || 'Outros';
+        if (!teamCounts[eq]) teamCounts[eq] = { entregues: 0, andamento: 0 };
+        const st = getMachineStatus(m);
+        if (st === 'Entregue' && m.entregaReal && m.entregaReal.startsWith(filterPeriodVal)) {
+          teamCounts[eq].entregues++;
+        }
+        if (st === 'Em andamento') {
+          teamCounts[eq].andamento++;
+        }
+      });
+
+      const sortedTeams = Object.keys(teamCounts).map(name => ({
+        name,
+        entregues: teamCounts[name].entregues,
+        andamento: teamCounts[name].andamento,
+        score: teamCounts[name].entregues * 10 + teamCounts[name].andamento
+      })).sort((a, b) => b.score - a.score);
+
+      const podiumWrapper = document.getElementById('podiumWrapper');
+      const step1 = sortedTeams[0] || { name: '—', entregues: 0 };
+      const step2 = sortedTeams[1] || { name: '—', entregues: 0 };
+      const step3 = sortedTeams[2] || { name: '—', entregues: 0 };
+
+      podiumWrapper.innerHTML = `
+        <div class="podium-step step-2">
+          <div style="font-weight:700; color:#9ca3af; margin-bottom:0.5rem; font-size:0.9rem;">2º Lugar</div>
+          <div class="podium-pillar">
+            <div class="medal-icon">🥈</div>
+            <div style="font-weight:700; color:#ffffff; font-size:0.9rem; margin-bottom:0.3rem;">${escapeHtml(step2.name)}</div>
+            <div style="font-size:0.75rem; color:#d1d5db;">${step2.entregues} entregues</div>
+          </div>
+        </div>
+
+        <div class="podium-step step-1">
+          <div style="font-weight:800; color:#f59e0b; margin-bottom:0.5rem; font-size:1.05rem;">1º Lugar 🥇</div>
+          <div class="podium-pillar">
+            <div class="medal-icon">🥇</div>
+            <div style="font-weight:800; color:#ffffff; font-size:1rem; margin-bottom:0.3rem;">${escapeHtml(step1.name)}</div>
+            <div style="font-size:0.8rem; color:#fde047; font-weight:700;">${step1.entregues} entregues</div>
+          </div>
+        </div>
+
+        <div class="podium-step step-3">
+          <div style="font-weight:700; color:#b45309; margin-bottom:0.5rem; font-size:0.9rem;">3º Lugar</div>
+          <div class="podium-pillar">
+            <div class="medal-icon">🥉</div>
+            <div style="font-weight:700; color:#ffffff; font-size:0.9rem; margin-bottom:0.3rem;">${escapeHtml(step3.name)}</div>
+            <div style="font-size:0.75rem; color:#d1d5db;">${step3.entregues} entregues</div>
+          </div>
+        </div>
+      `;
+
+      const podiumTableBody = document.getElementById('podiumTableBody');
+      podiumTableBody.innerHTML = sortedTeams.map((t, idx) => `
+        <tr>
+          <td><strong style="color:${idx === 0 ? '#f59e0b' : (idx === 1 ? '#9ca3af' : '#b45309')};">${idx + 1}º</strong></td>
+          <td><strong style="color:#ffffff;">${escapeHtml(t.name)}</strong></td>
+          <td><span style="color:#34d399; font-weight:700;">${t.entregues}</span></td>
+          <td><span style="color:#60a5fa;">${t.andamento}</span></td>
+          <td><strong>${t.score} pts</strong></td>
+        </tr>
+      `).join('');
+    }
+
+    function renderUsers() {
+      const tbody = document.getElementById('usersTableBody');
+      tbody.innerHTML = appUsers.map((u, idx) => `
+        <tr>
+          <td><strong style="color:#ffffff;">${escapeHtml(u.email)}</strong></td>
+          <td><span class="pill-linha" style="border-color:rgba(99,102,241,0.3); color:#c7d2fe; background:rgba(99,102,241,0.1);">${escapeHtml(u.role)}</span></td>
+          <td style="text-align:right;">
+            ${appUsers.length > 1 ? `<button class="btn-delta btn-danger btn-sm editor-only" onclick="deleteUser(${idx})">🗑️ Excluir</button>` : '<span style="font-size:0.75rem; color:var(--text-muted);">Protegido</span>'}
+          </td>
+        </tr>
+      `).join('');
+      setupPermissions();
+    }
+
+    function openUserModal() {
+      document.getElementById('newEditorEmail').value = '';
+      document.getElementById('newEditorPass').value = '';
+      document.getElementById('userModal').classList.add('open');
+    }
+
+    function closeUserModal() {
+      document.getElementById('userModal').classList.remove('open');
+    }
+
+    function saveNewUserSubmit() {
+      const email = document.getElementById('newEditorEmail').value.trim();
+      const pass = document.getElementById('newEditorPass').value;
+
+      if (!email || !pass) {
+        alert('Preencha o e-mail e a palavra-passe.');
+        return;
+      }
+
+      appUsers.push({ email, pass, role: 'Editor' });
+      saveData();
+      renderUsers();
+      closeUserModal();
+      alert('Novo utilizador criado com sucesso!');
+    }
+
+    function deleteUser(idx) {
+      if (appUsers.length <= 1) {
+        alert('Não pode excluir o último utilizador do sistema.');
+        return;
+      }
+      if (confirm(`Deseja excluir o acesso de ${appUsers[idx].email}?`)) {
+        appUsers.splice(idx, 1);
+        saveData();
+        renderUsers();
+      }
+    }
+
+    function openConfigModal() {
+      document.getElementById('geminiApiKeyInput').value = geminiApiKey;
+      document.getElementById('configModal').classList.add('open');
+    }
+
+    function closeConfigModal() {
+      document.getElementById('configModal').classList.remove('open');
+    }
+
+    function saveGeminiKey() {
+      const key = document.getElementById('geminiApiKeyInput').value.trim();
+      geminiApiKey = key;
+      localStorage.setItem(STORAGE_KEYS.GEMINI_KEY, key);
+      checkGeminiBanner();
+      alert('Chave da API Gemini guardada com sucesso!');
+      closeConfigModal();
+    }
+
+    function checkGeminiBanner() {
+      const banner = document.getElementById('geminiAlertBanner');
+      if (banner) {
+        if (geminiApiKey && geminiApiKey.length > 10) {
+          banner.style.display = 'none';
+        } else {
+          banner.style.display = 'flex';
+        }
+      }
+    }
+
+    function exportBackup() {
+      const backupData = {
+        machines: appMachines,
+        teams: appTeams,
+        users: appUsers,
+        exportDate: new Date().toISOString()
+      };
+      const blob = new Blob([JSON.stringify(backupData, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `delta-backup-${new Date().toISOString().split('T')[0]}.json`;
+      a.click();
+      setTimeout(() => URL.revokeObjectURL(url), 5000);
+    }
+
+    async function importBackup(e) {
+      const file = e.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = async (evt) => {
+        try {
+          const parsed = JSON.parse(evt.target.result);
+          if (parsed.machines) appMachines = parsed.machines;
+          if (parsed.teams) appTeams = parsed.teams;
+          if (parsed.users) appUsers = parsed.users;
+          await saveData();
+          populateTeamFilters();
+          renderTable();
+          updateDashboard();
+          renderTeams();
+          updatePodio();
+          renderUsers();
+          alert('Cópia de segurança restaurada com sucesso!');
+        } catch (err) {
+          alert('Erro ao processar ficheiro de backup JSON.');
+        }
+      };
+      reader.readAsText(file);
+    }
+
+    function exportCSV() {
+      let csv = 'OS;Equipe;Cliente;Maquina;Linha;Inicio;Previsao;EntregaReal;Estado;Observacoes\n';
+      appMachines.forEach(m => {
+        const row = [
+          `"${m.os || ''}"`,
+          `"${m.equipe || ''}"`,
+          `"${m.cliente || ''}"`,
+          `"${m.maquina || ''}"`,
+          `"${m.linha || ''}"`,
+          `"${m.inicio || ''}"`,
+          `"${m.previsao || ''}"`,
+          `"${m.entregaReal || ''}"`,
+          `"${getMachineStatus(m)}"`,
+          `"${(m.obs || '').replace(/"/g, '""')}"`
+        ];
+        csv += row.join(';') + '\n';
+      });
+
+      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `delta-producao-${new Date().toISOString().split('T')[0]}.csv`;
+      a.click();
+      setTimeout(() => URL.revokeObjectURL(url), 5000);
+    }
+  </script>
+</body>
+</html>
