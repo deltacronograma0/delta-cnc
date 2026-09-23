@@ -12,7 +12,8 @@
   <div class="app-shell">
     <aside class="app-sidebar">
       <div class="sidebar-brand-row">
-        <div class="brand-badge sidebar-badge">DELTA</div>
+        <img class="brand-logo" src="logo.png" alt="Logo CP - DELTA" onerror="this.style.display='none'; this.nextElementSibling.style.display='inline-flex';">
+        <div class="brand-badge sidebar-badge logo-fallback">DELTA</div>
       </div>
       <div class="sidebar-company">
         <h2>CP - DELTA</h2>
@@ -58,7 +59,6 @@
       <header class="delta-header">
         <div class="header-content">
           <div class="brand-group">
-            <div class="brand-badge">DELTA</div>
             <div class="brand-titles">
               <h1>CP - DELTA — Controle de Produção</h1>
               <p>Gestão de fabrico e expedição de máquinas CNC</p>
@@ -66,17 +66,17 @@
           </div>
 
           <div class="header-meta">
-            <div class="meta-tag" id="refMonthBadge">
+            <div class="meta-tag meta-status" id="refMonthBadge">
               <span style="color:#818cf8;">📅</span> <strong id="lblRefMonth">Setembro/2026</strong>
             </div>
-            <div class="meta-tag">
+            <div class="meta-tag meta-status">
               <span class="status-dot"></span>
               <span>Online</span>
             </div>
-            <div class="meta-tag" id="clockEl">
+            <div class="meta-tag meta-status" id="clockEl">
               ⏱️ 00:00:00
             </div>
-            <div class="meta-tag" style="background: rgba(99, 102, 241, 0.08); border-color: rgba(99, 102, 241, 0.2);">
+            <div class="meta-tag meta-status user-status">
               👤 <span id="currentUserLabel" style="font-weight:600; color: #c7d2fe;">Administrador</span>
             </div>
             <button id="authBtn" class="btn-delta btn-slate btn-sm" onclick="toggleAuthModal()">
@@ -192,7 +192,7 @@
                 <th>Previsão Entrega</th>
                 <th>Entrega Real</th>
                 <th>Estado</th>
-                <th>Observações</th>
+                <th>Observação do dia</th>
                 <th style="text-align:center;">OS</th>
                 <th style="text-align:right;">Ações</th>
               </tr>
@@ -339,14 +339,13 @@
       </div>
       <div class="modal-body">
         <div style="margin-bottom:0.75rem; font-size:0.8rem; color:var(--text-muted);" id="obsModalSubtitle">
-          Detalhes e especificações técnicas registadas:
+          Registre e consulte aqui as ocorrências e atualizações do dia:
         </div>
-        <div id="obsModalContent" style="background: rgba(11, 15, 23, 0.8); border: 1px solid var(--border); border-radius: 8px; padding: 1.15rem; color: #f3f4f6; font-size: 0.9rem; line-height: 1.6; white-space: pre-wrap; word-break: break-word;">
-          <!-- Texto completo de observações aqui -->
-        </div>
+        <textarea id="obsModalContent" class="observation-editor" rows="7" placeholder="Registre o que aconteceu hoje..."></textarea>
       </div>
       <div class="modal-footer">
-        <button class="btn-delta btn-indigo" onclick="closeObsModal()">Fechar</button>
+        <button class="btn-delta btn-slate" onclick="closeObsModal()">Cancelar</button>
+        <button class="btn-delta btn-indigo" onclick="saveObservation()">💾 Salvar observação</button>
       </div>
     </div>
   </div>
@@ -449,8 +448,8 @@
           </div>
 
           <div class="form-group" style="margin-bottom:1.15rem;">
-            <label>Observações Técnicas</label>
-            <textarea id="machNotes" class="input-delta" rows="2" placeholder="Especificações, opcionais, motorização..."></textarea>
+            <label>Observações do dia</label>
+            <textarea id="machNotes" class="input-delta" rows="3" placeholder="Registre o que aconteceu hoje: avanço, pendência, ajuste ou ocorrência..."></textarea>
           </div>
 
           <div class="form-group" style="margin-bottom:0.5rem;">
@@ -556,7 +555,7 @@
                 <th>Linha</th>
                 <th>Início</th>
                 <th>Previsão</th>
-                <th>Observações</th>
+                <th>Dados técnicos da IA</th>
               </tr>
             </thead>
             <tbody id="importPreviewBody">

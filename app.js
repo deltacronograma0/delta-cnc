@@ -43,6 +43,7 @@ let currentUser = null;
 let geminiApiKey = '';
 let selectedMachineIds = new Set();
 let currentPreviewRows = [];
+let currentObservationMachineId = null;
 
 function idbAbrir() {
   return new Promise((resolve, reject) => {
@@ -88,7 +89,7 @@ async function idbBuscarPdf(id) {
 }
 
 async function lerPdfComIA(base64Raw, apiKey, customPrompt) {
-  const prompt = customPrompt || 'Extraia desta OS em JSON puro: {"os":"número da OS","cliente":"nome","maquina":"modelo","linha":"Leve|Intermediária|Pesada","inicio":"YYYY-MM-DD","previsao":"YYYY-MM-DD","obs":"CNPJ | TAG | contato | especificações"}. Apenas JSON sem markdown.';
+  const prompt = customPrompt || 'Extraia desta OS em JSON puro: {"os":"número da OS","cliente":"nome","maquina":"modelo","linha":"Leve|Intermediária|Pesada","inicio":"YYYY-MM-DD","previsao":"YYYY-MM-DD","detalhesTecnicos":"CNPJ | TAG | contato | especificações"}. Apenas JSON sem markdown.';
 
   const payload = {
     contents: [{
@@ -428,16 +429,30 @@ function abrirObservacao(id) {
   const titleEl = document.getElementById('obsModalTitle');
   const subtitleEl = document.getElementById('obsModalSubtitle');
   const contentEl = document.getElementById('obsModalContent');
+  currentObservationMachineId = id;
 
-  titleEl.textContent = `Observações — OS ${item.os || 'N/A'} (${item.maquina || 'Máquina'})`;
+  titleEl.textContent = `Observações do dia — OS ${item.os || 'N/A'} (${item.maquina || 'Máquina'})`;
   subtitleEl.textContent = `Cliente: ${item.cliente || '—'} | Equipe: ${item.equipe || '—'}`;
-  contentEl.textContent = item.obs && item.obs.trim() !== '' ? item.obs : 'Sem observações registadas para esta máquina.';
+  contentEl.value = item.obs || '';
 
   document.getElementById('obsModal').classList.add('open');
 }
 
 function closeObsModal() {
   document.getElementById('obsModal').classList.remove('open');
+  currentObservationMachineId = null;
+}
+
+async function saveObservation() {
+  if (!currentObservationMachineId) return;
+  const item = appMachines.find(machine => machine.id === currentObservationMachineId);
+  if (!item) return;
+
+  item.obs = document.getElementById('obsModalContent').value.trim();
+  await saveData();
+  renderTable();
+  updateDashboard();
+  closeObsModal();
 }
 
 function populateTeamFilters() {
@@ -492,7 +507,7 @@ function renderTable() {
     const computedStatus = getMachineStatus(item);
 
     if (search) {
-      const hay = `${item.os || ''} ${item.cliente || ''} ${item.maquina || ''} ${item.equipe || ''} ${item.obs || ''}`.toLowerCase();
+      const hay = `${item.os || ''} ${item.cliente || ''} ${item.maquina || ''} ${item.equipe || ''} ${item.obs || ''} ${item.aiNotes || ''}`.toLowerCase();
       if (!hay.includes(search)) return false;
     }
 
@@ -536,7 +551,8 @@ function renderTable() {
       </button>`;
     }
 
-    const obsText = item.obs ? (item.obs.length > 38 ? item.obs.substring(0, 38) + '...' : item.obs) : '—';
+    const obsText = item.obs ? (item.obs.length > 30 ? item.obs.substring(0, 30) + '...' : item.obs) : 'Adicionar nota';
+    const obsClass = item.obs ? 'observation-chip has-note' : 'observation-chip empty-note';
 
     return `
       <tr class="${isChecked ? 'selected-row' : ''}">
@@ -552,9 +568,10 @@ function renderTable() {
         <td><strong style="color:#34d399;">${formatDateDisplay(item.entregaReal)}</strong></td>
         <td>${getStatusBadge(status)}</td>
         <td>
-          <span onclick="abrirObservacao('${item.id}')" style="cursor:pointer; color:#818cf8; text-decoration:underline; font-size:0.78rem;" title="Clique para ver a observação completa">
+          <button type="button" class="${obsClass}" onclick="abrirObservacao('${item.id}')" title="Clique para editar a observação do dia">
+            <span class="observation-chip-icon">${item.obs ? '✎' : '+'}</span>
             ${escapeHtml(obsText)}
-          </span>
+          </button>
         </td>
         <td style="text-align:center;">${osHtml}</td>
         <td style="text-align:right; white-space:nowrap;">
@@ -743,6 +760,7 @@ async function saveMachine(e) {
         ...target,
         os, equipe, cliente, maquina, linha, statusManual,
         inicio, previsao, entregaReal, obs,
+        aiNotes: target.aiNotes || '',
         pdfData: '',
         hasPdf
       };
@@ -762,6 +780,7 @@ async function saveMachine(e) {
       id: newId,
       os, equipe, cliente, maquina, linha, statusManual,
       inicio, previsao, entregaReal, obs,
+      aiNotes: '',
       pdfData: '',
       hasPdf
     };
@@ -825,7 +844,8 @@ function onFilesSelected(input) {
       linha: 'Leve',
       inicio: '',
       previsao: '',
-      obs: `OS: ${initialOs} | Ficheiro: ${f.name}`,
+      obs: '',
+      aiNotes: `Ficheiro: ${f.name}`,
       base64: ''
     };
 
@@ -864,7 +884,7 @@ async function processPdfsWithGemini() {
   progressBar.style.width = '0%';
   progressPercent.textContent = '0%';
 
-  const aiPrompt = 'Extraia desta OS em JSON puro: {"os":"número da OS","cliente":"nome","maquina":"modelo","linha":"Leve|Intermediária|Pesada","inicio":"YYYY-MM-DD","previsao":"YYYY-MM-DD","obs":"CNPJ | TAG | contato | especificações"}. Apenas JSON sem markdown.';
+  const aiPrompt = 'Extraia desta OS em JSON puro: {"os":"número da OS","cliente":"nome","maquina":"modelo","linha":"Leve|Intermediária|Pesada","inicio":"YYYY-MM-DD","previsao":"YYYY-MM-DD","detalhesTecnicos":"CNPJ | TAG | contato | especificações"}. Apenas JSON sem markdown.';
 
   const CONCURRENCY_LIMIT = 4;
   let queueIndex = 0;
@@ -889,19 +909,14 @@ async function processPdfsWithGemini() {
       row.inicio = parsed.inicio || '';
       row.previsao = parsed.previsao || '';
 
-      let parsedObs = (parsed.obs || '').trim();
-      if (parsedObs.toLowerCase().startsWith('os:')) {
-        row.obs = parsedObs;
-      } else if (extractedOs) {
-        row.obs = parsedObs ? `OS: ${extractedOs} | ${parsedObs}` : `OS: ${extractedOs}`;
-      } else {
-        row.obs = parsedObs || 'Processado com Gemini IA';
-      }
+      row.aiNotes = (parsed.detalhesTecnicos || parsed.obs || '').trim();
+      row.obs = '';
 
       row.selected = true;
     } catch (err) {
       console.warn(`Falha na leitura IA de ${row.fileName}:`, err);
-      row.obs = `⚠️ Erro na IA: ${err.message || 'Falha ao analisar'}`;
+      row.aiNotes = `⚠️ Erro na IA: ${err.message || 'Falha ao analisar'}`;
+      row.obs = '';
       row.selected = false;
     } finally {
       completed++;
@@ -966,7 +981,7 @@ function renderImportPreviewTable() {
         </td>
         <td><input type="date" class="preview-input" value="${row.inicio || ''}" onchange="updatePreviewRowValue(${idx}, 'inicio', this.value)"></td>
         <td><input type="date" class="preview-input" value="${row.previsao || ''}" onchange="updatePreviewRowValue(${idx}, 'previsao', this.value)"></td>
-        <td><input type="text" class="preview-input" value="${escapeHtml(row.obs)}" onchange="updatePreviewRowValue(${idx}, 'obs', this.value)"></td>
+        <td><input type="text" class="preview-input" value="${escapeHtml(row.aiNotes || '')}" onchange="updatePreviewRowValue(${idx}, 'aiNotes', this.value)" placeholder="Preenchido pela IA"></td>
       </tr>
     `;
   }).join('');
@@ -1028,6 +1043,7 @@ async function saveImportedRows() {
       previsao: row.previsao || '',
       entregaReal: '',
       obs: row.obs || '',
+      aiNotes: row.aiNotes || '',
       pdfData: '',
       hasPdf
     };

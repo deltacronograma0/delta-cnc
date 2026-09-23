@@ -61,6 +61,22 @@ body {
   align-items: center;
   justify-content: center;
   margin-bottom: 4px;
+  min-height: 54px;
+}
+
+.brand-logo {
+  display: block;
+  width: 118px;
+  height: 118px;
+  max-width: 100%;
+  max-height: 118px;
+  object-fit: contain;
+  border-radius: 50%;
+  box-shadow: 0 10px 26px rgba(0, 0, 0, 0.32);
+}
+
+.logo-fallback {
+  display: none;
 }
 
 .sidebar-badge {
@@ -243,6 +259,7 @@ body {
   align-items: center;
   gap: 0.75rem;
   flex-wrap: wrap;
+  justify-content: flex-end;
 }
 .meta-tag {
   background: rgba(255, 255, 255, 0.03);
@@ -255,6 +272,17 @@ body {
   align-items: center;
   gap: 0.45rem;
   font-weight: 500;
+}
+
+.meta-status {
+  background: rgba(255, 255, 255, 0.025);
+  padding: 0.42rem 0.65rem;
+  font-size: 0.72rem;
+}
+
+.user-status {
+  background: rgba(99, 102, 241, 0.1);
+  border-color: rgba(99, 102, 241, 0.25);
 }
 .status-dot {
   width: 7px;
@@ -485,6 +513,68 @@ body {
   color: var(--text-muted);
   font-size: 0.78rem;
   padding: 0.35rem 0;
+}
+
+.observation-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.38rem;
+  max-width: 190px;
+  border: 1px solid rgba(99, 102, 241, 0.28);
+  border-radius: 999px;
+  padding: 0.32rem 0.62rem;
+  color: #c7d2fe;
+  background: rgba(99, 102, 241, 0.1);
+  cursor: pointer;
+  font: inherit;
+  font-size: 0.73rem;
+  text-align: left;
+  transition: all 0.2s ease;
+}
+
+.observation-chip:hover {
+  color: #fff;
+  background: rgba(99, 102, 241, 0.2);
+  border-color: rgba(129, 140, 248, 0.7);
+  transform: translateY(-1px);
+}
+
+.observation-chip.empty-note {
+  border-style: dashed;
+  color: var(--text-muted);
+  background: rgba(255, 255, 255, 0.025);
+}
+
+.observation-chip-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: rgba(129, 140, 248, 0.18);
+  color: #a5b4fc;
+  font-weight: 800;
+}
+
+.observation-editor {
+  width: 100%;
+  min-height: 150px;
+  resize: vertical;
+  background: rgba(11, 15, 23, 0.8);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 1rem;
+  color: #f3f4f6;
+  font: inherit;
+  font-size: 0.9rem;
+  line-height: 1.6;
+  outline: none;
+}
+
+.observation-editor:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.16);
 }
 
 .annual-production-card {
