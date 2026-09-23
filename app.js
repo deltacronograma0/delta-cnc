@@ -3,7 +3,9 @@ const STORAGE_KEYS = {
   TEAMS: 'DELTA_TEAMS_DATA',
   USERS: 'DELTA_USERS_DATA',
   GEMINI_KEY: 'DELTA_GEMINI_KEY',
-  CURRENT_USER: 'DELTA_CURRENT_USER'
+  CURRENT_USER: 'DELTA_CURRENT_USER',
+  SUPABASE_URL: 'DELTA_SUPABASE_URL',
+  SUPABASE_KEY: 'DELTA_SUPABASE_KEY'
 };
 
 const IDB_NAME = 'delta-cnc-db';
@@ -44,6 +46,12 @@ let geminiApiKey = '';
 let selectedMachineIds = new Set();
 let currentPreviewRows = [];
 let currentObservationMachineId = null;
+let importCancelled = false;
+let currentAiAbortController = null;
+let currentAiIndex = null;
+let supabaseClient = null;
+let supabaseChannel = null;
+let isApplyingRemoteState = false;
 
 function idbAbrir() {
   return new Promise((resolve, reject) => {
@@ -88,8 +96,8 @@ async function idbBuscarPdf(id) {
   }
 }
 
-async function lerPdfComIA(base64Raw, apiKey, customPrompt) {
-  const prompt = customPrompt || 'Extraia desta OS em JSON puro: {"os":"número da OS","cliente":"nome","maquina":"modelo","linha":"Leve|Intermediária|Pesada","inicio":"YYYY-MM-DD","previsao":"YYYY-MM-DD","detalhesTecnicos":"CNPJ | TAG | contato | especificações"}. Apenas JSON sem markdown.';
+async function lerPdfComIA(base64Raw, apiKey, customPrompt, signal) {
+  const prompt = customPrompt || 'Extraia somente estes campos desta OS em JSON puro: {"os":"número da OS","cliente":"nome do cliente","maquina":"modelo da máquina","linha":"Leve|Intermediária|Pesada","inicio":"YYYY-MM-DD","previsao":"YYYY-MM-DD"}. Não explique nada e não inclua outros campos.';
 
   const payload = {
     contents: [{
@@ -105,22 +113,24 @@ async function lerPdfComIA(base64Raw, apiKey, customPrompt) {
     }],
     generationConfig: {
       temperature: 0.1,
-      maxOutputTokens: 500
+      maxOutputTokens: 300
     }
   };
 
   for (const model of GEMINI_MODELS) {
-    try {
+    for (let attempt = 0; attempt < 3; attempt++) {
+      try {
       const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${encodeURIComponent(apiKey)}`;
       const response = await fetch(endpoint, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
+        body: JSON.stringify(payload),
+        signal
       });
 
       if (response.status === 404) {
         console.warn(`Modelo ${model} retornou 404. Tentando próximo modelo...`);
-        continue;
+        break;
       }
 
       if (response.ok) {
@@ -139,10 +149,23 @@ async function lerPdfComIA(base64Raw, apiKey, customPrompt) {
 
         return JSON.parse(cleanJsonStr);
       } else {
-        console.warn(`Modelo ${model} retornou status ${response.status}. Tentando próximo...`);
+        let apiMessage = `status ${response.status}`;
+        try {
+          const errorData = await response.json();
+          apiMessage = errorData.error?.message || apiMessage;
+        } catch (_) {}
+        const temporaryError = [429, 500, 502, 503, 504].includes(response.status);
+        if (temporaryError && attempt < 2) {
+          await new Promise(resolve => setTimeout(resolve, 700 * (attempt + 1)));
+          continue;
+        }
+        throw new Error(`Gemini: ${apiMessage}`);
       }
-    } catch (fetchErr) {
-      console.warn(`Tentativa com ${model} falhou:`, fetchErr);
+      } catch (fetchErr) {
+        console.warn(`Tentativa com ${model} falhou:`, fetchErr);
+        if (fetchErr?.message?.startsWith('Gemini:') || fetchErr?.name === 'AbortError') throw fetchErr;
+        if (attempt === 2) throw fetchErr;
+      }
     }
   }
 
@@ -151,6 +174,7 @@ async function lerPdfComIA(base64Raw, apiKey, customPrompt) {
 
 document.addEventListener('DOMContentLoaded', async () => {
   loadStorage();
+  await initSupabaseSync();
   await migrarPdfsAntigosParaIdb();
   updateClock();
   setInterval(updateClock, 1000);
@@ -162,6 +186,12 @@ document.addEventListener('DOMContentLoaded', async () => {
   updatePodio();
   renderUsers();
   checkGeminiBanner();
+});
+
+document.addEventListener('click', (event) => {
+  if (!event.target.closest('.multi-filter')) {
+    document.querySelectorAll('.multi-filter-menu.open').forEach(menu => menu.classList.remove('open'));
+  }
 });
 
 async function migrarPdfsAntigosParaIdb() {
@@ -235,6 +265,10 @@ async function saveData() {
     } else {
       localStorage.removeItem(STORAGE_KEYS.CURRENT_USER);
     }
+
+    if (supabaseClient && !isApplyingRemoteState) {
+      await saveSharedState();
+    }
   } catch (e) {
     console.warn('Erro de gravação no localStorage (possível quota excedida):', e);
     try {
@@ -259,6 +293,92 @@ async function saveData() {
     }
 
     alert('Não foi possível salvar: espaço de armazenamento cheio. Remova PDFs antigos ou exporte um backup.');
+  }
+}
+
+function setSupabaseSyncStatus(message, connected = false) {
+  const status = document.getElementById('supabaseSyncStatus');
+  if (!status) return;
+  status.textContent = message;
+  status.classList.toggle('is-connected', connected);
+}
+
+function getSupabaseConfig() {
+  return {
+    url: localStorage.getItem(STORAGE_KEYS.SUPABASE_URL) || '',
+    key: localStorage.getItem(STORAGE_KEYS.SUPABASE_KEY) || ''
+  };
+}
+
+async function initSupabaseSync() {
+  const config = getSupabaseConfig();
+  if (!config.url || !config.key || !window.supabase?.createClient) {
+    setSupabaseSyncStatus('Modo local');
+    return;
+  }
+
+  try {
+    supabaseClient = window.supabase.createClient(config.url, config.key);
+    const { error: authError } = await supabaseClient.auth.signInAnonymously();
+    if (authError) throw authError;
+    const { data, error } = await supabaseClient
+      .from('delta_app_state')
+      .select('machines, teams, users')
+      .eq('id', 'main')
+      .maybeSingle();
+
+    if (error) throw error;
+    if (data) {
+      applySharedState(data);
+    } else {
+      await saveSharedState();
+    }
+
+    supabaseChannel = supabaseClient
+      .channel('delta-app-state-changes')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'delta_app_state', filter: 'id=eq.main' }, payload => {
+        if (payload.new) applySharedState(payload.new);
+      })
+      .subscribe(status => {
+        setSupabaseSyncStatus(status === 'SUBSCRIBED' ? 'Sincronização online' : `Estado: ${status}`, status === 'SUBSCRIBED');
+      });
+  } catch (error) {
+    console.error('Erro ao conectar ao Supabase:', error);
+    supabaseClient = null;
+    setSupabaseSyncStatus('Erro de conexão');
+  }
+}
+
+function applySharedState(data) {
+  isApplyingRemoteState = true;
+  try {
+    appMachines = Array.isArray(data.machines) ? data.machines : [];
+    appData = appMachines;
+    appTeams = Array.isArray(data.teams) ? data.teams : [];
+    appUsers = Array.isArray(data.users) ? data.users : [];
+    populateTeamFilters();
+    renderTable();
+    updateDashboard();
+    renderTeams();
+    updatePodio();
+    renderUsers();
+  } finally {
+    isApplyingRemoteState = false;
+  }
+}
+
+async function saveSharedState() {
+  if (!supabaseClient) return;
+  const { error } = await supabaseClient.from('delta_app_state').upsert({
+    id: 'main',
+    machines: appMachines,
+    teams: appTeams,
+    users: appUsers,
+    updated_at: new Date().toISOString()
+  });
+  if (error) {
+    console.error('Erro ao sincronizar dados:', error);
+    setSupabaseSyncStatus('Erro ao salvar');
   }
 }
 
@@ -456,34 +576,62 @@ async function saveObservation() {
 }
 
 function populateTeamFilters() {
-  const selectFilter = document.getElementById('filterTeam');
   const machSelect = document.getElementById('machTeam');
-  const val = selectFilter.value;
-
-  selectFilter.innerHTML = '<option value="todas">Todas as Equipes</option>';
   machSelect.innerHTML = '<option value="—">Sem equipe definida (—)</option>';
 
-  appTeams.forEach(t => {
-    const opt1 = document.createElement('option');
-    opt1.value = t.name;
-    opt1.textContent = t.name;
-    selectFilter.appendChild(opt1);
+  const teamMenu = document.getElementById('filterTeamMenu');
+  const selectedTeams = teamMenu
+    ? [...teamMenu.querySelectorAll('input:checked')].map(input => input.value)
+    : [];
 
-    const opt2 = document.createElement('option');
-    opt2.value = t.name;
-    opt2.textContent = t.name;
-    machSelect.appendChild(opt2);
+  appTeams.forEach(t => {
+    const teamOption = document.createElement('option');
+    teamOption.value = t.name;
+    teamOption.textContent = t.name;
+    machSelect.appendChild(teamOption);
   });
 
-  if (val) selectFilter.value = val;
+  if (teamMenu) {
+    teamMenu.innerHTML = appTeams.map(team => `
+      <label><input type="checkbox" value="${escapeHtml(team.name)}" ${selectedTeams.includes(team.name) ? 'checked' : ''} onchange="updateMultiFilter('team')"> ${escapeHtml(team.name)}</label>
+    `).join('') || '<span class="multi-filter-empty">Nenhuma equipe cadastrada</span>';
+  }
+  updateMultiFilter('team', false);
+}
+
+function toggleFilterMenu(group) {
+  const menu = document.getElementById(`filter${group === 'line' ? 'Line' : group.charAt(0).toUpperCase() + group.slice(1)}Menu`);
+  if (menu) menu.classList.toggle('open');
+}
+
+function getFilterValues(group) {
+  const menuId = group === 'line' ? 'filterLineMenu' : `filter${group.charAt(0).toUpperCase() + group.slice(1)}Menu`;
+  const menu = document.getElementById(menuId);
+  return menu ? [...menu.querySelectorAll('input:checked')].map(input => input.value) : [];
+}
+
+function updateMultiFilter(group, shouldRender = true) {
+  const values = getFilterValues(group);
+  const triggerId = group === 'line' ? 'filterLineTrigger' : `filter${group.charAt(0).toUpperCase() + group.slice(1)}Trigger`;
+  const trigger = document.getElementById(triggerId);
+  if (trigger) {
+    const labels = { status: 'estados', team: 'equipes', line: 'linhas' };
+    trigger.innerHTML = values.length === 0
+      ? `Todas as ${labels[group]} <span>⌄</span>`
+      : `${values.length} selecionado${values.length > 1 ? 's' : ''} <span>⌄</span>`;
+  }
+  if (shouldRender) renderTable();
 }
 
 function clearFilters() {
   document.getElementById('filterPeriod').value = '';
   document.getElementById('filterSearch').value = '';
-  document.getElementById('filterStatus').value = 'todos';
-  document.getElementById('filterTeam').value = 'todas';
-  document.getElementById('filterLinha').value = 'todas';
+  document.querySelectorAll('#filterStatusMenu input, #filterTeamMenu input, #filterLineMenu input').forEach(input => {
+    input.checked = false;
+  });
+  updateMultiFilter('status', false);
+  updateMultiFilter('team', false);
+  updateMultiFilter('line', false);
   renderTable();
 }
 
@@ -499,9 +647,9 @@ function renderTable() {
 
   const period = document.getElementById('filterPeriod').value;
   const search = document.getElementById('filterSearch').value.toLowerCase().trim();
-  const statusFilter = document.getElementById('filterStatus').value;
-  const teamFilter = document.getElementById('filterTeam').value;
-  const linhaFilter = document.getElementById('filterLinha').value;
+  const statusFilter = getFilterValues('status');
+  const teamFilter = getFilterValues('team');
+  const linhaFilter = getFilterValues('line');
 
   const filtered = appMachines.filter(item => {
     const computedStatus = getMachineStatus(item);
@@ -511,9 +659,9 @@ function renderTable() {
       if (!hay.includes(search)) return false;
     }
 
-    if (statusFilter !== 'todos' && computedStatus !== statusFilter) return false;
-    if (teamFilter !== 'todas' && item.equipe !== teamFilter) return false;
-    if (linhaFilter !== 'todas' && item.linha !== linhaFilter) return false;
+    if (statusFilter.length > 0 && !statusFilter.includes(computedStatus)) return false;
+    if (teamFilter.length > 0 && !teamFilter.includes(item.equipe)) return false;
+    if (linhaFilter.length > 0 && !linhaFilter.includes(item.linha)) return false;
 
     if (period) {
       const inStart = item.inicio && item.inicio.startsWith(period);
@@ -803,6 +951,30 @@ function fileToDataUrl(file) {
   });
 }
 
+function getLocalDateString() {
+  const now = new Date();
+  const offset = now.getTimezoneOffset() * 60000;
+  return new Date(now.getTime() - offset).toISOString().split('T')[0];
+}
+
+function getImportDateRule() {
+  return document.getElementById('importStartDateRule')?.value || 'hoje';
+}
+
+function getPreviewStartDate(row) {
+  const rule = getImportDateRule();
+  if (rule === 'hoje') return getLocalDateString();
+  if (rule === 'nenhuma') return '';
+  return row.aiInicio || row.inicio || '';
+}
+
+function applyImportDateRule() {
+  currentPreviewRows.forEach(row => {
+    row.inicio = getPreviewStartDate(row);
+  });
+  renderImportProgress(currentPreviewRows.length);
+}
+
 function openMultiImportModal() {
   currentPreviewRows = [];
   document.getElementById('multiPdfInput').value = '';
@@ -812,11 +984,14 @@ function openMultiImportModal() {
   document.getElementById('btnAiParse').disabled = true;
   document.getElementById('btnSaveMulti').disabled = true;
   document.getElementById('previewRowsCount').textContent = '0 ficheiros na fila';
+  document.getElementById('importBatchSummary').style.display = 'none';
+  document.getElementById('importQueue').style.display = 'none';
   renderImportPreviewTable();
   document.getElementById('multiImportModal').classList.add('open');
 }
 
 function closeMultiImportModal() {
+  if (currentAiAbortController) cancelPdfsWithGemini();
   document.getElementById('multiImportModal').classList.remove('open');
 }
 
@@ -828,6 +1003,8 @@ function onFilesSelected(input) {
   }
   document.getElementById('btnAiParse').disabled = false;
   document.getElementById('previewRowsCount').textContent = `${files.length} ficheiro(s) selecionado(s)`;
+  document.getElementById('importBatchSummary').style.display = 'grid';
+  document.getElementById('importQueue').style.display = 'block';
 
   currentPreviewRows = files.map((f, idx) => {
     const nameWithoutExt = f.name.replace(/\.[^/.]+$/, '');
@@ -843,9 +1020,11 @@ function onFilesSelected(input) {
       maquina: 'Máquina CNC (A aguardar IA)',
       linha: 'Leve',
       inicio: '',
+      aiInicio: '',
       previsao: '',
       obs: '',
       aiNotes: `Ficheiro: ${f.name}`,
+      status: 'Aguardando leitura',
       base64: ''
     };
 
@@ -856,10 +1035,11 @@ function onFilesSelected(input) {
     return row;
   });
 
-  renderImportPreviewTable();
+  applyImportDateRule();
+  renderImportProgress(files.length);
 }
 
-async function processPdfsWithGemini() {
+async function processPdfsWithGemini(retryIndexes = null) {
   const files = Array.from(document.getElementById('multiPdfInput').files || []);
   if (files.length === 0) return;
 
@@ -874,31 +1054,39 @@ async function processPdfsWithGemini() {
   const progressPercent = document.getElementById('aiProgressPercent');
   const progressBar = document.getElementById('aiProgressBar');
   const btnParse = document.getElementById('btnAiParse');
+  const btnCancel = document.getElementById('btnCancelAi');
 
   progressBox.style.display = 'block';
+  document.getElementById('importBatchSummary').style.display = 'grid';
+  document.getElementById('importQueue').style.display = 'block';
   btnParse.disabled = true;
+  if (btnCancel) btnCancel.style.display = 'inline-flex';
 
-  const total = currentPreviewRows.length;
+  const indexes = retryIndexes || currentPreviewRows.map((_, index) => index);
+  const total = indexes.length;
   let completed = 0;
+  importCancelled = false;
+  currentAiAbortController = new AbortController();
   progressText.textContent = `Lendo 0 de ${total}...`;
   progressBar.style.width = '0%';
   progressPercent.textContent = '0%';
 
-  const aiPrompt = 'Extraia desta OS em JSON puro: {"os":"número da OS","cliente":"nome","maquina":"modelo","linha":"Leve|Intermediária|Pesada","inicio":"YYYY-MM-DD","previsao":"YYYY-MM-DD","detalhesTecnicos":"CNPJ | TAG | contato | especificações"}. Apenas JSON sem markdown.';
-
-  const CONCURRENCY_LIMIT = 4;
-  let queueIndex = 0;
+  const aiPrompt = 'Extraia somente estes campos desta OS em JSON puro: {"os":"número da OS","cliente":"nome do cliente","maquina":"modelo da máquina","linha":"Leve|Intermediária|Pesada","inicio":"YYYY-MM-DD","previsao":"YYYY-MM-DD"}. Não explique nada e não inclua outros campos.';
 
   async function processSingleItem(i) {
     const row = currentPreviewRows[i];
     const file = row.file;
+    currentAiIndex = i;
+    currentAiAbortController = new AbortController();
+    row.status = 'Lendo PDF...';
+    renderImportProgress(total);
 
     try {
       const base64DataUrl = row.base64 || await fileToDataUrl(file);
       const base64Raw = base64DataUrl.includes(',') ? base64DataUrl.split(',')[1] : base64DataUrl;
       row.base64 = base64DataUrl;
 
-      const parsed = await lerPdfComIA(base64Raw, geminiApiKey, aiPrompt);
+      const parsed = await lerPdfComIA(base64Raw, geminiApiKey, aiPrompt, currentAiAbortController.signal);
 
       const extractedOs = (parsed.os || row.os || '').trim();
       row.os = extractedOs;
@@ -906,41 +1094,101 @@ async function processPdfsWithGemini() {
       row.maquina = parsed.maquina || 'Router / Laser CNC';
       row.linha = ['Leve', 'Intermediária', 'Pesada'].includes(parsed.linha) ? parsed.linha : 'Leve';
       row.equipe = '';
-      row.inicio = parsed.inicio || '';
+      row.aiInicio = parsed.inicio || '';
+      row.inicio = getPreviewStartDate(row);
       row.previsao = parsed.previsao || '';
 
       row.aiNotes = (parsed.detalhesTecnicos || parsed.obs || '').trim();
       row.obs = '';
 
       row.selected = true;
+      row.status = 'Leitura concluída';
     } catch (err) {
       console.warn(`Falha na leitura IA de ${row.fileName}:`, err);
       row.aiNotes = `⚠️ Erro na IA: ${err.message || 'Falha ao analisar'}`;
       row.obs = '';
       row.selected = false;
+      row.status = err.name === 'AbortError' ? 'Leitura cancelada' : 'Falha na leitura';
     } finally {
       completed++;
       const pct = Math.round((completed / total) * 100);
       progressBar.style.width = pct + '%';
       progressPercent.textContent = pct + '%';
-      progressText.textContent = `Lendo ${completed} de ${total}...`;
-      renderImportPreviewTable();
+      progressText.textContent = `${importCancelled ? 'Cancelando' : 'Lendo'} ${completed} de ${total}...`;
+      renderImportProgress(total);
+      currentAiAbortController = null;
+      currentAiIndex = null;
     }
   }
 
-  const poolSize = Math.min(CONCURRENCY_LIMIT, total);
-  const workers = Array.from({ length: poolSize }, async () => {
-    while (queueIndex < total) {
-      const currentIdx = queueIndex++;
-      await processSingleItem(currentIdx);
-    }
-  });
+  for (const index of indexes) {
+    if (importCancelled) break;
+    await processSingleItem(index);
+  }
 
-  await Promise.all(workers);
-
-  progressText.textContent = `✅ Concluído: ${completed} de ${total} ficheiro(s) analisado(s).`;
+  progressText.textContent = importCancelled
+    ? `Leitura cancelada após ${completed} de ${total} ficheiro(s).`
+    : `✅ Concluído: ${completed} de ${total} ficheiro(s) analisado(s).`;
   document.getElementById('btnSaveMulti').disabled = !currentPreviewRows.some(r => r.selected);
   btnParse.disabled = false;
+  if (btnCancel) btnCancel.style.display = 'none';
+  currentAiAbortController = null;
+}
+
+function cancelPdfsWithGemini() {
+  importCancelled = true;
+  if (currentAiAbortController) currentAiAbortController.abort();
+  const label = document.getElementById('importQueueLabel');
+  if (label) label.textContent = 'Cancelando leitura atual...';
+}
+
+function cancelCurrentPdf(index) {
+  if (currentAiIndex !== index || !currentAiAbortController) return;
+  currentAiAbortController.abort();
+}
+
+function retryImportedRow(index) {
+  if (!currentPreviewRows[index]) return;
+  currentPreviewRows[index].status = 'Aguardando leitura';
+  currentPreviewRows[index].selected = true;
+  processPdfsWithGemini([index]);
+}
+
+function renderImportProgress(total = currentPreviewRows.length) {
+  const completed = currentPreviewRows.filter(row => row.status === 'Leitura concluída').length;
+  const errors = currentPreviewRows.filter(row => row.status === 'Falha na leitura').length;
+  const selected = currentPreviewRows.filter(row => row.selected).length;
+  const active = currentPreviewRows.filter(row => row.status === 'Lendo PDF...').length;
+  const summary = {
+    batchTotalCount: total,
+    batchDoneCount: completed,
+    batchErrorCount: errors,
+    batchSelectedCount: selected
+  };
+
+  Object.entries(summary).forEach(([id, value]) => {
+    const element = document.getElementById(id);
+    if (element) element.textContent = value;
+  });
+
+  const label = document.getElementById('importQueueLabel');
+  if (label) label.textContent = active ? `${active} lendo agora` : completed === total ? 'Leitura concluída' : 'Aguardando início';
+
+  const queue = document.getElementById('importQueueList');
+  if (queue) {
+    queue.innerHTML = currentPreviewRows.map(row => `
+      <div class="import-queue-item">
+        <span class="import-queue-file" title="${escapeHtml(row.fileName)}">📄 ${escapeHtml(row.fileName)}</span>
+        <span class="import-queue-actions">
+          <span class="import-queue-status ${row.status === 'Leitura concluída' ? 'is-done' : row.status === 'Falha na leitura' || row.status === 'Leitura cancelada' ? 'is-error' : row.status === 'Lendo PDF...' ? 'is-reading' : ''}">${escapeHtml(row.status || 'Aguardando leitura')}</span>
+          ${row.status === 'Lendo PDF...' && currentAiIndex === currentPreviewRows.indexOf(row) ? `<button class="queue-cancel-btn" onclick="cancelCurrentPdf(${currentPreviewRows.indexOf(row)})">⏹ Cancelar</button>` : ''}
+          ${row.status === 'Falha na leitura' || row.status === 'Leitura cancelada' ? `<button class="queue-retry-btn" onclick="retryImportedRow(${currentPreviewRows.indexOf(row)})">↻ Tentar novamente</button>` : ''}
+        </span>
+      </div>
+    `).join('');
+  }
+
+  renderImportPreviewTable();
 }
 
 function renderImportPreviewTable() {
@@ -948,7 +1196,7 @@ function renderImportPreviewTable() {
   if (currentPreviewRows.length === 0) {
     tbody.innerHTML = `
       <tr>
-        <td colspan="9" style="text-align:center; padding:2.5rem; color:var(--text-muted);">
+        <td colspan="10" style="text-align:center; padding:2.5rem; color:var(--text-muted);">
           Nenhum PDF carregado ainda. Escolha ficheiros PDF acima para pré-visualizar e extrair.
         </td>
       </tr>
@@ -964,12 +1212,16 @@ function renderImportPreviewTable() {
         <td style="text-align:center;">
           <input type="checkbox" ${row.selected ? 'checked' : ''} onchange="updatePreviewRowValue(${idx}, 'selected', this.checked)" style="cursor:pointer; accent-color:#6366f1;">
         </td>
+        <td><span class="import-status-pill ${row.status === 'Leitura concluída' ? 'is-done' : row.status === 'Falha na leitura' ? 'is-error' : row.status === 'Lendo PDF...' ? 'is-reading' : ''}">${escapeHtml(row.status || 'Aguardando leitura')}</span></td>
         <td style="max-width:140px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" title="${escapeHtml(displayName)}">
           <span style="font-size:0.75rem; color:#93c5fd; font-weight:600; display:inline-flex; align-items:center; gap:0.35rem;">
             📄 ${escapeHtml(displayName)}
           </span>
         </td>
-        <td><input type="text" class="preview-input" value="${escapeHtml(row.equipe)}" onchange="updatePreviewRowValue(${idx}, 'equipe', this.value)" placeholder="Equipe"></td>
+        <td><select class="preview-input" onchange="updatePreviewRowValue(${idx}, 'equipe', this.value)">
+          <option value="">Selecionar equipe</option>
+          ${appTeams.map(team => `<option value="${escapeHtml(team.name)}" ${row.equipe === team.name ? 'selected' : ''}>${escapeHtml(team.name)}</option>`).join('')}
+        </select></td>
         <td><input type="text" class="preview-input" value="${escapeHtml(row.cliente)}" onchange="updatePreviewRowValue(${idx}, 'cliente', this.value)" placeholder="Cliente"></td>
         <td><input type="text" class="preview-input" value="${escapeHtml(row.maquina)}" onchange="updatePreviewRowValue(${idx}, 'maquina', this.value)" placeholder="Modelo"></td>
         <td>
@@ -994,6 +1246,7 @@ function updatePreviewRowValue(idx, key, val) {
     currentPreviewRows[idx][key] = val;
   }
   document.getElementById('btnSaveMulti').disabled = !currentPreviewRows.some(r => r.selected);
+  renderImportProgress(currentPreviewRows.length);
 }
 
 function toggleSelectAllPreview(masterCheckbox) {
@@ -1061,6 +1314,10 @@ async function saveImportedRows() {
 
 function openConfigModal() {
   document.getElementById('geminiApiKeyInput').value = geminiApiKey;
+  const config = getSupabaseConfig();
+  document.getElementById('supabaseUrlInput').value = config.url;
+  document.getElementById('supabaseKeyInput').value = config.key;
+  setSupabaseSyncStatus(supabaseClient ? 'Sincronização online' : (config.url && config.key ? 'Pronto para conectar' : 'Modo local'), Boolean(supabaseClient));
   document.getElementById('configModal').classList.add('open');
 }
 
@@ -1075,6 +1332,26 @@ function saveGeminiKey() {
   checkGeminiBanner();
   alert('Chave da API do Gemini guardada com sucesso!');
   closeConfigModal();
+}
+
+async function saveSupabaseConfig() {
+  const url = document.getElementById('supabaseUrlInput').value.trim().replace(/\/$/, '');
+  const key = document.getElementById('supabaseKeyInput').value.trim();
+  if (!url || !key) {
+    alert('Informe a URL e a Anon Key do Supabase.');
+    return;
+  }
+
+  localStorage.setItem(STORAGE_KEYS.SUPABASE_URL, url);
+  localStorage.setItem(STORAGE_KEYS.SUPABASE_KEY, key);
+  if (supabaseChannel && supabaseClient) await supabaseClient.removeChannel(supabaseChannel);
+  supabaseChannel = null;
+  supabaseClient = null;
+  setSupabaseSyncStatus('Conectando...');
+  await initSupabaseSync();
+  if (supabaseClient) {
+    alert('Supabase conectado. As alterações serão compartilhadas em tempo real.');
+  }
 }
 
 function checkGeminiBanner() {

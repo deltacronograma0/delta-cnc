@@ -7,6 +7,7 @@
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/basecoat-css@1.0.2/dist/basecoat.cdn.min.css">
   <link rel="stylesheet" href="styles.css">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body>
   <div class="app-shell">
@@ -109,28 +110,33 @@
         </div>
         <div class="form-group">
           <label>Estado</label>
-          <select id="filterStatus" class="input-delta" onchange="renderTable()">
-            <option value="todos">Todos os Estados</option>
-            <option value="Aguardando produção">Aguardando produção</option>
-            <option value="Em andamento">Em andamento</option>
-            <option value="Atrasado">Atrasado</option>
-            <option value="Entregue">Entregue</option>
-          </select>
+          <div class="multi-filter" data-filter-group="status">
+            <button type="button" class="multi-filter-trigger" onclick="toggleFilterMenu('status')" id="filterStatusTrigger">Todos os estados <span>⌄</span></button>
+            <div class="multi-filter-menu" id="filterStatusMenu">
+              <label><input type="checkbox" value="Aguardando produção" onchange="updateMultiFilter('status')"> Aguardando produção</label>
+              <label><input type="checkbox" value="Em andamento" onchange="updateMultiFilter('status')"> Em andamento</label>
+              <label><input type="checkbox" value="Atrasado" onchange="updateMultiFilter('status')"> Atrasado</label>
+              <label><input type="checkbox" value="Entregue" onchange="updateMultiFilter('status')"> Entregue</label>
+            </div>
+          </div>
         </div>
         <div class="form-group">
           <label>Equipe</label>
-          <select id="filterTeam" class="input-delta" onchange="renderTable()">
-            <option value="todas">Todas as Equipes</option>
-          </select>
+          <div class="multi-filter" data-filter-group="team">
+            <button type="button" class="multi-filter-trigger" onclick="toggleFilterMenu('team')" id="filterTeamTrigger">Todas as equipes <span>⌄</span></button>
+            <div class="multi-filter-menu" id="filterTeamMenu"></div>
+          </div>
         </div>
         <div class="form-group">
           <label>Linha</label>
-          <select id="filterLinha" class="input-delta" onchange="renderTable()">
-            <option value="todas">Todas as Linhas</option>
-            <option value="Leve">Leve</option>
-            <option value="Intermediária">Intermediária</option>
-            <option value="Pesada">Pesada</option>
-          </select>
+          <div class="multi-filter" data-filter-group="line">
+            <button type="button" class="multi-filter-trigger" onclick="toggleFilterMenu('line')" id="filterLineTrigger">Todas as linhas <span>⌄</span></button>
+            <div class="multi-filter-menu" id="filterLineMenu">
+              <label><input type="checkbox" value="Leve" onchange="updateMultiFilter('line')"> Leve</label>
+              <label><input type="checkbox" value="Intermediária" onchange="updateMultiFilter('line')"> Intermediária</label>
+              <label><input type="checkbox" value="Pesada" onchange="updateMultiFilter('line')"> Pesada</label>
+            </div>
+          </div>
         </div>
         <div class="form-group">
           <button class="btn-delta btn-slate" onclick="clearFilters()" style="margin-top:auto; width:100%;">
@@ -494,12 +500,15 @@
               <input type="file" id="multiPdfInput" multiple accept="application/pdf,.pdf" class="input-delta" onchange="onFilesSelected(this)">
               <div style="font-size:0.74rem; color:var(--text-muted); margin-top:0.45rem; display:flex; align-items:center; gap:0.4rem;">
                 <span>⚡</span>
-                <span>Modelos suportados: Gemini 3.x (fallback automático)</span>
+                <span>Leitura sequencial: um PDF por vez, com controle individual</span>
               </div>
             </div>
             <div style="display:flex; gap:0.75rem; align-items:flex-end;">
               <button id="btnAiParse" class="btn-delta btn-emerald" onclick="processPdfsWithGemini()" disabled>
                 ✨ Ler PDFs com IA
+              </button>
+              <button id="btnCancelAi" class="btn-delta btn-danger" onclick="cancelPdfsWithGemini()" style="display:none;">
+                ⏹ Cancelar leitura
               </button>
             </div>
           </div>
@@ -510,14 +519,14 @@
               <label for="importStartDateRule" style="font-size:0.74rem; font-weight:700; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.04em; display:block; margin-bottom:0.4rem;">
                 Data de início:
               </label>
-              <select id="importStartDateRule" class="input-delta">
+              <select id="importStartDateRule" class="input-delta" onchange="applyImportDateRule()">
                 <option value="hoje" selected>Usar data de hoje</option>
                 <option value="nenhuma">Sem data de início</option>
                 <option value="os">Usar data de início da OS</option>
               </select>
             </div>
             <div style="font-size:0.76rem; color:var(--text-muted); flex:1; min-width:240px; line-height:1.45;">
-              💡 <span>Controla apenas a data de início. A previsão de entrega sempre vem da OS.</span>
+              💡 <span>A data encontrada na OS fica guardada. Você pode alternar a prévia entre hoje, sem data ou data original da OS.</span>
             </div>
           </div>
 
@@ -531,23 +540,43 @@
               <div id="aiProgressBar" style="width:0%; height:100%; background:linear-gradient(90deg, #10b981, #6366f1); transition:width 0.25s ease;"></div>
             </div>
           </div>
+
+          <div id="importBatchSummary" class="import-batch-summary" style="display:none;">
+            <div><span>Arquivos</span><strong id="batchTotalCount">0</strong></div>
+            <div><span>Concluídos</span><strong id="batchDoneCount">0</strong></div>
+            <div><span>Com erro</span><strong id="batchErrorCount">0</strong></div>
+            <div><span>Selecionados</span><strong id="batchSelectedCount">0</strong></div>
+          </div>
+
+          <div id="importQueue" class="import-queue" style="display:none;">
+            <div class="import-queue-heading">
+              <span>Fila de leitura</span>
+              <span id="importQueueLabel">Aguardando início</span>
+            </div>
+            <div id="importQueueList" class="import-queue-list"></div>
+          </div>
         </div>
 
         <!-- Preview Table -->
         <div style="margin-bottom:0.65rem; display:flex; justify-content:space-between; align-items:center;">
-          <h4 style="margin:0; font-size:0.92rem; color:#ffffff; font-weight:700;">
-            Prévia de Dados Extraídos (Células editáveis)
-          </h4>
+          <div>
+            <span class="section-kicker">Conferência antes de salvar</span>
+            <h4 style="margin:0.18rem 0 0; font-size:0.98rem; color:#ffffff; font-weight:700;">
+              Prévia de dados extraídos
+            </h4>
+          </div>
           <span style="font-size:0.76rem; color:var(--text-muted);" id="previewRowsCount">0 ficheiros na fila</span>
         </div>
 
-        <div class="table-card" style="max-height:380px; overflow-y:auto;">
-          <table class="delta-table" id="importPreviewTable">
+        <div class="table-card import-preview-card">
+          <div class="import-preview-scroll">
+            <table class="delta-table import-preview-table" id="importPreviewTable">
             <thead>
               <tr>
                 <th style="width:35px; text-align:center;">
                   <input type="checkbox" id="previewSelectAll" checked onchange="toggleSelectAllPreview(this)" style="cursor:pointer; accent-color:#6366f1;">
                 </th>
+                <th>Status</th>
                 <th>PDF</th>
                 <th>Equipe</th>
                 <th>Cliente</th>
@@ -560,12 +589,13 @@
             </thead>
             <tbody id="importPreviewBody">
               <tr>
-                <td colspan="9" style="text-align:center; padding:2.5rem; color:var(--text-muted);">
+                <td colspan="10" style="text-align:center; padding:2.5rem; color:var(--text-muted);">
                   Nenhum PDF carregado ainda. Escolha ficheiros PDF acima para pré-visualizar e extrair.
                 </td>
               </tr>
             </tbody>
-          </table>
+            </table>
+          </div>
         </div>
       </div>
 
@@ -600,6 +630,25 @@
         </div>
 
         <hr style="border:0; border-top:1px solid var(--border); margin:1.75rem 0;">
+
+        <div style="margin-bottom:1.75rem;">
+          <h4 style="margin:0 0 0.5rem; font-size:0.95rem; color:#ffffff; font-weight:700;">Sincronização entre gestores</h4>
+          <p style="font-size:0.76rem; color:var(--text-muted); margin-bottom:1rem; line-height:1.4;">
+            Conecte o projeto Supabase para que alterações feitas por um gestor apareçam automaticamente nos outros computadores.
+          </p>
+          <div class="form-group" style="margin-bottom:0.75rem;">
+            <label>Supabase Project URL</label>
+            <input type="url" id="supabaseUrlInput" class="input-delta" placeholder="https://seu-projeto.supabase.co">
+          </div>
+          <div class="form-group" style="margin-bottom:0.75rem;">
+            <label>Supabase Anon Key</label>
+            <input type="password" id="supabaseKeyInput" class="input-delta" placeholder="eyJhbGciOiJIUzI1NiIs...">
+          </div>
+          <div class="sync-config-actions">
+            <button class="btn-delta btn-indigo" onclick="saveSupabaseConfig()">🔗 Conectar e sincronizar</button>
+            <span id="supabaseSyncStatus" class="sync-status">Modo local</span>
+          </div>
+        </div>
 
         <div>
           <h4 style="margin:0 0 0.5rem; font-size:0.95rem; color:#ffffff; font-weight:700;">Segurança de Dados (Backup Completo)</h4>
