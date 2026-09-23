@@ -9,91 +9,68 @@
   <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-  <div class="app-shell">
-    <aside class="app-sidebar">
-      <div class="sidebar-brand-row">
-        <div class="brand-badge sidebar-badge">DELTA</div>
-      </div>
-      <div class="sidebar-company">
-        <h2>CP - DELTA</h2>
-        <p>Produção CNC</p>
-      </div>
 
-      <div class="sidebar-section-label">Navegação</div>
-      <nav class="sidebar-nav">
-        <button class="sidebar-link active" data-tab="acompanhamento" onclick="switchTab('acompanhamento')">
-          <span>📋</span> Acompanhamento
-        </button>
-        <button class="sidebar-link" data-tab="dashboard" onclick="switchTab('dashboard')">
-          <span>📊</span> Dashboard
-        </button>
-        <button class="sidebar-link" data-tab="equipas" onclick="switchTab('equipas')">
-          <span>👥</span> Equipes
-        </button>
-        <button class="sidebar-link" data-tab="destaques" onclick="switchTab('destaques')">
-          <span>🏆</span> Destaques
-        </button>
-        <button class="sidebar-link" data-tab="usuarios" onclick="switchTab('usuarios')">
-          <span>🔐</span> Utilizadores
-        </button>
-      </nav>
-
-      <div class="sidebar-summary">
-        <div class="sidebar-summary-title">Estado da operação</div>
-        <div class="sidebar-summary-grid">
-          <div>
-            <span>Ativas</span>
-            <strong id="sidebarActiveCount">0</strong>
-          </div>
-          <div>
-            <span>Entregues</span>
-            <strong id="sidebarDeliveredCount">0</strong>
-          </div>
+  <!-- Top Header -->
+  <header class="delta-header">
+    <div class="header-content">
+      <div class="brand-group">
+        <div class="brand-badge">DELTA</div>
+        <div class="brand-titles">
+          <h1>CP - DELTA — Controle de Produção</h1>
+          <p>Gestão de fabrico e expedição de máquinas CNC</p>
         </div>
       </div>
-    </aside>
 
-    <div class="workspace">
-      <!-- Top Header -->
-      <header class="delta-header">
-        <div class="header-content">
-          <div class="brand-group">
-            <div class="brand-badge">DELTA</div>
-            <div class="brand-titles">
-              <h1>CP - DELTA — Controle de Produção</h1>
-              <p>Gestão de fabrico e expedição de máquinas CNC</p>
-            </div>
-          </div>
-
-          <div class="header-meta">
-            <div class="meta-tag" id="refMonthBadge">
-              <span style="color:#818cf8;">📅</span> <strong id="lblRefMonth">Setembro/2026</strong>
-            </div>
-            <div class="meta-tag">
-              <span class="status-dot"></span>
-              <span>Online</span>
-            </div>
-            <div class="meta-tag" id="clockEl">
-              ⏱️ 00:00:00
-            </div>
-            <div class="meta-tag" style="background: rgba(99, 102, 241, 0.08); border-color: rgba(99, 102, 241, 0.2);">
-              👤 <span id="currentUserLabel" style="font-weight:600; color: #c7d2fe;">Administrador</span>
-            </div>
-            <button id="authBtn" class="btn-delta btn-slate btn-sm" onclick="toggleAuthModal()">
-              Entrar
-            </button>
-          </div>
+      <div class="header-meta">
+        <div class="meta-tag" id="refMonthBadge">
+          <span style="color:#818cf8;">📅</span> <strong id="lblRefMonth">Setembro/2026</strong>
         </div>
-      </header>
-
-      <!-- Gemini Key Warning Banner (auto-hidden when key exists) -->
-      <div id="geminiAlertBanner" class="gemini-alert">
-        <span>⚠️ <strong>Atenção:</strong> Chave da API do Gemini necessária para leitura inteligente de PDFs de OS.</span>
-        <button class="btn-delta btn-amber btn-sm" onclick="openConfigModal()">Configurar Chave</button>
+        <div class="meta-tag">
+          <span class="status-dot"></span>
+          <span>Online</span>
+        </div>
+        <div class="meta-tag" id="clockEl">
+          ⏱️ 00:00:00
+        </div>
+        <div class="meta-tag" style="background: rgba(99, 102, 241, 0.08); border-color: rgba(99, 102, 241, 0.2);">
+          👤 <span id="currentUserLabel" style="font-weight:600; color: #c7d2fe;">Administrador</span>
+        </div>
+        <button id="authBtn" class="btn-delta btn-slate btn-sm" onclick="toggleAuthModal()">
+          Entrar
+        </button>
       </div>
+    </div>
+  </header>
 
-      <!-- Main Content Area -->
-      <main class="delta-main">
+  <!-- Gemini Key Warning Banner (auto-hidden when key exists) -->
+  <div id="geminiAlertBanner" class="gemini-alert">
+    <span>⚠️ <strong>Atenção:</strong> Chave da API do Gemini necessária para leitura inteligente de PDFs de OS.</span>
+    <button class="btn-delta btn-amber btn-sm" onclick="openConfigModal()">Configurar Chave</button>
+  </div>
+
+  <!-- Navigation Tabs -->
+  <nav class="tabs-nav-container">
+    <div class="tabs-nav">
+      <button class="tab-button active" onclick="switchTab('acompanhamento')">
+        📋 Acompanhamento
+      </button>
+      <button class="tab-button" onclick="switchTab('dashboard')">
+        📊 Dashboard
+      </button>
+      <button class="tab-button" onclick="switchTab('equipas')">
+        👥 Equipas
+      </button>
+      <button class="tab-button" onclick="switchTab('destaques')">
+        🏆 Destaques
+      </button>
+      <button class="tab-button" onclick="switchTab('usuarios')">
+        🔐 Utilizadores
+      </button>
+    </div>
+  </nav>
+
+  <!-- Main Content Area -->
+  <main class="delta-main">
 
     <!-- TAB 1: ACOMPANHAMENTO -->
     <section id="tab-acompanhamento">
@@ -118,9 +95,9 @@
           </select>
         </div>
         <div class="form-group">
-          <label>Equipe</label>
+          <label>Equipa</label>
           <select id="filterTeam" class="input-delta" onchange="renderTable()">
-            <option value="todas">Todas as Equipes</option>
+            <option value="todas">Todas as Equipas</option>
           </select>
         </div>
         <div class="form-group">
@@ -184,7 +161,7 @@
                 <th style="width: 40px; text-align:center;">
                   <input type="checkbox" id="selectAllCheckbox" onchange="toggleSelectAll(this)" style="cursor:pointer; accent-color:#6366f1;">
                 </th>
-                <th>Equipe</th>
+                <th>Equipa</th>
                 <th>Cliente</th>
                 <th>Máquina CNC</th>
                 <th>Linha</th>
@@ -207,15 +184,6 @@
 
     <!-- TAB 2: DASHBOARD -->
     <section id="tab-dashboard" class="hidden">
-      <div class="dashboard-heading">
-        <div>
-          <span class="section-kicker">Visão operacional</span>
-          <h2>Produção por equipe</h2>
-          <p>Máquinas movimentadas no mês de <strong class="dashMonthName">Setembro/2026</strong>, organizadas por estado e ordem de serviço.</p>
-        </div>
-        <button class="btn-delta btn-slate" onclick="switchTab('acompanhamento')">📋 Abrir acompanhamento</button>
-      </div>
-
       <!-- KPIs -->
       <div class="kpi-grid">
         <div class="kpi-card blue">
@@ -240,25 +208,38 @@
         </div>
       </div>
 
-      <div class="dashboard-team-board" id="dashTeamsList">
-        <!-- Dynamic team production cards -->
-      </div>
+      <!-- Detailed Layout: Team Cards and Annual Chart -->
+      <div class="dash-sections-grid">
+        <div class="teams-production-card">
+          <h3 style="margin-top:0; margin-bottom:1.25rem; font-size:1.05rem; color:#ffffff; display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid var(--border); padding-bottom:0.75rem;">
+            <span>👥 Produção por Equipa no Mês</span>
+            <span style="font-size:0.75rem; color:var(--text-muted); font-weight:normal;" id="dashRefMonthSub">Setembro/2026</span>
+          </h3>
+          <div id="dashTeamsList">
+            <!-- Dynamic team items -->
+          </div>
+        </div>
 
-      <div class="teams-production-card annual-production-card">
-        <h3>📈 Arranques de produção anual (2026)</h3>
-        <p>Evolução de novas máquinas iniciadas ao longo dos meses.</p>
-        <div class="svg-chart-container" id="annualChartBox">
-          <!-- Built dynamically via JS with accessible SVG bars -->
+        <div class="teams-production-card">
+          <h3 style="margin-top:0; margin-bottom:0.3rem; font-size:1.05rem; color:#ffffff;">
+            📈 Arranques de Produção Anual (2026)
+          </h3>
+          <p style="font-size:0.75rem; color:var(--text-muted); margin-top:0; margin-bottom:1.25rem;">
+            Evolução de novas máquinas iniciadas ao longo dos meses
+          </p>
+          <div class="svg-chart-container" id="annualChartBox">
+            <!-- Built dynamically via JS with accessible SVG bars -->
+          </div>
         </div>
       </div>
     </section>
 
-    <!-- TAB 3: EQUIPES -->
+    <!-- TAB 3: EQUIPAS -->
     <section id="tab-equipas" class="hidden">
       <div class="action-bar">
-        <h2 style="font-size:1.2rem; margin:0; color:#ffffff; font-weight:700;">Equipes de Fabrico &amp; Montagem</h2>
+        <h2 style="font-size:1.2rem; margin:0; color:#ffffff; font-weight:700;">Equipas de Fabrico &amp; Montagem</h2>
         <button class="btn-delta btn-indigo editor-only" onclick="openTeamModal()">
-          ➕ Registar Nova Equipe
+          ➕ Registar Nova Equipa
         </button>
       </div>
 
@@ -272,7 +253,7 @@
       <div style="text-align:center; max-width:650px; margin:0 auto 1.5rem;">
         <h2 style="font-size:1.45rem; color:#ffffff; margin-bottom:0.4rem; font-weight:800;">🏆 Pódio de Eficiência do Mês</h2>
         <p style="color:var(--text-muted); font-size:0.88rem;">
-          Equipes com maior volume de máquinas CNC entregues no mês de <span class="dashMonthName" style="color:#818cf8; font-weight:600;">Setembro/2026</span>.
+          Equipas com maior volume de máquinas CNC entregues no mês de <span class="dashMonthName" style="color:#818cf8; font-weight:600;">Setembro/2026</span>.
         </p>
       </div>
 
@@ -288,7 +269,7 @@
           <thead>
             <tr>
               <th>Posição</th>
-              <th>Equipe</th>
+              <th>Equipa</th>
               <th>Máquinas Entregues</th>
               <th>Em Andamento</th>
               <th>Pontuação</th>
@@ -326,9 +307,7 @@
       </div>
     </section>
 
-      </main>
-    </div>
-  </div>
+  </main>
 
   <!-- MODAL: VER OBSERVAÇÕES COMPLETA -->
   <div id="obsModal" class="modal-overlay">
@@ -394,7 +373,7 @@
               <input type="text" id="machOs" class="input-delta" placeholder="Ex.: DM12" required>
             </div>
             <div class="form-group">
-              <label>Equipe Responsável</label>
+              <label>Equipa Responsável</label>
               <select id="machTeam" class="input-delta" required>
                 <!-- populated dynamically -->
               </select>
@@ -550,7 +529,7 @@
                   <input type="checkbox" id="previewSelectAll" checked onchange="toggleSelectAllPreview(this)" style="cursor:pointer; accent-color:#6366f1;">
                 </th>
                 <th>PDF</th>
-                <th>Equipe</th>
+                <th>Equipa</th>
                 <th>Cliente</th>
                 <th>Máquina CNC</th>
                 <th>Linha</th>
@@ -605,7 +584,7 @@
         <div>
           <h4 style="margin:0 0 0.5rem; font-size:0.95rem; color:#ffffff; font-weight:700;">Segurança de Dados (Backup Completo)</h4>
           <p style="font-size:0.76rem; color:var(--text-muted); margin-bottom:1.15rem; line-height:1.4;">
-            Exporte ou restaure todo o ecossistema (Máquinas, Equipes e Utilizadores) em ficheiro JSON estruturado.
+            Exporte ou restaure todo o ecossistema (Máquinas, Equipas e Utilizadores) em ficheiro JSON estruturado.
           </p>
           <div style="display:flex; flex-wrap:wrap; gap:0.75rem;">
             <button class="btn-delta btn-slate" onclick="exportBackup()">
@@ -624,17 +603,17 @@
     </div>
   </div>
 
-  <!-- MODAL: NOVA / EDITAR EQUIPE -->
+  <!-- MODAL: NOVA / EDITAR EQUIPA -->
   <div id="teamModal" class="modal-overlay">
     <div class="modal-dialog">
       <div class="modal-header">
-        <h3 id="teamModalTitle">Registar Nova Equipe</h3>
+        <h3 id="teamModalTitle">Registar Nova Equipa</h3>
         <button class="modal-close" onclick="closeTeamModal()">&times;</button>
       </div>
       <div class="modal-body">
         <input type="hidden" id="teamEditIndex" value="-1">
         <div class="form-group" style="margin-bottom:1.15rem;">
-          <label>Nome da Equipe ou Técnicos</label>
+          <label>Nome da Equipa ou Técnicos</label>
           <input type="text" id="teamNameInput" class="input-delta" placeholder="Ex.: Lucas e Bruno" required>
         </div>
         <div class="form-group">
@@ -644,7 +623,7 @@
       </div>
       <div class="modal-footer">
         <button class="btn-delta btn-slate" onclick="closeTeamModal()">Cancelar</button>
-        <button class="btn-delta btn-indigo" onclick="saveTeamSubmit()">Guardar Equipe</button>
+        <button class="btn-delta btn-indigo" onclick="saveTeamSubmit()">Guardar Equipa</button>
       </div>
     </div>
   </div>
