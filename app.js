@@ -1872,6 +1872,16 @@ function updateDashboard() {
 
   const analyticsBox = document.getElementById('dashboardAnalytics');
   if (analyticsBox) {
+    const dateDiffDays = (from, to) => {
+      const start = new Date(`${from}T00:00:00`);
+      const end = new Date(`${to}T00:00:00`);
+      if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) return 0;
+      return Math.max(0, Math.round((end - start) / 86400000));
+    };
+    const [selectedYear, selectedMonth] = mesRefStr.split('-').map(Number);
+    const previousDate = new Date(selectedYear, selectedMonth - 2, 1);
+    const previousPeriod = `${previousDate.getFullYear()}-${String(previousDate.getMonth() + 1).padStart(2, '0')}`;
+    const todayIso = new Date().toISOString().slice(0, 10);
     const teamNames = [...new Set([...appTeams.map(team => team.name), ...appMachines.map(machine => machine.equipe).filter(Boolean)])];
     analyticsBox.innerHTML = teamNames.map(teamName => {
       const teamMachines = appMachines.filter(machine => machine.equipe === teamName && [machine.inicio, machine.previsao, machine.entregaReal].some(date => date && date.startsWith(mesRefStr)));
@@ -1882,6 +1892,20 @@ function updateDashboard() {
       const inProcess = teamMachines.filter(machine => getMachineStatus(machine) === 'Em andamento').length;
       const planned = plannedMachines.length;
       const efficiency = planned ? Math.min(100, Math.round((onTime / planned) * 100)) : 0;
+      const delayDays = plannedMachines
+        .filter(machine => machine.entregaReal && machine.entregaReal > machine.previsao)
+        .map(machine => dateDiffDays(machine.previsao, machine.entregaReal));
+      const overduePendingDays = plannedMachines
+        .filter(machine => !machine.entregaReal && machine.previsao < todayIso)
+        .map(machine => dateDiffDays(machine.previsao, todayIso));
+      const allDelayDays = [...delayDays, ...overduePendingDays];
+      const averageDelay = allDelayDays.length ? Math.round((allDelayDays.reduce((sum, days) => sum + days, 0) / allDelayDays.length) * 10) / 10 : 0;
+      const previousPlanned = appMachines.filter(machine => machine.equipe === teamName && machine.previsao?.startsWith(previousPeriod));
+      const previousOnTime = previousPlanned.filter(machine => machine.entregaReal && machine.entregaReal <= machine.previsao).length;
+      const previousEfficiency = previousPlanned.length ? Math.min(100, Math.round((previousOnTime / previousPlanned.length) * 100)) : 0;
+      const efficiencyDelta = efficiency - previousEfficiency;
+      const trendClass = efficiencyDelta > 0 ? 'trend-up' : efficiencyDelta < 0 ? 'trend-down' : 'trend-stable';
+      const trendLabel = efficiencyDelta > 0 ? `↑ ${efficiencyDelta} p.p. vs. mês anterior` : efficiencyDelta < 0 ? `↓ ${Math.abs(efficiencyDelta)} p.p. vs. mês anterior` : '→ igual ao mês anterior';
       const volume = Math.max(planned, 1);
       const onTimeWidth = Math.round((onTime / volume) * 100);
       const lateWidth = Math.round((lateDelivered / volume) * 100);
@@ -1901,6 +1925,7 @@ function updateDashboard() {
             <div class="metric-bar-row"><span>Pendentes <b>${pending}</b></span><i><em class="bar-pending" style="width:${pendingWidth}%"></em></i></div>
           </div>
           <div class="team-analytics-footer"><span>${inProcess} em produção</span><span>${planned} previstas no mês</span></div>
+          <div class="team-analytics-insight"><span>Atraso médio <b>${averageDelay} dias</b></span><strong class="${trendClass}">${trendLabel}</strong></div>
         </article>
       `;
     }).join('') || '<div class="dashboard-empty">Sem equipes para analisar.</div>';

@@ -613,6 +613,24 @@ body {
   font-size: 0.68rem;
 }
 
+.team-analytics-insight {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.7rem;
+  margin-top: 0.65rem;
+  padding-top: 0.65rem;
+  border-top: 1px solid rgba(147, 197, 253, 0.12);
+  color: var(--text-muted);
+  font-size: 0.66rem;
+}
+
+.team-analytics-insight b { color: #fbbf24; }
+.team-analytics-insight strong { font-size: 0.64rem; }
+.trend-up { color: #34d399; }
+.trend-down { color: #fb7185; }
+.trend-stable { color: #93c5fd; }
+
 .monthly-team-lines-card { margin-top: 1rem; }
 .monthly-team-lines-heading { display: flex; align-items: end; justify-content: space-between; gap: 1rem; margin-bottom: 0.9rem; }
 .monthly-team-lines-heading h3 { margin: 0.2rem 0 0; color: #fff; font-size: 1rem; }
