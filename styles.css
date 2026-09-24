@@ -602,6 +602,8 @@ body {
 .bar-delivered { background: #34d399; }
 .bar-process { background: #60a5fa; }
 .bar-overdue { background: #fb7185; }
+.bar-planned { background: #a78bfa; }
+.bar-pending { background: #fbbf24; }
 
 .team-analytics-footer {
   display: flex;

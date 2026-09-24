@@ -1875,29 +1875,32 @@ function updateDashboard() {
     const teamNames = [...new Set([...appTeams.map(team => team.name), ...appMachines.map(machine => machine.equipe).filter(Boolean)])];
     analyticsBox.innerHTML = teamNames.map(teamName => {
       const teamMachines = appMachines.filter(machine => machine.equipe === teamName && [machine.inicio, machine.previsao, machine.entregaReal].some(date => date && date.startsWith(mesRefStr)));
-      const delivered = teamMachines.filter(machine => getMachineStatus(machine) === 'Entregue').length;
+      const plannedMachines = appMachines.filter(machine => machine.equipe === teamName && machine.previsao && machine.previsao.startsWith(mesRefStr));
+      const onTime = plannedMachines.filter(machine => machine.entregaReal && machine.entregaReal <= machine.previsao).length;
+      const lateDelivered = plannedMachines.filter(machine => machine.entregaReal && machine.entregaReal > machine.previsao).length;
+      const pending = plannedMachines.filter(machine => !machine.entregaReal).length;
       const inProcess = teamMachines.filter(machine => getMachineStatus(machine) === 'Em andamento').length;
-      const overdue = teamMachines.filter(machine => getMachineStatus(machine) === 'Atrasado').length;
-      const planned = teamMachines.filter(machine => machine.previsao && machine.previsao.startsWith(mesRefStr)).length;
-      const efficiency = planned ? Math.min(100, Math.round((delivered / planned) * 100)) : (delivered ? 100 : 0);
-      const volume = Math.max(teamMachines.length, 1);
-      const deliveredWidth = Math.round((delivered / volume) * 100);
-      const processWidth = Math.round((inProcess / volume) * 100);
-      const overdueWidth = Math.round((overdue / volume) * 100);
+      const planned = plannedMachines.length;
+      const efficiency = planned ? Math.min(100, Math.round((onTime / planned) * 100)) : 0;
+      const volume = Math.max(planned, 1);
+      const onTimeWidth = Math.round((onTime / volume) * 100);
+      const lateWidth = Math.round((lateDelivered / volume) * 100);
+      const pendingWidth = Math.round((pending / volume) * 100);
 
       return `
         <article class="team-analytics-card">
           <div class="team-analytics-header">
-            <div><span class="section-kicker">Eficiência da equipe</span><h3>${escapeHtml(teamName)}</h3></div>
+            <div><span class="section-kicker">Eficiência de prazo</span><h3>${escapeHtml(teamName)}</h3></div>
             <strong class="team-efficiency-value">${efficiency}%</strong>
           </div>
           <div class="team-efficiency-meter"><span style="width:${efficiency}%"></span></div>
           <div class="team-metric-bars">
-            <div class="metric-bar-row"><span>Entregues <b>${delivered}</b></span><i><em class="bar-delivered" style="width:${deliveredWidth}%"></em></i></div>
-            <div class="metric-bar-row"><span>Em processo <b>${inProcess}</b></span><i><em class="bar-process" style="width:${processWidth}%"></em></i></div>
-            <div class="metric-bar-row"><span>Atrasadas <b>${overdue}</b></span><i><em class="bar-overdue" style="width:${overdueWidth}%"></em></i></div>
+            <div class="metric-bar-row"><span>Previstas <b>${planned}</b></span><i><em class="bar-planned" style="width:100%"></em></i></div>
+            <div class="metric-bar-row"><span>Entregues no prazo <b>${onTime}</b></span><i><em class="bar-delivered" style="width:${onTimeWidth}%"></em></i></div>
+            <div class="metric-bar-row"><span>Entregues atrasadas <b>${lateDelivered}</b></span><i><em class="bar-overdue" style="width:${lateWidth}%"></em></i></div>
+            <div class="metric-bar-row"><span>Pendentes <b>${pending}</b></span><i><em class="bar-pending" style="width:${pendingWidth}%"></em></i></div>
           </div>
-          <div class="team-analytics-footer"><span>${teamMachines.length} no período</span><span>${planned} previstas</span></div>
+          <div class="team-analytics-footer"><span>${inProcess} em produção</span><span>${planned} previstas no mês</span></div>
         </article>
       `;
     }).join('') || '<div class="dashboard-empty">Sem equipes para analisar.</div>';
