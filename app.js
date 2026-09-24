@@ -2085,6 +2085,19 @@ function updateDashboard() {
     { label: 'Entregues', value: periodMachines.filter(machine => machine.entregaReal && machine.entregaReal.startsWith(mesRefStr)).length, className: 'mini-bar-green' },
     { label: 'Em atraso', value: periodMachines.filter(machine => getMachineStatus(machine) === 'Atrasado').length, className: 'mini-bar-red' }
   ]);
+
+  const overdueMachinesList = document.getElementById('overdueMachinesList');
+  const overdueMachinesSubtitle = document.getElementById('overdueMachinesSubtitle');
+  if (overdueMachinesList) {
+    const overdueMachines = periodMachines.filter(machine => getMachineStatus(machine) === 'Atrasado' && machine.cliente && machine.cliente.trim());
+    if (overdueMachinesSubtitle) overdueMachinesSubtitle.textContent = `${overdueMachines.length} máquina(s) em atraso em ${dashboardLabel}.`;
+    overdueMachinesList.innerHTML = overdueMachines.map(machine => `
+      <div class="overdue-machine-item">
+        <div><strong>${escapeHtml(machine.maquina || 'Máquina sem modelo')}</strong><span>${escapeHtml(machine.cliente)} · ${escapeHtml(machine.equipe || 'Equipe não definida')}</span></div>
+        <b>${formatDateDisplay(machine.previsao)}</b>
+      </div>
+    `).join('') || '<div class="dashboard-empty overdue-empty">Nenhuma máquina atrasada neste mês.</div>';
+  }
 }
 
 function filterDashboardTeam(input) {

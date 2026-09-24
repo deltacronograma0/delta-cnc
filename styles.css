@@ -1153,6 +1153,15 @@ body {
 .mini-bar-green { background: linear-gradient(90deg, #10b981, #34d399); }
 .mini-bar-red { background: linear-gradient(90deg, #f43f5e, #fb7185); }
 
+.overdue-machines-card { border-top: 3px solid #fb7185; }
+.overdue-machines-list { display: grid; gap: 0.55rem; max-height: 190px; overflow-y: auto; padding-right: 0.2rem; }
+.overdue-machine-item { display: flex; align-items: center; justify-content: space-between; gap: 0.65rem; padding: 0.55rem 0.6rem; border: 1px solid rgba(251, 113, 133, 0.2); border-radius: 8px; background: rgba(244, 63, 94, 0.08); }
+.overdue-machine-item div { min-width: 0; }
+.overdue-machine-item strong { display: block; overflow: hidden; color: #ffe4e6; font-size: 0.68rem; text-overflow: ellipsis; white-space: nowrap; }
+.overdue-machine-item span { display: block; overflow: hidden; margin-top: 0.12rem; color: #fda4af; font-size: 0.59rem; text-overflow: ellipsis; white-space: nowrap; }
+.overdue-machine-item > b { flex: 0 0 auto; color: #fb7185; font-size: 0.62rem; }
+.overdue-empty { padding: 1.1rem 0; text-align: center; }
+
 @media (max-width: 1100px) {
   .dashboard-team-board {
     grid-template-columns: repeat(2, minmax(0, 1fr));
