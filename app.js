@@ -959,6 +959,9 @@ function openMachineModal(id = null) {
     document.getElementById('machineModalTitle').textContent = `Editar Máquina — OS ${item.os || ''}`;
     document.getElementById('machId').value = item.id;
     document.getElementById('machOs').value = item.os || '';
+    if (item.equipe && ![...document.getElementById('machTeam').options].some(option => option.value === item.equipe)) {
+      document.getElementById('machTeam').add(new Option(`${item.equipe} (histórica)`, item.equipe));
+    }
     document.getElementById('machTeam').value = item.equipe || '—';
     document.getElementById('machClient').value = item.cliente || '';
     document.getElementById('machModel').value = item.maquina || '';
@@ -992,6 +995,7 @@ async function saveMachine(e) {
   const id = document.getElementById('machId').value;
   const os = document.getElementById('machOs').value.trim();
   const equipe = document.getElementById('machTeam').value;
+  const equipeRecord = appTeams.find(team => team.name === equipe);
   const cliente = document.getElementById('machClient').value.trim();
   const maquina = document.getElementById('machModel').value.trim();
   const linha = document.getElementById('machLinha').value;
@@ -1029,7 +1033,7 @@ async function saveMachine(e) {
       }
       appMachines[index] = {
         ...target,
-        os, equipe, cliente, maquina, linha, statusManual,
+        os, equipe, equipeId: equipeRecord?.id || target.equipeId || '', cliente, maquina, linha, statusManual,
         inicio, previsao, entregaReal, obs,
         aiNotes: target.aiNotes || '',
         pdfPath,
@@ -1052,7 +1056,7 @@ async function saveMachine(e) {
     }
     const newMachine = {
       id: newId,
-      os, equipe, cliente, maquina, linha, statusManual,
+      os, equipe, equipeId: equipeRecord?.id || '', cliente, maquina, linha, statusManual,
       inicio, previsao, entregaReal, obs,
       aiNotes: '',
       pdfPath,
@@ -1685,7 +1689,7 @@ function saveTeamSubmit() {
 }
 
 function deleteTeam(idx) {
-  if (confirm(`Deseja excluir a equipe "${appTeams[idx].name}"?`)) {
+  if (confirm(`Deseja retirar a equipe "${appTeams[idx].name}" da lista ativa? As máquinas já registadas continuarão com o histórico dessa equipe.`)) {
     appTeams.splice(idx, 1);
     saveData();
     renderTeams();
@@ -2025,8 +2029,10 @@ function filterDashboardTeam(input) {
 function updatePodio() {
   const mesRefStr = document.getElementById('highlightsMonth')?.value || document.getElementById('dashboardPeriod')?.value || '2026-09';
   const anoRef = document.getElementById('highlightsYear')?.value || mesRefStr.slice(0, 4);
-  const teamScores = appTeams.map(t => {
-    const teamMachines = appMachines.filter(m => m.equipe === t.name);
+  const teamNames = [...new Set([...appTeams.map(team => team.name), ...appMachines.map(machine => machine.equipe).filter(Boolean)])];
+  const teamScores = teamNames.map(teamName => {
+    const teamRecord = appTeams.find(team => team.name === teamName);
+    const teamMachines = appMachines.filter(m => m.equipe === teamName);
     const periodMachines = teamMachines.filter(m => [m.inicio, m.previsao, m.entregaReal].some(date => date && date.startsWith(mesRefStr)));
     const delivered = teamMachines.filter(m => getMachineStatus(m) === 'Entregue' && m.entregaReal?.startsWith(mesRefStr)).length;
     const active = periodMachines.filter(m => getMachineStatus(m) === 'Em andamento').length;
@@ -2034,7 +2040,7 @@ function updatePodio() {
     const planned = teamMachines.filter(m => m.previsao?.startsWith(mesRefStr)).length;
     const efficiency = planned ? Math.min(100, Math.round((delivered / planned) * 100)) : 0;
     const startedInYear = teamMachines.filter(m => m.inicio?.startsWith(`${anoRef}-`)).length;
-    return { name: t.name, delivered, active, overdue, planned, efficiency, startedInYear, score: (delivered * 10) + active };
+    return { name: teamName, id: teamRecord?.id || teamMachines.find(machine => machine.equipeId)?.equipeId || '', delivered, active, overdue, planned, efficiency, startedInYear, score: (delivered * 10) + active };
   });
 
   teamScores.sort((a, b) => b.score - a.score);
@@ -2118,7 +2124,6 @@ function updatePodio() {
     const yearMachines = appMachines.filter(machine => machine.inicio?.startsWith(`${anoRef}-`));
     const maxTeamYear = Math.max(...teamScores.map(team => team.startedInYear), 1);
     highlightsTeamBoard.innerHTML = teamScores.map((team, index) => {
-      const teamRecord = appTeams.find(currentTeam => currentTeam.name === team.name);
       const monthlyCounts = Array.from({ length: 12 }, (_, monthIndex) => yearMachines.filter(machine => machine.equipe === team.name && Number(machine.inicio.split('-')[1]) === monthIndex + 1).length);
       const maxMonth = Math.max(...monthlyCounts, 1);
       return `
@@ -2127,7 +2132,7 @@ function updatePodio() {
             <div>
               <span class="highlights-team-rank">#${index + 1}</span>
               <h3>${escapeHtml(team.name)}</h3>
-              <small>${escapeHtml(teamRecord?.id || 'ID não definido')}</small>
+              <small>${escapeHtml(team.id || 'ID não definido')}</small>
             </div>
             <strong>${team.score}<small> pts</small></strong>
           </div>
