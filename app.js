@@ -2004,9 +2004,8 @@ function updateDashboard() {
   const annualEfficiencyChart = document.getElementById('annualEfficiencyChart');
   if (annualEfficiencyChart) {
     const efficiencyTeamNames = [...new Set([...appTeams.map(team => team.name), ...appMachines.map(machine => machine.equipe).filter(Boolean)])];
-    annualEfficiencyChart.innerHTML = `
-      <div class="annual-efficiency-months"><span></span>${meses.map(month => `<b>${month}</b>`).join('')}</div>
-      ${efficiencyTeamNames.map(teamName => {
+    annualEfficiencyChart.innerHTML = efficiencyTeamNames.map(teamName => {
+        const teamRecord = appTeams.find(team => team.name === teamName);
         const monthlyEfficiency = meses.map((_, monthIndex) => {
           const monthKey = `${dashboardYear}-${String(monthIndex + 1).padStart(2, '0')}`;
           const planned = appMachines.filter(machine => machine.equipe === teamName && machine.previsao?.startsWith(monthKey));
@@ -2014,13 +2013,11 @@ function updateDashboard() {
           const onTime = planned.filter(machine => machine.entregaReal && machine.entregaReal <= machine.previsao).length;
           return Math.min(100, Math.round((onTime / planned.length) * 100));
         });
-        return `<div class="annual-efficiency-row">
-          <strong title="${escapeHtml(teamName)}">${escapeHtml(teamName)}</strong>
-          <div class="annual-efficiency-points">${monthlyEfficiency.map((value, monthIndex) => `<span class="efficiency-point ${value === null ? 'is-empty' : ''}" title="${meses[monthIndex]}/${dashboardYear}: ${value === null ? 'sem previsão' : `${value}% no prazo`}" style="--efficiency:${value || 0}%"></span>`).join('')}</div>
-        </div>`;
-      }).join('') || '<div class="dashboard-empty">Sem equipes para analisar.</div>'}
-      <div class="annual-efficiency-scale"><span>0%</span><span>50%</span><span>100%</span></div>
-    `;
+        return `<article class="annual-efficiency-team-card">
+          <div class="annual-efficiency-team-heading"><div><h4>${escapeHtml(teamName)}</h4><small>${escapeHtml(teamRecord?.id || 'ID não definido')}</small></div><span>${dashboardYear}</span></div>
+          <div class="annual-efficiency-month-grid">${monthlyEfficiency.map((value, monthIndex) => `<div class="annual-efficiency-month ${value === null ? 'is-empty' : value >= 80 ? 'is-good' : value >= 50 ? 'is-medium' : 'is-low'}" title="${meses[monthIndex]}/${dashboardYear}: ${value === null ? 'sem previsão' : `${value}% no prazo`}"><b>${value === null ? '—' : `${value}%`}</b><span>${meses[monthIndex]}</span></div>`).join('')}</div>
+        </article>`;
+      }).join('') || '<div class="dashboard-empty">Sem equipes para analisar.</div>';
   }
 
   const annualTeamsChart = document.getElementById('annualTeamsChart');

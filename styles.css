@@ -986,15 +986,22 @@ body {
 }
 
 .dashboard-efficiency-chart-card { grid-column: 1 / -1; }
-.annual-efficiency-chart { display: grid; gap: 0.65rem; margin-top: 0.9rem; overflow-x: auto; }
-.annual-efficiency-months, .annual-efficiency-row { display: grid; grid-template-columns: 150px repeat(12, minmax(24px, 1fr)); align-items: center; gap: 0.35rem; min-width: 580px; }
-.annual-efficiency-months b { color: #93c5fd; font-size: 0.58rem; text-align: center; }
-.annual-efficiency-row > strong { overflow: hidden; color: #fff; font-size: 0.7rem; text-overflow: ellipsis; white-space: nowrap; }
-.annual-efficiency-points { display: contents; }
-.efficiency-point { display: block; height: 24px; border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 5px; background: linear-gradient(180deg, #34d399, #0f766e); opacity: calc(0.28 + var(--efficiency) * 0.007); box-shadow: 0 3px 10px rgba(16, 185, 129, 0.16); }
-.efficiency-point[style*="--efficiency:0%"] { background: #334155; opacity: 0.55; }
-.efficiency-point.is-empty { background: rgba(255, 255, 255, 0.04); border-style: dashed; box-shadow: none; opacity: 1; }
-.annual-efficiency-scale { display: flex; justify-content: space-between; padding-left: 150px; color: var(--text-muted); font-size: 0.6rem; }
+.annual-efficiency-team-board { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 0.9rem; margin-top: 0.9rem; }
+.annual-efficiency-team-card { min-width: 0; padding: 0.9rem; border: 1px solid rgba(147, 197, 253, 0.14); border-radius: 11px; background: linear-gradient(145deg, rgba(9, 25, 54, 0.9), rgba(17, 24, 39, 0.94)); box-shadow: 0 8px 20px rgba(0, 0, 0, 0.18); }
+.annual-efficiency-team-heading { display: flex; align-items: flex-start; justify-content: space-between; gap: 0.8rem; margin-bottom: 0.8rem; }
+.annual-efficiency-team-heading h4 { overflow: hidden; margin: 0; color: #fff; font-size: 0.86rem; text-overflow: ellipsis; white-space: nowrap; }
+.annual-efficiency-team-heading small { display: block; margin-top: 0.15rem; color: #93c5fd; font-size: 0.6rem; letter-spacing: 0.08em; }
+.annual-efficiency-team-heading > span { color: #60a5fa; font-size: 0.68rem; font-weight: 800; }
+.annual-efficiency-month-grid { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 0.35rem; }
+.annual-efficiency-month { display: flex; min-height: 42px; align-items: center; justify-content: center; flex-direction: column; gap: 0.12rem; border: 1px solid rgba(52, 211, 153, 0.28); border-radius: 6px; background: rgba(16, 185, 129, 0.18); }
+.annual-efficiency-month b { color: #d1fae5; font-size: 0.7rem; }
+.annual-efficiency-month span { color: #a7f3d0; font-size: 0.56rem; }
+.annual-efficiency-month.is-medium { border-color: rgba(251, 191, 36, 0.3); background: rgba(245, 158, 11, 0.18); }
+.annual-efficiency-month.is-medium b, .annual-efficiency-month.is-medium span { color: #fde68a; }
+.annual-efficiency-month.is-low { border-color: rgba(251, 113, 133, 0.3); background: rgba(244, 63, 94, 0.16); }
+.annual-efficiency-month.is-low b, .annual-efficiency-month.is-low span { color: #fecdd3; }
+.annual-efficiency-month.is-empty { border-style: dashed; border-color: rgba(148, 163, 184, 0.2); background: rgba(255, 255, 255, 0.035); }
+.annual-efficiency-month.is-empty b, .annual-efficiency-month.is-empty span { color: #64748b; }
 
 .dashboard-chart-card {
   min-width: 0;
