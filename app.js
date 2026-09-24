@@ -1829,8 +1829,10 @@ function updateDashboard() {
 
       const teamNames = [...new Set([...appTeams.map(t => t.name), ...monthMachines.map(m => m.equipe).filter(Boolean)])];
       dashTeamsList.innerHTML = teamNames.map(teamName => {
-        const teamMachines = monthMachines.filter(m => m.equipe === teamName);
-        const inProcess = teamMachines.filter(m => getMachineStatus(m) !== 'Entregue');
+        const teamMachines = monthMachines.filter(m => m.equipe === teamName && m.cliente && m.cliente.trim());
+        if (!teamMachines.length) return '';
+        const overdue = teamMachines.filter(m => getMachineStatus(m) === 'Atrasado');
+        const inProcess = teamMachines.filter(m => getMachineStatus(m) === 'Em andamento');
         const ready = teamMachines.filter(m => getMachineStatus(m) === 'Entregue');
 
         return `
@@ -1850,14 +1852,18 @@ function updateDashboard() {
               <span>⌕</span>
               <input type="search" placeholder="Pesquisar cliente, máquina ou OS" oninput="filterDashboardTeam(this)">
             </div>
-            <div class="dashboard-status-section process-section">
+            ${overdue.length ? `<div class="dashboard-status-section overdue-section">
+              <div class="dashboard-status-title"><span>Atrasadas</span><strong>${overdue.length}</strong></div>
+              ${overdue.map(renderDashMachine).join('')}
+            </div>` : ''}
+            ${inProcess.length ? `<div class="dashboard-status-section process-section">
               <div class="dashboard-status-title"><span>Em processo</span><strong>${inProcess.length}</strong></div>
-              ${inProcess.length ? inProcess.map(renderDashMachine).join('') : '<div class="dashboard-empty">Nenhuma máquina em processo neste mês.</div>'}
-            </div>
-            <div class="dashboard-status-section ready-section">
+              ${inProcess.map(renderDashMachine).join('')}
+            </div>` : ''}
+            ${ready.length ? `<div class="dashboard-status-section ready-section">
               <div class="dashboard-status-title"><span>Prontas / entregues</span><strong>${ready.length}</strong></div>
-              ${ready.length ? ready.map(renderDashMachine).join('') : '<div class="dashboard-empty">Nenhuma máquina pronta neste mês.</div>'}
-            </div>
+              ${ready.map(renderDashMachine).join('')}
+            </div>` : ''}
           </article>
         `;
       }).join('') || '<div class="dashboard-empty">Nenhuma máquina encontrada para o mês selecionado.</div>';

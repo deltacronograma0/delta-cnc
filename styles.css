@@ -718,6 +718,7 @@ body {
 
 .process-section .dashboard-status-title span { color: #93c5fd; }
 .ready-section .dashboard-status-title span { color: #6ee7b7; }
+.overdue-section .dashboard-status-title span { color: #fb7185; }
 .dashboard-status-title strong { color: #fff; }
 
 .dashboard-machine-row {
