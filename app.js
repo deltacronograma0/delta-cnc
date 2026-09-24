@@ -1897,6 +1897,20 @@ function updateDashboard() {
     }).join('') || '<div class="dashboard-empty">Sem equipes para analisar.</div>';
   }
 
+  const monthlyTeamLinesBody = document.getElementById('monthlyTeamLinesBody');
+  const monthlyTeamLinesLabel = document.getElementById('monthlyTeamLinesLabel');
+  if (monthlyTeamLinesBody) {
+    if (monthlyTeamLinesLabel) monthlyTeamLinesLabel.textContent = dashboardLabel;
+    const monthlyTeamNames = [...new Set([...appTeams.map(team => team.name), ...monthlyMachines.map(machine => machine.equipe).filter(Boolean)])];
+    monthlyTeamLinesBody.innerHTML = monthlyTeamNames.map(teamName => {
+      const teamMonthlyMachines = appMachines.filter(machine => machine.equipe === teamName && machine.inicio?.startsWith(mesRefStr));
+      const light = teamMonthlyMachines.filter(machine => machine.linha === 'Leve').length;
+      const intermediate = teamMonthlyMachines.filter(machine => machine.linha === 'Intermediária').length;
+      const heavy = teamMonthlyMachines.filter(machine => machine.linha === 'Pesada').length;
+      return `<tr><td><strong class="monthly-team-name">${escapeHtml(teamName)}</strong></td><td><strong class="monthly-line-light">${light}</strong></td><td><strong class="monthly-line-intermediate">${intermediate}</strong></td><td><strong class="monthly-line-heavy">${heavy}</strong></td><td><strong class="monthly-line-total">${light + intermediate + heavy}</strong></td></tr>`;
+    }).join('') || '<tr><td colspan="5" class="dashboard-empty">Sem máquinas iniciadas neste mês.</td></tr>';
+  }
+
   const meses = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
   const annualChartBox = document.getElementById('annualChartBox');
   if (annualChartBox) {
