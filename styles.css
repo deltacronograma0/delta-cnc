@@ -528,6 +528,22 @@ body {
   margin-top: 1.5rem;
 }
 
+.operational-overdue-summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-top: 1rem;
+  padding: 0.85rem 1rem;
+  border: 1px solid rgba(251, 113, 133, 0.3);
+  border-left: 4px solid #fb7185;
+  border-radius: 10px;
+  background: linear-gradient(100deg, rgba(127, 29, 55, 0.22), rgba(17, 24, 39, 0.82));
+}
+
+.operational-overdue-summary h3 { margin: 0.18rem 0 0; color: #ffe4e6; font-size: 0.86rem; }
+.operational-overdue-summary strong { color: #fb7185; font-size: 1.65rem; line-height: 1; }
+
 .dashboard-analytics-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(270px, 1fr));

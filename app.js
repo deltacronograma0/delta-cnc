@@ -1797,6 +1797,10 @@ function updateDashboard() {
   document.getElementById('kpiEficiencia').textContent = `${eficiencia}%`;
 
   const dashTeamsList = document.getElementById('dashTeamsList');
+  const operationalOverdueTotal = document.getElementById('operationalOverdueTotal');
+  if (operationalOverdueTotal) {
+    operationalOverdueTotal.textContent = monthlyMachines.filter(machine => getMachineStatus(machine) === 'Atrasado').length;
+  }
   if (dashTeamsList) {
     if (appTeams.length === 0) {
       dashTeamsList.innerHTML = '<div style="color:var(--text-muted); font-size:0.82rem;">Sem equipes registadas.</div>';
