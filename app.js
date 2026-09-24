@@ -1844,6 +1844,7 @@ function updateDashboard() {
               </div>
               <div class="dashboard-team-stats">
                 <span><strong>${teamMachines.length}</strong> máquinas no mês</span>
+                <span class="dashboard-team-overdue-stat"><strong>${overdue.length}</strong> atrasadas</span>
                 <span><strong>${inProcess.length}</strong> em processo</span>
                 <span><strong>${ready.length}</strong> prontas</span>
               </div>
