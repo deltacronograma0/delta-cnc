@@ -199,6 +199,14 @@ async function lerPdfComIA(base64Raw, apiKey, customPrompt, signal) {
 }
 
 document.addEventListener('DOMContentLoaded', async () => {
+  setTimeout(() => {
+    const brandSplash = document.getElementById('brandSplash');
+    if (brandSplash) {
+      brandSplash.classList.add('is-hidden');
+      setTimeout(() => brandSplash.remove(), 500);
+    }
+  }, 3000);
+
   loadStorage();
   await initSupabaseSync();
   await migrarPdfsAntigosParaIdb();
@@ -452,13 +460,7 @@ function setupPermissions() {
 
 function toggleAuthModal() {
   if (currentUser) {
-    if (confirm('Deseja terminar a sessão atual?')) {
-      currentUser = null;
-      localStorage.removeItem(STORAGE_KEYS.CURRENT_USER);
-      setupPermissions();
-      renderTable();
-      renderUsers();
-    }
+    document.getElementById('logoutModal').classList.add('open');
   } else {
     document.getElementById('loginEmail').value = '';
     document.getElementById('loginPassword').value = '';
@@ -466,23 +468,48 @@ function toggleAuthModal() {
   }
 }
 
+function closeLogoutModal() {
+  document.getElementById('logoutModal').classList.remove('open');
+}
+
+function confirmLogout() {
+  currentUser = null;
+  localStorage.removeItem(STORAGE_KEYS.CURRENT_USER);
+  setupPermissions();
+  renderTable();
+  renderUsers();
+  closeLogoutModal();
+}
+
 function closeAuthModal() {
   document.getElementById('authModal').classList.remove('open');
 }
 
-function handleLoginSubmit() {
+async function handleLoginSubmit() {
+  const submitButton = document.getElementById('loginSubmitButton');
+  if (submitButton?.disabled) return;
   const email = document.getElementById('loginEmail').value.trim();
   const pass = document.getElementById('loginPassword').value;
 
   const user = appUsers.find(u => u.email.toLowerCase() === email.toLowerCase() && u.pass === pass);
   if (user) {
+    if (submitButton) {
+      submitButton.disabled = true;
+      submitButton.textContent = 'A entrar...';
+      submitButton.classList.add('is-loading');
+    }
     currentUser = user;
-    saveData();
+    await saveData();
     setupPermissions();
     closeAuthModal();
-    alert(`Bem-vindo, ${user.role}!`);
+    showToast(`Sessão iniciada com sucesso. Bem-vindo, ${user.role}!`);
+    if (submitButton) {
+      submitButton.disabled = false;
+      submitButton.textContent = 'Entrar no Sistema';
+      submitButton.classList.remove('is-loading');
+    }
   } else {
-    alert('Credenciais incorretas! Verifique o e-mail e a palavra-passe.');
+    showToast('Não foi possível iniciar sessão. Verifique os dados.', 'error');
   }
 }
 
@@ -771,12 +798,18 @@ function renderTable() {
     const obsText = item.obs ? (item.obs.length > 30 ? item.obs.substring(0, 30) + '...' : item.obs) : 'Adicionar nota';
     const obsClass = item.obs ? 'observation-chip has-note' : 'observation-chip empty-note';
 
+    const team = appTeams.find(currentTeam => currentTeam.name === item.equipe);
+    const teamId = team?.id || '';
+
     return `
       <tr class="${isChecked ? 'selected-row' : ''}">
         <td style="text-align:center;">
           <input type="checkbox" ${isChecked ? 'checked' : ''} onchange="toggleSelectMachine('${item.id}', this)" style="cursor:pointer; accent-color:#6366f1;">
         </td>
-        <td><strong style="color:#ffffff;">${escapeHtml(item.equipe || '—')}</strong></td>
+        <td>
+          <div class="team-table-name">${escapeHtml(item.equipe || '—')}</div>
+          ${teamId ? `<span class="team-table-id">${escapeHtml(teamId)}</span>` : ''}
+        </td>
         <td>${escapeHtml(item.cliente || '—')}</td>
         <td><span style="font-weight:600; color:#f3f4f6;">${escapeHtml(item.maquina || '—')}</span></td>
         <td><span class="${linhaClass}">${escapeHtml(item.linha || 'Leve')}</span></td>
@@ -838,12 +871,19 @@ function deleteSelectedMachines() {
   updatePodio();
 }
 
-function syncData() {
+async function syncData() {
+  if (supabaseClient) {
+    await saveSharedState();
+    setSupabaseSyncStatus('Sincronização online', true);
+    alert('Últimas atualizações enviadas ao Supabase com sucesso!');
+    return;
+  }
+
   loadStorage();
   renderTable();
   updateDashboard();
   updatePodio();
-  alert('Base sincronizada com sucesso!');
+  alert('Base local sincronizada com sucesso!');
 }
 
 async function verPdfOs(id) {
@@ -1423,11 +1463,12 @@ async function saveImportedRows() {
 
 let toastTimeout = null;
 
-function showToast(message) {
+function showToast(message, type = 'success') {
   const toast = document.getElementById('appToast');
   const messageEl = document.getElementById('appToastMessage');
   if (!toast || !messageEl) return;
   messageEl.textContent = message;
+  toast.classList.toggle('toast-error', type === 'error');
   toast.classList.add('show');
   clearTimeout(toastTimeout);
   toastTimeout = setTimeout(() => toast.classList.remove('show'), 4200);
@@ -1571,26 +1612,17 @@ function renderTeams() {
   }
 
   container.innerHTML = appTeams.map((t, idx) => {
-    const tagsHtml = (t.tags || []).map(tag => `<span class="team-badge-tag">${escapeHtml(tag)}</span>`).join('');
-    const activeCount = appMachines.filter(m => m.equipe === t.name && getMachineStatus(m) === 'Em andamento').length;
-    const deliveredCount = appMachines.filter(m => m.equipe === t.name && getMachineStatus(m) === 'Entregue').length;
-
     return `
       <div class="teams-production-card" style="position:relative;">
         <div style="display:flex; justify-content:space-between; align-items:start; margin-bottom:0.75rem;">
           <div class="team-name-lockup">
             <h3>${escapeHtml(t.name)}</h3>
-            <span class="team-id-badge">${escapeHtml(t.id || 'EQ-000')}</span>
+            <span class="team-id-badge">${escapeHtml(t.id || 'ID não definido')}</span>
           </div>
           <div class="editor-only" style="display:flex; gap:0.35rem;">
             <button class="btn-delta btn-slate btn-sm" onclick="openTeamModal(${idx})" title="Editar">✏️</button>
             <button class="btn-delta btn-danger btn-sm" onclick="deleteTeam(${idx})" title="Excluir">🗑️</button>
           </div>
-        </div>
-        <div style="margin-bottom:1rem;">${tagsHtml}</div>
-        <div style="display:flex; justify-content:space-between; font-size:0.78rem; color:var(--text-muted); border-top:1px solid var(--border); padding-top:0.75rem;">
-          <span>⚙️ Em Andamento: <strong style="color:#60a5fa;">${activeCount}</strong></span>
-          <span>✅ Entregues: <strong style="color:#34d399;">${deliveredCount}</strong></span>
         </div>
       </div>
     `;
@@ -1604,11 +1636,11 @@ function openTeamModal(idx = -1) {
   if (idx >= 0 && appTeams[idx]) {
     document.getElementById('teamModalTitle').textContent = 'Editar Equipe';
     document.getElementById('teamNameInput').value = appTeams[idx].name || '';
-    document.getElementById('teamTagsInput').value = (appTeams[idx].tags || []).join(', ');
+    document.getElementById('teamIdInput').value = appTeams[idx].id || '';
   } else {
     document.getElementById('teamModalTitle').textContent = 'Registar Nova Equipe';
     document.getElementById('teamNameInput').value = '';
-    document.getElementById('teamTagsInput').value = '';
+    document.getElementById('teamIdInput').value = '';
   }
   document.getElementById('teamModal').classList.add('open');
 }
@@ -1620,19 +1652,28 @@ function closeTeamModal() {
 function saveTeamSubmit() {
   const idx = parseInt(document.getElementById('teamEditIndex').value, 10);
   const name = document.getElementById('teamNameInput').value.trim();
-  const tagsRaw = document.getElementById('teamTagsInput').value;
-  const tags = tagsRaw ? tagsRaw.split(',').map(s => s.trim()).filter(Boolean) : [];
+  const id = document.getElementById('teamIdInput').value.trim().toUpperCase();
 
   if (!name) {
     alert('Insira o nome da equipe.');
     return;
   }
 
+  if (!/^[A-Z]-\d{3}$/.test(id)) {
+    alert('Insira o código da equipe no formato A-583.');
+    return;
+  }
+
+  const duplicateId = appTeams.some((team, teamIndex) => teamIndex !== idx && String(team.id || '').toUpperCase() === id);
+  if (duplicateId) {
+    alert('Já existe uma equipe com esse código ID.');
+    return;
+  }
+
   if (idx >= 0 && appTeams[idx]) {
-    appTeams[idx] = { ...appTeams[idx], name, tags };
+    appTeams[idx] = { ...appTeams[idx], id, name, tags: [] };
   } else {
-    const nextId = `EQ-${String(appTeams.length + 1).padStart(3, '0')}`;
-    appTeams.push({ id: nextId, name, tags });
+    appTeams.push({ id, name, tags: [] });
   }
 
   saveData();
@@ -1714,13 +1755,19 @@ function updateDashboard() {
   const monthNames = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
   const dashboardMonthName = monthNames[Number(dashboardMonth) - 1] || 'Mês selecionado';
   const dashboardLabel = `${dashboardMonthName}/${dashboardYear}`;
+  const headerReferenceMonth = document.getElementById('headerReferenceMonth');
+  if (headerReferenceMonth) headerReferenceMonth.textContent = dashboardLabel;
   document.querySelectorAll('.dashMonthName').forEach(element => {
-    element.textContent = element.classList.contains('dashMonthName') && element.closest('.kpi-title') ? dashboardMonthName : dashboardLabel;
+    element.textContent = dashboardLabel;
   });
   const annualChartTitle = document.getElementById('annualChartTitle');
   if (annualChartTitle) annualChartTitle.textContent = `📈 Arranques de produção anual (${dashboardYear})`;
+  const annualDataYear = document.getElementById('annualDataYear');
+  if (annualDataYear) annualDataYear.textContent = dashboardYear;
 
-  document.getElementById('kpiTotal').textContent = appMachines.length;
+  const mesRefStr = dashboardPeriod;
+  const monthlyMachines = appMachines.filter(machine => [machine.inicio, machine.previsao, machine.entregaReal].some(date => date && date.startsWith(mesRefStr)));
+  document.getElementById('kpiTotal').textContent = monthlyMachines.length;
 
   const activeCount = appMachines.filter(m => getMachineStatus(m) === 'Em andamento').length;
   const deliveredCount = appMachines.filter(m => getMachineStatus(m) === 'Entregue').length;
@@ -1729,16 +1776,17 @@ function updateDashboard() {
   if (activeSidebar) activeSidebar.textContent = activeCount;
   if (deliveredSidebar) deliveredSidebar.textContent = deliveredCount;
 
-  const emAndamento = activeCount;
+  const emAndamento = monthlyMachines.filter(machine => getMachineStatus(machine) === 'Em andamento').length;
   document.getElementById('kpiAndamento').textContent = emAndamento;
+  const waitingCount = monthlyMachines.filter(machine => getMachineStatus(machine) === 'Aguardando produção').length;
+  document.getElementById('kpiAguardando').textContent = waitingCount;
+  const monthlyDeliveredCount = monthlyMachines.filter(machine => getMachineStatus(machine) === 'Entregue' && machine.entregaReal && machine.entregaReal.startsWith(mesRefStr)).length;
+  document.getElementById('kpiEntreguesTotal').textContent = monthlyDeliveredCount;
 
-  const mesRefStr = dashboardPeriod;
   const entreguesMes = appMachines.filter(m => {
     const st = getMachineStatus(m);
     return st === 'Entregue' && m.entregaReal && m.entregaReal.startsWith(mesRefStr);
   }).length;
-
-  document.getElementById('kpiEntreguesMes').textContent = entreguesMes;
 
   const prevMesCount = appMachines.filter(m => m.previsao && m.previsao.startsWith(mesRefStr)).length;
   const eficiencia = prevMesCount > 0 ? Math.round((entreguesMes / prevMesCount) * 100) : (entreguesMes > 0 ? 100 : 0);
@@ -1845,9 +1893,9 @@ function updateDashboard() {
     }).join('') || '<div class="dashboard-empty">Sem equipes para analisar.</div>';
   }
 
+  const meses = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
   const annualChartBox = document.getElementById('annualChartBox');
   if (annualChartBox) {
-    const meses = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
     const counts = Array(12).fill(0);
 
     appMachines.forEach(m => {
@@ -1870,7 +1918,7 @@ function updateDashboard() {
       return `
         <div class="svg-bar-col" title="${val} arranques em ${mes}/${dashboardYear}">
           <div class="svg-bar-val">${val}</div>
-          <div class="svg-bar" style="height: ${Math.max(heightPct, 6)}%;"></div>
+          <div class="svg-bar annual-bar-${idx % 4}" style="height: ${Math.max(heightPct, 6)}%;"></div>
           <div class="svg-bar-label">${mes}</div>
         </div>
       `;
@@ -1886,7 +1934,7 @@ function updateDashboard() {
       const heightPct = Math.round((value / maxValue) * 100);
       return `<div class="svg-bar-col" title="${value} ${titleSuffix} em ${mes}/${dashboardYear}">
         <div class="svg-bar-val">${value}</div>
-        <div class="svg-bar delivery-bar" style="height:${Math.max(heightPct, 6)}%;"></div>
+        <div class="svg-bar delivery-bar annual-bar-${index % 4}" style="height:${Math.max(heightPct, 6)}%;"></div>
         <div class="svg-bar-label">${mes}</div>
       </div>`;
     }).join('');
@@ -1915,6 +1963,53 @@ function updateDashboard() {
       </div>
     `).join('') || '<div class="dashboard-empty">Sem produção registrada neste ano.</div>';
   }
+
+  const renderMiniBars = (containerId, entries) => {
+    const container = document.getElementById(containerId);
+    if (!container) return;
+    const maxValue = Math.max(...entries.map(entry => entry.value), 1);
+    container.innerHTML = entries.map(entry => `
+      <div class="mini-bar-row">
+        <div class="mini-bar-label"><span>${escapeHtml(entry.label)}</span><strong>${entry.value}</strong></div>
+        <div class="mini-bar-track"><span class="${entry.className || ''}" style="width:${Math.round((entry.value / maxValue) * 100)}%"></span></div>
+      </div>
+    `).join('') || '<div class="dashboard-empty">Sem dados para analisar.</div>';
+  };
+
+  const statusEntries = [
+    { label: 'Em andamento', value: appMachines.filter(machine => getMachineStatus(machine) === 'Em andamento').length, color: '#60a5fa' },
+    { label: 'Entregue', value: appMachines.filter(machine => getMachineStatus(machine) === 'Entregue').length, color: '#34d399' },
+    { label: 'Atrasado', value: appMachines.filter(machine => getMachineStatus(machine) === 'Atrasado').length, color: '#fb7185' },
+    { label: 'Aguardando', value: appMachines.filter(machine => getMachineStatus(machine) === 'Aguardando produção').length, color: '#fbbf24' }
+  ];
+  const statusTotal = Math.max(statusEntries.reduce((sum, entry) => sum + entry.value, 0), 1);
+  let statusOffset = 0;
+  const statusGradient = statusEntries.map(entry => {
+    const start = statusOffset;
+    statusOffset += (entry.value / statusTotal) * 360;
+    return `${entry.color} ${start}deg ${statusOffset}deg`;
+  }).join(', ');
+  const statusDonut = document.getElementById('statusMixChart');
+  const statusLegend = document.getElementById('statusMixLegend');
+  if (statusDonut) statusDonut.style.setProperty('--donut-gradient', statusGradient);
+  if (statusLegend) {
+    statusLegend.innerHTML = statusEntries.map(entry => `
+      <div class="dashboard-legend-item"><span><i style="background:${entry.color}"></i>${entry.label}</span><strong>${entry.value}</strong></div>
+    `).join('');
+  }
+
+  renderMiniBars('lineMixChart', [
+    { label: 'Leve', value: appMachines.filter(machine => machine.linha === 'Leve').length, className: 'mini-bar-blue' },
+    { label: 'Intermediária', value: appMachines.filter(machine => machine.linha === 'Intermediária').length, className: 'mini-bar-purple' },
+    { label: 'Pesada', value: appMachines.filter(machine => machine.linha === 'Pesada').length, className: 'mini-bar-orange' }
+  ]);
+
+  const periodMachines = appMachines.filter(machine => [machine.inicio, machine.previsao, machine.entregaReal].some(date => date && date.startsWith(mesRefStr)));
+  renderMiniBars('deadlineChart', [
+    { label: 'Previstas', value: periodMachines.filter(machine => machine.previsao && machine.previsao.startsWith(mesRefStr)).length, className: 'mini-bar-purple' },
+    { label: 'Entregues', value: periodMachines.filter(machine => machine.entregaReal && machine.entregaReal.startsWith(mesRefStr)).length, className: 'mini-bar-green' },
+    { label: 'Em atraso', value: periodMachines.filter(machine => getMachineStatus(machine) === 'Atrasado').length, className: 'mini-bar-red' }
+  ]);
 }
 
 function filterDashboardTeam(input) {
@@ -1928,11 +2023,18 @@ function filterDashboardTeam(input) {
 }
 
 function updatePodio() {
-  const mesRefStr = document.getElementById('dashboardPeriod')?.value || '2026-09';
+  const mesRefStr = document.getElementById('highlightsMonth')?.value || document.getElementById('dashboardPeriod')?.value || '2026-09';
+  const anoRef = document.getElementById('highlightsYear')?.value || mesRefStr.slice(0, 4);
   const teamScores = appTeams.map(t => {
-    const delivered = appMachines.filter(m => m.equipe === t.name && getMachineStatus(m) === 'Entregue' && m.entregaReal && m.entregaReal.startsWith(mesRefStr)).length;
-    const active = appMachines.filter(m => m.equipe === t.name && getMachineStatus(m) === 'Em andamento').length;
-    return { name: t.name, delivered, active, score: (delivered * 10) + active };
+    const teamMachines = appMachines.filter(m => m.equipe === t.name);
+    const periodMachines = teamMachines.filter(m => [m.inicio, m.previsao, m.entregaReal].some(date => date && date.startsWith(mesRefStr)));
+    const delivered = teamMachines.filter(m => getMachineStatus(m) === 'Entregue' && m.entregaReal?.startsWith(mesRefStr)).length;
+    const active = periodMachines.filter(m => getMachineStatus(m) === 'Em andamento').length;
+    const overdue = periodMachines.filter(m => getMachineStatus(m) === 'Atrasado').length;
+    const planned = teamMachines.filter(m => m.previsao?.startsWith(mesRefStr)).length;
+    const efficiency = planned ? Math.min(100, Math.round((delivered / planned) * 100)) : 0;
+    const startedInYear = teamMachines.filter(m => m.inicio?.startsWith(`${anoRef}-`)).length;
+    return { name: t.name, delivered, active, overdue, planned, efficiency, startedInYear, score: (delivered * 10) + active };
   });
 
   teamScores.sort((a, b) => b.score - a.score);
@@ -1971,7 +2073,7 @@ function updatePodio() {
           <div class="podium-pillar">
             <div class="medal-icon">${cfg.medal}</div>
             <div style="font-weight:700; color:#ffffff; font-size:0.92rem; margin-bottom:0.2rem;">${escapeHtml(item.name)}</div>
-            <div style="font-size:0.76rem; color:#34d399; font-weight:600;">${item.delivered} máquina(s)</div>
+            <div style="font-size:0.76rem; color:#34d399; font-weight:600;">${item.delivered} máquina(s) · ${item.score} pts</div>
           </div>
           <div style="margin-top:0.6rem; font-size:0.85rem; font-weight:700; color:#818cf8;">${cfg.label}</div>
         </div>
@@ -1987,9 +2089,100 @@ function updatePodio() {
         <td>${escapeHtml(ts.name)}</td>
         <td><strong style="color:#34d399;">${ts.delivered}</strong></td>
         <td><strong style="color:#60a5fa;">${ts.active}</strong></td>
+        <td><strong style="color:#fb7185;">${ts.overdue}</strong></td>
+        <td><strong style="color:#fbbf24;">${ts.efficiency}%</strong></td>
         <td><strong style="color:#818cf8;">${ts.score} pts</strong></td>
       </tr>
     `).join('');
+  }
+
+  const highlightsAnalysis = document.getElementById('highlightsAnalysis');
+  if (highlightsAnalysis) {
+    const totals = teamScores.reduce((summary, team) => ({
+      delivered: summary.delivered + team.delivered,
+      active: summary.active + team.active,
+      overdue: summary.overdue + team.overdue,
+      planned: summary.planned + team.planned
+    }), { delivered: 0, active: 0, overdue: 0, planned: 0 });
+    const bestTeam = [...teamScores].sort((a, b) => b.score - a.score)[0];
+    highlightsAnalysis.innerHTML = `
+      <article class="highlight-stat-card highlight-stat-blue"><span>📊 Máquinas analisadas</span><strong>${totals.delivered + totals.active + totals.overdue}</strong><small>${mesRefStr}</small></article>
+      <article class="highlight-stat-card highlight-stat-green"><span>🚀 Entregas no período</span><strong>${totals.delivered}</strong><small>Concluídas no mês</small></article>
+      <article class="highlight-stat-card highlight-stat-amber"><span>⭐ Equipe destaque</span><strong>${escapeHtml(bestTeam?.name || '—')}</strong><small>${bestTeam ? `${bestTeam.score} pontos · ${bestTeam.efficiency}% eficiência` : 'Sem dados'}</small></article>
+      <article class="highlight-stat-card highlight-stat-red"><span>⚠️ Em atraso</span><strong>${totals.overdue}</strong><small>Requer atenção</small></article>
+    `;
+  }
+
+  const highlightsTeamBoard = document.getElementById('highlightsTeamBoard');
+  if (highlightsTeamBoard) {
+    const yearMachines = appMachines.filter(machine => machine.inicio?.startsWith(`${anoRef}-`));
+    const maxTeamYear = Math.max(...teamScores.map(team => team.startedInYear), 1);
+    highlightsTeamBoard.innerHTML = teamScores.map((team, index) => {
+      const teamRecord = appTeams.find(currentTeam => currentTeam.name === team.name);
+      const monthlyCounts = Array.from({ length: 12 }, (_, monthIndex) => yearMachines.filter(machine => machine.equipe === team.name && Number(machine.inicio.split('-')[1]) === monthIndex + 1).length);
+      const maxMonth = Math.max(...monthlyCounts, 1);
+      return `
+        <article class="highlights-team-card rank-${Math.min(index + 1, 4)}">
+          <div class="highlights-team-card-heading">
+            <div>
+              <span class="highlights-team-rank">#${index + 1}</span>
+              <h3>${escapeHtml(team.name)}</h3>
+              <small>${escapeHtml(teamRecord?.id || 'ID não definido')}</small>
+            </div>
+            <strong>${team.score}<small> pts</small></strong>
+          </div>
+          <div class="highlights-team-metrics">
+            <span><b>${team.delivered}</b> entregues</span>
+            <span><b>${team.active}</b> produção</span>
+            <span><b>${team.overdue}</b> atraso</span>
+          </div>
+          <div class="highlights-team-progress"><span style="width:${Math.round((team.startedInYear / maxTeamYear) * 100)}%"></span></div>
+          <div class="highlights-team-progress-label"><span>Produção em ${anoRef}</span><b>${team.startedInYear} máquinas</b></div>
+          <div class="highlights-team-sparkline" aria-label="Evolução mensal de ${escapeHtml(team.name)}">
+            ${monthlyCounts.map((count, monthIndex) => `<span title="${count} em ${monthIndex + 1}/${anoRef}" style="height:${Math.max(8, Math.round((count / maxMonth) * 100))}%"></span>`).join('')}
+          </div>
+        </article>
+      `;
+    }).join('') || '<div class="dashboard-empty">Sem equipes para analisar.</div>';
+  }
+
+  const highlightsTrendChart = document.getElementById('highlightsTrendChart');
+  if (highlightsTrendChart) {
+    const months = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
+    const yearMachines = appMachines.filter(machine => machine.inicio?.startsWith(`${anoRef}-`));
+    const maxCount = Math.max(...months.map((_, index) => yearMachines.filter(machine => Number(machine.inicio.split('-')[1]) === index + 1).length), 1);
+    highlightsTrendChart.innerHTML = months.map((month, index) => {
+      const monthMachines = yearMachines.filter(machine => Number(machine.inicio.split('-')[1]) === index + 1);
+      const teamCount = new Set(monthMachines.map(machine => machine.equipe).filter(Boolean)).size;
+      return `<div class="highlight-trend-column" title="${month}/${anoRef}: ${monthMachines.length} máquinas, ${teamCount} equipes">
+        <strong>${monthMachines.length}</strong><div class="highlight-trend-bar" style="height:${Math.max(8, Math.round((monthMachines.length / maxCount) * 100))}%"></div><span>${month}</span>
+      </div>`;
+    }).join('');
+  }
+
+  const highlightsAnnualTeams = document.getElementById('highlightsAnnualTeams');
+  const highlightsAnnualLabel = document.getElementById('highlightsAnnualLabel');
+  if (highlightsAnnualTeams) {
+    if (highlightsAnnualLabel) highlightsAnnualLabel.textContent = `Ano ${anoRef}`;
+    const annualTeamMetrics = teamScores.map(team => {
+      const teamMachines = appMachines.filter(machine => machine.equipe === team.name);
+      return {
+        ...team,
+        annualDelivered: teamMachines.filter(machine => machine.entregaReal?.startsWith(`${anoRef}-`)).length,
+        annualOverdue: teamMachines.filter(machine => machine.previsao?.startsWith(`${anoRef}-`) && getMachineStatus(machine) === 'Atrasado').length
+      };
+    }).sort((a, b) => b.startedInYear - a.startedInYear || b.annualDelivered - a.annualDelivered);
+    const maxAnnual = Math.max(...annualTeamMetrics.map(team => team.startedInYear), 1);
+    highlightsAnnualTeams.innerHTML = annualTeamMetrics.map((team, index) => `
+      <div class="highlights-annual-team-row">
+        <div class="highlights-annual-team-rank">${index + 1}</div>
+        <div class="highlights-annual-team-main">
+          <div class="highlights-annual-team-name"><strong>${escapeHtml(team.name)}</strong><span>${team.startedInYear} máquinas iniciadas</span></div>
+          <div class="highlights-annual-team-track"><span style="width:${Math.round((team.startedInYear / maxAnnual) * 100)}%"></span></div>
+        </div>
+        <div class="highlights-annual-team-numbers"><span><b>${team.annualDelivered}</b> entregues</span><span><b>${team.annualOverdue}</b> atrasos</span></div>
+      </div>
+    `).join('') || '<div class="dashboard-empty">Sem dados anuais para analisar.</div>';
   }
 }
 

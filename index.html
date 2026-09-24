@@ -3,66 +3,30 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>CP - DELTA — Controle de Produção</title>
+  <title>DELTA CNC — Controle de Produção</title>
+  <link rel="icon" type="image/png" href="logo.png">
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/basecoat-css@1.0.2/dist/basecoat.cdn.min.css">
   <link rel="stylesheet" href="styles.css">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body>
+  <div id="brandSplash" class="brand-splash" aria-label="A carregar Delta CNC">
+    <img src="logo.png" alt="Delta CNC">
+    <strong>DELTA CNC</strong>
+    <span>Controle de Produção</span>
+  </div>
   <div class="app-shell">
-    <aside class="app-sidebar">
-      <div class="sidebar-brand-row">
-        <img class="brand-logo" src="logo.png" alt="Logo CP - DELTA" onerror="this.style.display='none'; this.nextElementSibling.style.display='inline-flex';">
-        <div class="brand-badge sidebar-badge logo-fallback">DELTA</div>
-      </div>
-      <div class="sidebar-company">
-        <h2>CP - DELTA</h2>
-        <p>Produção CNC</p>
-      </div>
-
-      <div class="sidebar-section-label">Navegação</div>
-      <nav class="sidebar-nav">
-        <button class="sidebar-link active" data-tab="acompanhamento" onclick="switchTab('acompanhamento')">
-          <span>📋</span> Acompanhamento
-        </button>
-        <button class="sidebar-link" data-tab="dashboard" onclick="switchTab('dashboard')">
-          <span>📊</span> Dashboard
-        </button>
-        <button class="sidebar-link" data-tab="equipas" onclick="switchTab('equipas')">
-          <span>👥</span> Equipes
-        </button>
-        <button class="sidebar-link" data-tab="destaques" onclick="switchTab('destaques')">
-          <span>🏆</span> Destaques
-        </button>
-        <button class="sidebar-link" data-tab="usuarios" onclick="switchTab('usuarios')">
-          <span>🔐</span> Utilizadores
-        </button>
-      </nav>
-
-      <div class="sidebar-summary">
-        <div class="sidebar-summary-title">Estado da operação</div>
-        <div class="sidebar-summary-grid">
-          <div>
-            <span>Ativas</span>
-            <strong id="sidebarActiveCount">0</strong>
-          </div>
-          <div>
-            <span>Entregues</span>
-            <strong id="sidebarDeliveredCount">0</strong>
-          </div>
-        </div>
-      </div>
-    </aside>
-
     <div class="workspace">
       <!-- Top Header -->
       <header class="delta-header">
         <div class="header-content">
           <div class="brand-group">
+            <img class="header-brand-logo" src="logo.png" alt="Logo Delta CNC" onerror="this.style.display='none';">
             <div class="brand-titles">
-              <h1>CP - DELTA — Controle de Produção</h1>
-              <p>Gestão de fabrico e expedição de máquinas CNC</p>
+              <h1>DELTA CNC</h1>
+              <p>Controle de Produção</p>
+              <span class="header-reference">Mês de referência: <strong id="headerReferenceMonth">Setembro/2026</strong></span>
             </div>
           </div>
 
@@ -85,6 +49,23 @@
             </button>
           </div>
         </div>
+        <nav class="top-navigation" aria-label="Navegação principal">
+          <button class="sidebar-link active" data-tab="acompanhamento" onclick="switchTab('acompanhamento')">
+            <span>📋</span> Acompanhamento
+          </button>
+          <button class="sidebar-link" data-tab="dashboard" onclick="switchTab('dashboard')">
+            <span>📊</span> Dashboard
+          </button>
+          <button class="sidebar-link" data-tab="destaques" onclick="switchTab('destaques')">
+            <span>🏆</span> Destaques
+          </button>
+          <button class="sidebar-link" data-tab="equipas" onclick="switchTab('equipas')">
+            <span>👥</span> Equipes
+          </button>
+          <button class="sidebar-link" data-tab="usuarios" onclick="switchTab('usuarios')">
+            <span>🔐</span> Utilizadores
+          </button>
+        </nav>
       </header>
 
       <!-- Gemini Key Warning Banner (auto-hidden when key exists) -->
@@ -231,22 +212,27 @@
       <!-- KPIs -->
       <div class="kpi-grid">
         <div class="kpi-card blue">
-          <div class="kpi-title">Total Registado (Geral)</div>
+          <div class="kpi-title">Total de Máquinas — <span class="dashMonthName">Setembro/2026</span></div>
           <div class="kpi-num" id="kpiTotal">0</div>
-          <div class="kpi-sub">Ordens de serviço acumuladas</div>
+          <div class="kpi-sub">Ordens relacionadas ao período</div>
         </div>
         <div class="kpi-card">
-          <div class="kpi-title">Em Produção / Andamento</div>
+          <div class="kpi-title">Em Produção — <span class="dashMonthName">Setembro/2026</span></div>
           <div class="kpi-num text-indigo" id="kpiAndamento">0</div>
-          <div class="kpi-sub">Máquinas ativas na fábrica</div>
+          <div class="kpi-sub">Máquinas ativas no período</div>
+        </div>
+        <div class="kpi-card amber">
+          <div class="kpi-title">Aguardando Produção — <span class="dashMonthName">Setembro/2026</span></div>
+          <div class="kpi-num text-amber" id="kpiAguardando">0</div>
+          <div class="kpi-sub">Máquinas ainda não iniciadas</div>
         </div>
         <div class="kpi-card green">
-          <div class="kpi-title">Entregues no Mês (<span class="dashMonthName">Setembro</span>)</div>
-          <div class="kpi-num text-emerald" id="kpiEntreguesMes">0</div>
+          <div class="kpi-title">Entregues — <span class="dashMonthName">Setembro/2026</span></div>
+          <div class="kpi-num text-emerald" id="kpiEntreguesTotal">0</div>
           <div class="kpi-sub">Concluídas com entrega real</div>
         </div>
         <div class="kpi-card amber">
-          <div class="kpi-title">Taxa de Eficiência Mensal</div>
+          <div class="kpi-title">Taxa de Eficiência — <span class="dashMonthName">Setembro/2026</span></div>
           <div class="kpi-num text-amber" id="kpiEficiencia">0%</div>
           <div class="kpi-sub">Entregues vs previstos no mês</div>
         </div>
@@ -260,26 +246,53 @@
         <!-- Dynamic team efficiency charts -->
       </div>
 
-      <div class="teams-production-card annual-production-card">
-        <h3 id="annualChartTitle">📈 Arranques de produção anual</h3>
-        <p>Evolução de novas máquinas iniciadas ao longo dos meses.</p>
-        <div class="svg-chart-container" id="annualChartBox">
-          <!-- Built dynamically via JS with accessible SVG bars -->
+      <div class="dashboard-current-grid">
+        <div class="teams-production-card dashboard-chart-card">
+          <h3>🏭 Estado da fábrica</h3>
+          <p>Distribuição atual das máquinas.</p>
+          <div class="dashboard-donut-layout">
+            <div class="dashboard-donut" id="statusMixChart"></div>
+            <div class="dashboard-legend" id="statusMixLegend"></div>
+          </div>
+        </div>
+        <div class="teams-production-card dashboard-chart-card">
+          <h3>⚙️ Máquinas por linha</h3>
+          <p>Perfil de produção por categoria.</p>
+          <div class="mini-bars" id="lineMixChart"></div>
+        </div>
+        <div class="teams-production-card dashboard-chart-card">
+          <h3 id="annualTeamsTitle">👥 Produção por equipe</h3>
+          <p>Arranques acumulados no ano.</p>
+          <div class="team-year-chart compact-team-chart" id="annualTeamsChart"></div>
+        </div>
+        <div class="teams-production-card dashboard-chart-card">
+          <h3>⏱️ Prazo do período</h3>
+          <p>Previstas, entregues e em atraso.</p>
+          <div class="mini-bars" id="deadlineChart"></div>
         </div>
       </div>
 
-      <div class="annual-analytics-grid">
-        <div class="teams-production-card annual-chart-card">
-          <h3 id="annualDeliveriesTitle">✅ Entregas por mês</h3>
-          <p>Máquinas concluídas e entregues ao longo do ano.</p>
-          <div class="svg-chart-container" id="annualDeliveriesChart"></div>
+      <section class="dashboard-annual-section">
+        <div class="dashboard-annual-heading">
+          <div>
+            <span class="section-kicker">Histórico da fábrica</span>
+            <h3>Dados anuais</h3>
+          </div>
+          <span>Comparativo mês a mês de <strong id="annualDataYear">2026</strong></span>
         </div>
-        <div class="teams-production-card annual-chart-card">
-          <h3 id="annualTeamsTitle">👥 Produção anual por equipe</h3>
-          <p>Comparativo de máquinas iniciadas por equipe.</p>
-          <div class="team-year-chart" id="annualTeamsChart"></div>
+        <div class="dashboard-annual-grid">
+          <div class="teams-production-card dashboard-chart-card">
+            <h3 id="annualChartTitle">📈 Arranques de produção anual</h3>
+            <p>Máquinas iniciadas por mês.</p>
+            <div class="svg-chart-container compact-chart" id="annualChartBox"></div>
+          </div>
+          <div class="teams-production-card dashboard-chart-card">
+            <h3 id="annualDeliveriesTitle">✅ Entregas por mês</h3>
+            <p>Máquinas concluídas ao longo do ano.</p>
+            <div class="svg-chart-container compact-chart" id="annualDeliveriesChart"></div>
+          </div>
         </div>
-      </div>
+      </section>
     </section>
 
     <!-- TAB 3: EQUIPES -->
@@ -298,11 +311,27 @@
 
     <!-- TAB 4: DESTAQUES (PODIUM) -->
     <section id="tab-destaques" class="hidden">
-      <div style="text-align:center; max-width:650px; margin:0 auto 1.5rem;">
+      <div class="highlights-heading">
+        <span class="section-kicker">Mural de performance</span>
         <h2 style="font-size:1.45rem; color:#ffffff; margin-bottom:0.4rem; font-weight:800;">🏆 Pódio de Eficiência do Mês</h2>
         <p style="color:var(--text-muted); font-size:0.88rem;">
-          Equipes com maior volume de máquinas CNC entregues no mês de <span class="dashMonthName" style="color:#818cf8; font-weight:600;">Setembro/2026</span>.
+          Compare o desempenho das equipes por mês e acompanhe a evolução anual.
         </p>
+      </div>
+
+      <div class="highlights-filters">
+        <div class="form-group">
+          <label for="highlightsMonth">Mês de análise</label>
+          <input type="month" id="highlightsMonth" class="input-delta" value="2026-09" onchange="updatePodio()">
+        </div>
+        <div class="form-group">
+          <label for="highlightsYear">Ano da evolução</label>
+          <select id="highlightsYear" class="input-delta" onchange="updatePodio()">
+            <option value="2026" selected>2026</option>
+            <option value="2025">2025</option>
+            <option value="2024">2024</option>
+          </select>
+        </div>
       </div>
 
       <div class="podium-container" id="podiumWrapper">
@@ -313,13 +342,15 @@
         <div style="padding:1.15rem 1.35rem; border-bottom:1px solid var(--border); background:rgba(17, 24, 39, 0.95);">
           <h3 style="margin:0; font-size:1rem; color:#ffffff; font-weight:700;">Quadro Geral de Desempenho</h3>
         </div>
-        <table class="delta-table">
+        <table class="delta-table highlights-table">
           <thead>
             <tr>
               <th>Posição</th>
               <th>Equipe</th>
               <th>Máquinas Entregues</th>
               <th>Em Andamento</th>
+              <th>Em Atraso</th>
+              <th>Eficiência</th>
               <th>Pontuação</th>
             </tr>
           </thead>
@@ -327,6 +358,32 @@
             <!-- JS -->
           </tbody>
         </table>
+      </div>
+
+      <div class="highlights-analysis-grid" id="highlightsAnalysis"></div>
+
+      <div class="highlights-team-board" id="highlightsTeamBoard"></div>
+
+      <div class="teams-production-card highlights-trend-card">
+        <div class="highlights-section-heading">
+          <div>
+            <span class="section-kicker">Evolução anual</span>
+            <h3>Produção mensal por equipe</h3>
+          </div>
+          <span>Máquinas iniciadas no ano selecionado</span>
+        </div>
+        <div class="highlights-trend-chart" id="highlightsTrendChart"></div>
+      </div>
+
+      <div class="teams-production-card highlights-annual-teams-card">
+        <div class="highlights-section-heading">
+          <div>
+            <span class="section-kicker">Ranking anual</span>
+            <h3>Desempenho de cada equipe</h3>
+          </div>
+          <span id="highlightsAnnualLabel">Ano 2026</span>
+        </div>
+        <div class="highlights-annual-team-list" id="highlightsAnnualTeams"></div>
       </div>
     </section>
 
@@ -381,12 +438,19 @@
 
   <!-- MODAL: LOGIN -->
   <div id="authModal" class="modal-overlay">
-    <div class="modal-dialog">
+    <div class="modal-dialog auth-dialog">
       <div class="modal-header">
-        <h3 id="authModalTitle">Iniciar Sessão</h3>
+        <div class="auth-modal-heading">
+          <img src="logo.png" alt="Logo Delta CNC">
+          <div>
+            <span>DELTA CNC</span>
+            <h3 id="authModalTitle">Iniciar Sessão</h3>
+          </div>
+        </div>
         <button class="modal-close" onclick="closeAuthModal()">&times;</button>
       </div>
       <div class="modal-body">
+        <p class="auth-modal-intro">Aceda ao controle de produção da fábrica.</p>
         <div class="form-group" style="margin-bottom:1.15rem;">
           <label>E-mail Corporativo</label>
           <input type="email" id="loginEmail" class="input-delta" placeholder="deltacronograma@gmail.com">
@@ -395,13 +459,25 @@
           <label>Palavra-passe</label>
           <input type="password" id="loginPassword" class="input-delta" placeholder="••••••••">
         </div>
-        <div style="font-size:0.78rem; color:var(--text-muted); background:rgba(99, 102, 241, 0.08); padding:0.85rem; border-radius:8px; border:1px solid rgba(99, 102, 241, 0.2);">
-          💡 Administrador padrão: <strong style="color:#ffffff;">deltacronograma@gmail.com</strong> / Palavra-passe: <strong style="color:#ffffff;">delta2026</strong>
-        </div>
       </div>
       <div class="modal-footer">
         <button class="btn-delta btn-slate" onclick="closeAuthModal()">Cancelar</button>
-        <button class="btn-delta btn-indigo" onclick="handleLoginSubmit()">Entrar no Sistema</button>
+        <button id="loginSubmitButton" class="btn-delta btn-indigo login-submit-button" onclick="handleLoginSubmit()">Entrar no Sistema</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="logoutModal" class="modal-overlay">
+    <div class="modal-dialog logout-dialog">
+      <div class="logout-modal-content">
+        <img src="logo.png" alt="Logo Delta CNC">
+        <span class="logout-modal-kicker">DELTA CNC</span>
+        <h3>Terminar sessão?</h3>
+        <p>Tem a certeza de que deseja sair do controle de produção?</p>
+      </div>
+      <div class="modal-footer logout-modal-footer">
+        <button class="btn-delta btn-slate" onclick="closeLogoutModal()">Continuar na sessão</button>
+        <button class="btn-delta btn-danger" onclick="confirmLogout()">Terminar sessão</button>
       </div>
     </div>
   </div>
@@ -708,9 +784,10 @@
           <label>Nome da Equipe ou Técnicos</label>
           <input type="text" id="teamNameInput" class="input-delta" placeholder="Ex.: Lucas e Bruno" required>
         </div>
-        <div class="form-group">
-          <label>Tags de Especialidade (separadas por vírgula)</label>
-          <input type="text" id="teamTagsInput" class="input-delta" placeholder="Ex.: Linha Leve, Precisão CNC, Montagem Rápida">
+        <div class="form-group" style="margin-bottom:1.15rem;">
+          <label>Código ID da equipe</label>
+          <input type="text" id="teamIdInput" class="input-delta" placeholder="Ex.: A-583" maxlength="5" required>
+          <small style="display:block; margin-top:0.4rem; color:var(--text-muted);">Use uma letra e os 3 últimos dígitos do CPF, por exemplo A-583.</small>
         </div>
       </div>
       <div class="modal-footer">
