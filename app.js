@@ -2170,13 +2170,15 @@ function updatePodio() {
   if (highlightsAnnualTeams) {
     if (highlightsAnnualLabel) highlightsAnnualLabel.textContent = `Ano ${anoRef}`;
     const annualTeamMetrics = teamScores.map(team => {
-      const teamMachines = appMachines.filter(machine => machine.equipe === team.name);
+      const teamMachines = appMachines.filter(machine => machine.equipe === team.name && machine.inicio?.startsWith(`${anoRef}-`));
       return {
         ...team,
-        annualDelivered: teamMachines.filter(machine => machine.entregaReal?.startsWith(`${anoRef}-`)).length,
-        annualOverdue: teamMachines.filter(machine => machine.previsao?.startsWith(`${anoRef}-`) && getMachineStatus(machine) === 'Atrasado').length
+        annualLight: teamMachines.filter(machine => machine.linha === 'Leve').length,
+        annualIntermediate: teamMachines.filter(machine => machine.linha === 'Intermediária').length,
+        annualHeavy: teamMachines.filter(machine => machine.linha === 'Pesada').length,
+        annualTotal: teamMachines.length
       };
-    }).sort((a, b) => b.startedInYear - a.startedInYear || b.annualDelivered - a.annualDelivered);
+    }).sort((a, b) => b.annualTotal - a.annualTotal);
     const maxAnnual = Math.max(...annualTeamMetrics.map(team => team.startedInYear), 1);
     highlightsAnnualTeams.innerHTML = annualTeamMetrics.map((team, index) => `
       <div class="highlights-annual-team-row">
@@ -2185,7 +2187,7 @@ function updatePodio() {
           <div class="highlights-annual-team-name"><strong>${escapeHtml(team.name)}</strong><span>${team.startedInYear} máquinas iniciadas</span></div>
           <div class="highlights-annual-team-track"><span style="width:${Math.round((team.startedInYear / maxAnnual) * 100)}%"></span></div>
         </div>
-        <div class="highlights-annual-team-numbers"><span><b>${team.annualDelivered}</b> entregues</span><span><b>${team.annualOverdue}</b> atrasos</span></div>
+        <div class="highlights-annual-team-numbers"><span><b>${team.annualLight}</b> leves</span><span><b>${team.annualIntermediate}</b> interm.</span><span><b>${team.annualHeavy}</b> pesadas</span><span><b>${team.annualTotal}</b> total</span></div>
       </div>
     `).join('') || '<div class="dashboard-empty">Sem dados anuais para analisar.</div>';
   }
