@@ -2001,6 +2001,28 @@ function updateDashboard() {
   });
   renderMonthlyBars('annualDeliveriesChart', deliveryCounts, 'entregas');
 
+  const annualEfficiencyChart = document.getElementById('annualEfficiencyChart');
+  if (annualEfficiencyChart) {
+    const efficiencyTeamNames = [...new Set([...appTeams.map(team => team.name), ...appMachines.map(machine => machine.equipe).filter(Boolean)])];
+    annualEfficiencyChart.innerHTML = `
+      <div class="annual-efficiency-months"><span></span>${meses.map(month => `<b>${month}</b>`).join('')}</div>
+      ${efficiencyTeamNames.map(teamName => {
+        const monthlyEfficiency = meses.map((_, monthIndex) => {
+          const monthKey = `${dashboardYear}-${String(monthIndex + 1).padStart(2, '0')}`;
+          const planned = appMachines.filter(machine => machine.equipe === teamName && machine.previsao?.startsWith(monthKey));
+          if (!planned.length) return null;
+          const onTime = planned.filter(machine => machine.entregaReal && machine.entregaReal <= machine.previsao).length;
+          return Math.min(100, Math.round((onTime / planned.length) * 100));
+        });
+        return `<div class="annual-efficiency-row">
+          <strong title="${escapeHtml(teamName)}">${escapeHtml(teamName)}</strong>
+          <div class="annual-efficiency-points">${monthlyEfficiency.map((value, monthIndex) => `<span class="efficiency-point ${value === null ? 'is-empty' : ''}" title="${meses[monthIndex]}/${dashboardYear}: ${value === null ? 'sem previsão' : `${value}% no prazo`}" style="--efficiency:${value || 0}%"></span>`).join('')}</div>
+        </div>`;
+      }).join('') || '<div class="dashboard-empty">Sem equipes para analisar.</div>'}
+      <div class="annual-efficiency-scale"><span>0%</span><span>50%</span><span>100%</span></div>
+    `;
+  }
+
   const annualTeamsChart = document.getElementById('annualTeamsChart');
   if (annualTeamsChart) {
     const teamYearCounts = [...new Set([...appTeams.map(team => team.name), ...appMachines.map(machine => machine.equipe).filter(Boolean)])].map(teamName => {

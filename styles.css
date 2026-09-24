@@ -985,6 +985,17 @@ body {
   grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
+.dashboard-efficiency-chart-card { grid-column: 1 / -1; }
+.annual-efficiency-chart { display: grid; gap: 0.65rem; margin-top: 0.9rem; overflow-x: auto; }
+.annual-efficiency-months, .annual-efficiency-row { display: grid; grid-template-columns: 150px repeat(12, minmax(24px, 1fr)); align-items: center; gap: 0.35rem; min-width: 580px; }
+.annual-efficiency-months b { color: #93c5fd; font-size: 0.58rem; text-align: center; }
+.annual-efficiency-row > strong { overflow: hidden; color: #fff; font-size: 0.7rem; text-overflow: ellipsis; white-space: nowrap; }
+.annual-efficiency-points { display: contents; }
+.efficiency-point { display: block; height: 24px; border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 5px; background: linear-gradient(180deg, #34d399, #0f766e); opacity: calc(0.28 + var(--efficiency) * 0.007); box-shadow: 0 3px 10px rgba(16, 185, 129, 0.16); }
+.efficiency-point[style*="--efficiency:0%"] { background: #334155; opacity: 0.55; }
+.efficiency-point.is-empty { background: rgba(255, 255, 255, 0.04); border-style: dashed; box-shadow: none; opacity: 1; }
+.annual-efficiency-scale { display: flex; justify-content: space-between; padding-left: 150px; color: var(--text-muted); font-size: 0.6rem; }
+
 .dashboard-chart-card {
   min-width: 0;
   overflow: hidden;
