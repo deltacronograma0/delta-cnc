@@ -219,7 +219,13 @@
           <h2>Produção por equipe</h2>
           <p>Máquinas movimentadas no mês de <strong class="dashMonthName">Setembro/2026</strong>, organizadas por estado e ordem de serviço.</p>
         </div>
-        <button class="btn-delta btn-slate" onclick="switchTab('acompanhamento')">📋 Abrir acompanhamento</button>
+        <div class="dashboard-heading-actions">
+          <div class="dashboard-period-control">
+            <label for="dashboardPeriod">Período de análise</label>
+            <input type="month" id="dashboardPeriod" class="input-delta" value="2026-09" onchange="updateDashboard()">
+          </div>
+          <button class="btn-delta btn-slate" onclick="switchTab('acompanhamento')">📋 Abrir acompanhamento</button>
+        </div>
       </div>
 
       <!-- KPIs -->
@@ -250,11 +256,28 @@
         <!-- Dynamic team production cards -->
       </div>
 
+      <div class="dashboard-analytics-grid" id="dashboardAnalytics">
+        <!-- Dynamic team efficiency charts -->
+      </div>
+
       <div class="teams-production-card annual-production-card">
-        <h3>📈 Arranques de produção anual (2026)</h3>
+        <h3 id="annualChartTitle">📈 Arranques de produção anual</h3>
         <p>Evolução de novas máquinas iniciadas ao longo dos meses.</p>
         <div class="svg-chart-container" id="annualChartBox">
           <!-- Built dynamically via JS with accessible SVG bars -->
+        </div>
+      </div>
+
+      <div class="annual-analytics-grid">
+        <div class="teams-production-card annual-chart-card">
+          <h3 id="annualDeliveriesTitle">✅ Entregas por mês</h3>
+          <p>Máquinas concluídas e entregues ao longo do ano.</p>
+          <div class="svg-chart-container" id="annualDeliveriesChart"></div>
+        </div>
+        <div class="teams-production-card annual-chart-card">
+          <h3 id="annualTeamsTitle">👥 Produção anual por equipe</h3>
+          <p>Comparativo de máquinas iniciadas por equipe.</p>
+          <div class="team-year-chart" id="annualTeamsChart"></div>
         </div>
       </div>
     </section>
@@ -395,7 +418,7 @@
           <input type="hidden" id="machId">
           <div class="grid-2" style="margin-bottom:1.15rem;">
             <div class="form-group">
-              <label>Nº da OS</label>
+              <label>OS</label>
               <input type="text" id="machOs" class="input-delta" placeholder="Ex.: DM12" required>
             </div>
             <div class="form-group">

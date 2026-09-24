@@ -26,10 +26,10 @@ const DEFAULT_SEED_MACHINES = [
 ];
 
 const DEFAULT_SEED_TEAMS = [
-  { name: 'Felipe e Arthur', tags: ['Alta Performance', 'Linha Leve', 'Fibras Laser'] },
-  { name: 'Equipe Beta', tags: ['Linha Pesada', 'Precisão CNC', 'Centros Usinagem'] },
-  { name: 'Equipe Alfa', tags: ['Linha Pesada', 'Corte Plasma', 'Routers Alta Potência'] },
-  { name: 'Carlos e Renato', tags: ['Linha Intermediária', 'Routers Madeira', 'Sistemas Vácuo'] }
+  { id: 'EQ-001', name: 'Felipe e Arthur', tags: ['Alta Performance', 'Linha Leve', 'Fibras Laser'] },
+  { id: 'EQ-002', name: 'Equipe Beta', tags: ['Linha Pesada', 'Precisão CNC', 'Centros Usinagem'] },
+  { id: 'EQ-003', name: 'Equipe Alfa', tags: ['Linha Pesada', 'Corte Plasma', 'Routers Alta Potência'] },
+  { id: 'EQ-004', name: 'Carlos e Renato', tags: ['Linha Intermediária', 'Routers Madeira', 'Sistemas Vácuo'] }
 ];
 
 const DEFAULT_SEED_USERS = [
@@ -94,6 +94,32 @@ async function idbBuscarPdf(id) {
     console.warn('Erro ao aceder ao IndexedDB:', err);
     return null;
   }
+}
+
+function dataUrlToBlob(dataUrl) {
+  const [header, base64] = dataUrl.split(',');
+  const mime = header.match(/:(.*?);/)?.[1] || 'application/pdf';
+  const bytes = atob(base64);
+  const buffer = new Uint8Array(bytes.length);
+  for (let index = 0; index < bytes.length; index++) buffer[index] = bytes.charCodeAt(index);
+  return new Blob([buffer], { type: mime });
+}
+
+async function supabaseSalvarPdf(id, dataUrl) {
+  if (!supabaseClient || !id || !dataUrl) return null;
+  const path = `ordens/${String(id)}.pdf`;
+  const { error } = await supabaseClient.storage
+    .from('delta-pdfs')
+    .upload(path, dataUrlToBlob(dataUrl), { contentType: 'application/pdf', upsert: true });
+  if (error) throw error;
+  return path;
+}
+
+async function supabaseBuscarPdf(path) {
+  if (!supabaseClient || !path) return null;
+  const { data, error } = await supabaseClient.storage.from('delta-pdfs').createSignedUrl(path, 300);
+  if (error) throw error;
+  return data?.signedUrl || null;
 }
 
 async function lerPdfComIA(base64Raw, apiKey, customPrompt, signal) {
@@ -211,6 +237,18 @@ async function migrarPdfsAntigosParaIdb() {
       item.pdfData = '';
       mudou = true;
     }
+
+    if (supabaseClient && item.hasPdf && !item.pdfPath) {
+      try {
+        const localPdf = await idbBuscarPdf(item.id);
+        if (localPdf) {
+          item.pdfPath = await supabaseSalvarPdf(item.id, localPdf);
+          mudou = true;
+        }
+      } catch (e) {
+        console.warn('PDF mantido apenas no armazenamento local:', e);
+      }
+    }
   }
   if (mudou) {
     saveData();
@@ -232,7 +270,11 @@ function loadStorage() {
     const normalizeTeamName = (name) => String(name || '').replace(/^Equipa\b/, 'Equipe');
     appMachines = appMachines.map(machine => ({ ...machine, equipe: normalizeTeamName(machine.equipe) }));
     appData = appMachines;
-    appTeams = appTeams.map(team => ({ ...team, name: normalizeTeamName(team.name) }));
+    appTeams = appTeams.map((team, index) => ({
+      ...team,
+      id: team.id || `EQ-${String(index + 1).padStart(3, '0')}`,
+      name: normalizeTeamName(team.name)
+    }));
 
     geminiApiKey = localStorage.getItem(STORAGE_KEYS.GEMINI_KEY) || '';
 
@@ -816,6 +858,18 @@ async function verPdfOs(id) {
     return;
   }
 
+  if (item.pdfPath && supabaseClient) {
+    try {
+      const remotePdf = await supabaseBuscarPdf(item.pdfPath);
+      if (remotePdf) {
+        window.open(remotePdf, '_blank');
+        return;
+      }
+    } catch (err) {
+      console.warn('Erro ao carregar PDF do Supabase Storage:', err);
+    }
+  }
+
   if (item.hasPdf) {
     try {
       const storedPdf = await idbBuscarPdf(item.id);
@@ -923,9 +977,11 @@ async function saveMachine(e) {
     if (index !== -1) {
       const target = appMachines[index];
       let hasPdf = target.hasPdf || false;
+      let pdfPath = target.pdfPath || '';
       if (newPdfData) {
         try {
           await idbSalvarPdf(id, newPdfData);
+          pdfPath = await supabaseSalvarPdf(id, newPdfData) || pdfPath;
           hasPdf = true;
         } catch (idbErr) {
           console.warn('Erro ao salvar PDF no IndexedDB:', idbErr);
@@ -936,6 +992,7 @@ async function saveMachine(e) {
         os, equipe, cliente, maquina, linha, statusManual,
         inicio, previsao, entregaReal, obs,
         aiNotes: target.aiNotes || '',
+        pdfPath,
         pdfData: '',
         hasPdf
       };
@@ -943,9 +1000,11 @@ async function saveMachine(e) {
   } else {
     const newId = 'M_' + Date.now() + '_' + Math.floor(Math.random() * 1000);
     let hasPdf = false;
+    let pdfPath = '';
     if (newPdfData) {
       try {
         await idbSalvarPdf(newId, newPdfData);
+        pdfPath = await supabaseSalvarPdf(newId, newPdfData) || '';
         hasPdf = true;
       } catch (idbErr) {
         console.warn('Erro ao salvar PDF no IndexedDB:', idbErr);
@@ -956,6 +1015,7 @@ async function saveMachine(e) {
       os, equipe, cliente, maquina, linha, statusManual,
       inicio, previsao, entregaReal, obs,
       aiNotes: '',
+      pdfPath,
       pdfData: '',
       hasPdf
     };
@@ -1315,9 +1375,11 @@ async function saveImportedRows() {
 
     const newId = 'M_' + Date.now() + '_' + Math.floor(Math.random() * 10000);
     let hasPdf = false;
+    let pdfPath = '';
     if (row.base64) {
       try {
         await idbSalvarPdf(newId, row.base64);
+        pdfPath = await supabaseSalvarPdf(newId, row.base64) || '';
         hasPdf = true;
       } catch (idbErr) {
         console.warn('Erro ao salvar PDF em lote no IndexedDB:', idbErr);
@@ -1337,6 +1399,7 @@ async function saveImportedRows() {
       entregaReal: '',
       obs: row.obs || '',
       aiNotes: row.aiNotes || '',
+      pdfPath,
       pdfData: '',
       hasPdf
     };
@@ -1515,7 +1578,10 @@ function renderTeams() {
     return `
       <div class="teams-production-card" style="position:relative;">
         <div style="display:flex; justify-content:space-between; align-items:start; margin-bottom:0.75rem;">
-          <h3 style="margin:0; font-size:1.05rem; color:#ffffff; font-weight:700;">${escapeHtml(t.name)}</h3>
+          <div class="team-name-lockup">
+            <h3>${escapeHtml(t.name)}</h3>
+            <span class="team-id-badge">${escapeHtml(t.id || 'EQ-000')}</span>
+          </div>
           <div class="editor-only" style="display:flex; gap:0.35rem;">
             <button class="btn-delta btn-slate btn-sm" onclick="openTeamModal(${idx})" title="Editar">✏️</button>
             <button class="btn-delta btn-danger btn-sm" onclick="deleteTeam(${idx})" title="Excluir">🗑️</button>
@@ -1563,9 +1629,10 @@ function saveTeamSubmit() {
   }
 
   if (idx >= 0 && appTeams[idx]) {
-    appTeams[idx] = { name, tags };
+    appTeams[idx] = { ...appTeams[idx], name, tags };
   } else {
-    appTeams.push({ name, tags });
+    const nextId = `EQ-${String(appTeams.length + 1).padStart(3, '0')}`;
+    appTeams.push({ id: nextId, name, tags });
   }
 
   saveData();
@@ -1642,6 +1709,17 @@ function deleteUser(idx) {
 }
 
 function updateDashboard() {
+  const dashboardPeriod = document.getElementById('dashboardPeriod')?.value || '2026-09';
+  const [dashboardYear, dashboardMonth] = dashboardPeriod.split('-');
+  const monthNames = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
+  const dashboardMonthName = monthNames[Number(dashboardMonth) - 1] || 'Mês selecionado';
+  const dashboardLabel = `${dashboardMonthName}/${dashboardYear}`;
+  document.querySelectorAll('.dashMonthName').forEach(element => {
+    element.textContent = element.classList.contains('dashMonthName') && element.closest('.kpi-title') ? dashboardMonthName : dashboardLabel;
+  });
+  const annualChartTitle = document.getElementById('annualChartTitle');
+  if (annualChartTitle) annualChartTitle.textContent = `📈 Arranques de produção anual (${dashboardYear})`;
+
   document.getElementById('kpiTotal').textContent = appMachines.length;
 
   const activeCount = appMachines.filter(m => getMachineStatus(m) === 'Em andamento').length;
@@ -1654,7 +1732,7 @@ function updateDashboard() {
   const emAndamento = activeCount;
   document.getElementById('kpiAndamento').textContent = emAndamento;
 
-  const mesRefStr = '2026-09';
+  const mesRefStr = dashboardPeriod;
   const entreguesMes = appMachines.filter(m => {
     const st = getMachineStatus(m);
     return st === 'Entregue' && m.entregaReal && m.entregaReal.startsWith(mesRefStr);
@@ -1676,14 +1754,18 @@ function updateDashboard() {
         const hasPdf = Boolean((machine.pdfData && machine.pdfData.trim()) || machine.hasPdf);
         const status = getMachineStatus(machine);
         const osAction = hasPdf
-          ? `<button class="btn-delta btn-indigo btn-sm" onclick="verPdfOs('${machine.id}')" title="Abrir ordem de serviço">📄 OS ${escapeHtml(machine.os || '')}</button>`
+          ? `<button class="btn-delta btn-indigo btn-sm dashboard-os-button" onclick="verPdfOs('${machine.id}')" title="Abrir ordem de serviço">📄 Abrir OS</button>`
           : `<span class="dash-os-number">OS ${escapeHtml(machine.os || 'não definida')}</span>`;
 
         return `
-          <div class="dashboard-machine-row">
+          <div class="dashboard-machine-row" data-search-text="${escapeHtml(`${machine.cliente || ''} ${machine.maquina || ''} ${machine.os || ''}`.toLowerCase())}">
             <div class="dashboard-machine-main">
               <strong>${escapeHtml(machine.maquina || 'Máquina sem modelo')}</strong>
               <span>${escapeHtml(machine.cliente || 'Cliente não definido')} · ${escapeHtml(machine.linha || 'Linha não definida')}</span>
+              <div class="dashboard-machine-dates">
+                <span>Início <b>${formatDateDisplay(machine.inicio)}</b></span>
+                <span>Finalização <b>${formatDateDisplay(machine.entregaReal)}</b></span>
+              </div>
             </div>
             <div class="dashboard-machine-meta">
               <span class="badge-status ${status === 'Entregue' ? 'status-entregue' : status === 'Atrasado' ? 'status-atrasado' : 'status-andamento'}">${escapeHtml(status)}</span>
@@ -1712,6 +1794,10 @@ function updateDashboard() {
                 <span><strong>${ready.length}</strong> prontas</span>
               </div>
             </div>
+            <div class="dashboard-team-search">
+              <span>⌕</span>
+              <input type="search" placeholder="Pesquisar cliente, máquina ou OS" oninput="filterDashboardTeam(this)">
+            </div>
             <div class="dashboard-status-section process-section">
               <div class="dashboard-status-title"><span>Em processo</span><strong>${inProcess.length}</strong></div>
               ${inProcess.length ? inProcess.map(renderDashMachine).join('') : '<div class="dashboard-empty">Nenhuma máquina em processo neste mês.</div>'}
@@ -1726,13 +1812,46 @@ function updateDashboard() {
     }
   }
 
+  const analyticsBox = document.getElementById('dashboardAnalytics');
+  if (analyticsBox) {
+    const teamNames = [...new Set([...appTeams.map(team => team.name), ...appMachines.map(machine => machine.equipe).filter(Boolean)])];
+    analyticsBox.innerHTML = teamNames.map(teamName => {
+      const teamMachines = appMachines.filter(machine => machine.equipe === teamName && [machine.inicio, machine.previsao, machine.entregaReal].some(date => date && date.startsWith(mesRefStr)));
+      const delivered = teamMachines.filter(machine => getMachineStatus(machine) === 'Entregue').length;
+      const inProcess = teamMachines.filter(machine => getMachineStatus(machine) === 'Em andamento').length;
+      const overdue = teamMachines.filter(machine => getMachineStatus(machine) === 'Atrasado').length;
+      const planned = teamMachines.filter(machine => machine.previsao && machine.previsao.startsWith(mesRefStr)).length;
+      const efficiency = planned ? Math.min(100, Math.round((delivered / planned) * 100)) : (delivered ? 100 : 0);
+      const volume = Math.max(teamMachines.length, 1);
+      const deliveredWidth = Math.round((delivered / volume) * 100);
+      const processWidth = Math.round((inProcess / volume) * 100);
+      const overdueWidth = Math.round((overdue / volume) * 100);
+
+      return `
+        <article class="team-analytics-card">
+          <div class="team-analytics-header">
+            <div><span class="section-kicker">Eficiência da equipe</span><h3>${escapeHtml(teamName)}</h3></div>
+            <strong class="team-efficiency-value">${efficiency}%</strong>
+          </div>
+          <div class="team-efficiency-meter"><span style="width:${efficiency}%"></span></div>
+          <div class="team-metric-bars">
+            <div class="metric-bar-row"><span>Entregues <b>${delivered}</b></span><i><em class="bar-delivered" style="width:${deliveredWidth}%"></em></i></div>
+            <div class="metric-bar-row"><span>Em processo <b>${inProcess}</b></span><i><em class="bar-process" style="width:${processWidth}%"></em></i></div>
+            <div class="metric-bar-row"><span>Atrasadas <b>${overdue}</b></span><i><em class="bar-overdue" style="width:${overdueWidth}%"></em></i></div>
+          </div>
+          <div class="team-analytics-footer"><span>${teamMachines.length} no período</span><span>${planned} previstas</span></div>
+        </article>
+      `;
+    }).join('') || '<div class="dashboard-empty">Sem equipes para analisar.</div>';
+  }
+
   const annualChartBox = document.getElementById('annualChartBox');
   if (annualChartBox) {
     const meses = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
     const counts = Array(12).fill(0);
 
     appMachines.forEach(m => {
-      if (m.inicio && m.inicio.startsWith('2026-')) {
+      if (m.inicio && m.inicio.startsWith(`${dashboardYear}-`)) {
         const mParts = m.inicio.split('-');
         if (mParts.length === 3) {
           const monthIdx = parseInt(mParts[1], 10) - 1;
@@ -1749,7 +1868,7 @@ function updateDashboard() {
       const val = counts[idx];
       const heightPct = Math.round((val / maxVal) * 100);
       return `
-        <div class="svg-bar-col" title="${val} arranques em ${mes}/2026">
+        <div class="svg-bar-col" title="${val} arranques em ${mes}/${dashboardYear}">
           <div class="svg-bar-val">${val}</div>
           <div class="svg-bar" style="height: ${Math.max(heightPct, 6)}%;"></div>
           <div class="svg-bar-label">${mes}</div>
@@ -1757,10 +1876,59 @@ function updateDashboard() {
       `;
     }).join('');
   }
+
+  const renderMonthlyBars = (containerId, values, titleSuffix) => {
+    const container = document.getElementById(containerId);
+    if (!container) return;
+    const maxValue = Math.max(...values, 5);
+    container.innerHTML = meses.map((mes, index) => {
+      const value = values[index];
+      const heightPct = Math.round((value / maxValue) * 100);
+      return `<div class="svg-bar-col" title="${value} ${titleSuffix} em ${mes}/${dashboardYear}">
+        <div class="svg-bar-val">${value}</div>
+        <div class="svg-bar delivery-bar" style="height:${Math.max(heightPct, 6)}%;"></div>
+        <div class="svg-bar-label">${mes}</div>
+      </div>`;
+    }).join('');
+  };
+
+  const deliveryCounts = Array(12).fill(0);
+  appMachines.forEach(machine => {
+    if (machine.entregaReal && machine.entregaReal.startsWith(`${dashboardYear}-`)) {
+      const monthIndex = Number(machine.entregaReal.split('-')[1]) - 1;
+      if (monthIndex >= 0 && monthIndex < 12) deliveryCounts[monthIndex]++;
+    }
+  });
+  renderMonthlyBars('annualDeliveriesChart', deliveryCounts, 'entregas');
+
+  const annualTeamsChart = document.getElementById('annualTeamsChart');
+  if (annualTeamsChart) {
+    const teamYearCounts = [...new Set([...appTeams.map(team => team.name), ...appMachines.map(machine => machine.equipe).filter(Boolean)])].map(teamName => {
+      const count = appMachines.filter(machine => machine.equipe === teamName && machine.inicio && machine.inicio.startsWith(`${dashboardYear}-`)).length;
+      return { name: teamName, count };
+    }).sort((a, b) => b.count - a.count);
+    const maxTeamCount = Math.max(...teamYearCounts.map(team => team.count), 1);
+    annualTeamsChart.innerHTML = teamYearCounts.map(team => `
+      <div class="team-year-row">
+        <div class="team-year-label"><span>${escapeHtml(team.name)}</span><strong>${team.count}</strong></div>
+        <div class="team-year-track"><span style="width:${Math.round((team.count / maxTeamCount) * 100)}%"></span></div>
+      </div>
+    `).join('') || '<div class="dashboard-empty">Sem produção registrada neste ano.</div>';
+  }
+}
+
+function filterDashboardTeam(input) {
+  const card = input.closest('.dashboard-team-card');
+  if (!card) return;
+  const query = input.value.toLowerCase().trim();
+  card.querySelectorAll('.dashboard-machine-row').forEach(row => {
+    const haystack = row.dataset.searchText || '';
+    row.style.display = !query || haystack.includes(query) ? '' : 'none';
+  });
 }
 
 function updatePodio() {
-  const mesRefStr = '2026-09';
+  const mesRefStr = document.getElementById('dashboardPeriod')?.value || '2026-09';
   const teamScores = appTeams.map(t => {
     const delivered = appMachines.filter(m => m.equipe === t.name && getMachineStatus(m) === 'Entregue' && m.entregaReal && m.entregaReal.startsWith(mesRefStr)).length;
     const active = appMachines.filter(m => m.equipe === t.name && getMachineStatus(m) === 'Em andamento').length;
