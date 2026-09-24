@@ -991,6 +991,7 @@ body {
 .annual-efficiency-team-heading { display: flex; align-items: flex-start; justify-content: space-between; gap: 0.8rem; margin-bottom: 0.8rem; }
 .annual-efficiency-team-heading h4 { overflow: hidden; margin: 0; color: #fff; font-size: 0.86rem; text-overflow: ellipsis; white-space: nowrap; }
 .annual-efficiency-team-heading small { display: block; margin-top: 0.15rem; color: #93c5fd; font-size: 0.6rem; letter-spacing: 0.08em; }
+.annual-efficiency-team-heading > strong { margin-left: auto; color: #34d399; font-size: 1rem; }
 .annual-efficiency-team-heading > span { color: #60a5fa; font-size: 0.68rem; font-weight: 800; }
 .annual-efficiency-month-grid { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 0.35rem; }
 .annual-efficiency-month { display: flex; min-height: 42px; align-items: center; justify-content: center; flex-direction: column; gap: 0.12rem; border: 1px solid rgba(52, 211, 153, 0.28); border-radius: 6px; background: rgba(16, 185, 129, 0.18); }

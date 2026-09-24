@@ -2013,8 +2013,11 @@ function updateDashboard() {
           const onTime = planned.filter(machine => machine.entregaReal && machine.entregaReal <= machine.previsao).length;
           return Math.min(100, Math.round((onTime / planned.length) * 100));
         });
+        const annualPlanned = appMachines.filter(machine => machine.equipe === teamName && machine.previsao?.startsWith(`${dashboardYear}-`));
+        const annualOnTime = annualPlanned.filter(machine => machine.entregaReal && machine.entregaReal <= machine.previsao).length;
+        const annualEfficiency = annualPlanned.length ? Math.round((annualOnTime / annualPlanned.length) * 100) : 0;
         return `<article class="annual-efficiency-team-card">
-          <div class="annual-efficiency-team-heading"><div><h4>${escapeHtml(teamName)}</h4><small>${escapeHtml(teamRecord?.id || 'ID não definido')}</small></div><span>${dashboardYear}</span></div>
+          <div class="annual-efficiency-team-heading"><div><h4>${escapeHtml(teamName)}</h4><small>${escapeHtml(teamRecord?.id || 'ID não definido')}</small></div><strong>${annualEfficiency}%</strong><span>${dashboardYear}</span></div>
           <div class="annual-efficiency-month-grid">${monthlyEfficiency.map((value, monthIndex) => `<div class="annual-efficiency-month ${value === null ? 'is-empty' : value >= 80 ? 'is-good' : value >= 50 ? 'is-medium' : 'is-low'}" title="${meses[monthIndex]}/${dashboardYear}: ${value === null ? 'sem previsão' : `${value}% no prazo`}"><b>${value === null ? '—' : `${value}%`}</b><span>${meses[monthIndex]}</span></div>`).join('')}</div>
         </article>`;
       }).join('') || '<div class="dashboard-empty">Sem equipes para analisar.</div>';
@@ -2243,16 +2246,19 @@ function updatePodio() {
         annualLight: teamMachines.filter(machine => machine.linha === 'Leve').length,
         annualIntermediate: teamMachines.filter(machine => machine.linha === 'Intermediária').length,
         annualHeavy: teamMachines.filter(machine => machine.linha === 'Pesada').length,
-        annualTotal: teamMachines.length
+        annualTotal: teamMachines.length,
+        annualPlanned: teamMachines.filter(machine => machine.previsao?.startsWith(`${anoRef}-`)).length,
+        annualOnTime: teamMachines.filter(machine => machine.previsao?.startsWith(`${anoRef}-`) && machine.entregaReal && machine.entregaReal <= machine.previsao).length
       };
-    }).sort((a, b) => b.annualTotal - a.annualTotal);
+    }).map(team => ({ ...team, annualEfficiency: team.annualPlanned ? Math.round((team.annualOnTime / team.annualPlanned) * 100) : 0 }))
+      .sort((a, b) => b.annualEfficiency - a.annualEfficiency || b.annualTotal - a.annualTotal);
     const maxAnnual = Math.max(...annualTeamMetrics.map(team => team.startedInYear), 1);
     highlightsAnnualTeams.innerHTML = annualTeamMetrics.map((team, index) => `
       <div class="highlights-annual-team-row">
         <div class="highlights-annual-team-rank">${index + 1}</div>
         <div class="highlights-annual-team-main">
-          <div class="highlights-annual-team-name"><strong>${escapeHtml(team.name)}</strong><span>${team.startedInYear} máquinas iniciadas</span></div>
-          <div class="highlights-annual-team-track"><span style="width:${Math.round((team.startedInYear / maxAnnual) * 100)}%"></span></div>
+          <div class="highlights-annual-team-name"><strong>${escapeHtml(team.name)}</strong><span>${team.annualEfficiency}% no prazo · ${team.annualPlanned} previstas</span></div>
+          <div class="highlights-annual-team-track"><span style="width:${team.annualEfficiency}%"></span></div>
         </div>
         <div class="highlights-annual-team-numbers"><span><b>${team.annualLight}</b> leves</span><span><b>${team.annualIntermediate}</b> interm.</span><span><b>${team.annualHeavy}</b> pesadas</span><span><b>${team.annualTotal}</b> total</span></div>
       </div>
