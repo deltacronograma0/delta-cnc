@@ -1784,6 +1784,8 @@ function updateDashboard() {
   document.getElementById('kpiAndamento').textContent = emAndamento;
   const waitingCount = monthlyMachines.filter(machine => getMachineStatus(machine) === 'Aguardando produção').length;
   document.getElementById('kpiAguardando').textContent = waitingCount;
+  const overdueCount = monthlyMachines.filter(machine => getMachineStatus(machine) === 'Atrasado').length;
+  document.getElementById('kpiAtrasadas').textContent = overdueCount;
   const monthlyDeliveredCount = monthlyMachines.filter(machine => getMachineStatus(machine) === 'Entregue' && machine.entregaReal && machine.entregaReal.startsWith(mesRefStr)).length;
   document.getElementById('kpiEntreguesTotal').textContent = monthlyDeliveredCount;
 

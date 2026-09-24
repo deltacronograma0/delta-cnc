@@ -1559,6 +1559,7 @@ body {
 .kpi-card.green::before { background: var(--accent-emerald); }
 .kpi-card.amber::before { background: var(--accent-amber); }
 .kpi-card.blue::before { background: #3b82f6; }
+.kpi-card.red::before { background: var(--accent-rose); }
 
 .kpi-title {
   font-size: 0.75rem;
@@ -2255,6 +2256,7 @@ body {
 .text-emerald { color: #34d399; }
 .text-amber { color: #fbbf24; }
 .text-indigo { color: #818cf8; }
+.text-rose { color: #fb7185; }
 
 .svg-chart-container {
   width: 100%;
