@@ -532,6 +532,33 @@ function formatDateDisplay(d) {
   return d;
 }
 
+function formatDateBrazilian(dateValue) {
+  if (!dateValue) return '';
+  const normalized = String(dateValue).trim();
+  if (/^\d{2}\/\d{2}\/\d{4}$/.test(normalized)) return normalized;
+  const parts = normalized.substring(0, 10).split('-');
+  return parts.length === 3 && parts[0].length === 4
+    ? `${parts[2]}/${parts[1]}/${parts[0]}`
+    : normalized;
+}
+
+function parseBrazilianDate(value) {
+  const normalized = String(value || '').trim();
+  const parts = normalized.split('/');
+  if (parts.length !== 3) return normalized;
+  const [day, month, year] = parts;
+  if (day.length !== 2 || month.length !== 2 || year.length !== 4) return normalized;
+  return `${year}-${month}-${day}`;
+}
+
+function normalizeDateValue(value) {
+  const normalized = String(value || '').trim();
+  if (!normalized) return '';
+  if (/^\d{2}\/\d{2}\/\d{4}$/.test(normalized)) return parseBrazilianDate(normalized);
+  const isoMatch = normalized.match(/\d{4}-\d{2}-\d{2}/);
+  return isoMatch ? isoMatch[0] : '';
+}
+
 function escapeHtml(str) {
   if (!str) return '';
   return String(str)
@@ -1094,9 +1121,9 @@ async function processPdfsWithGemini(retryIndexes = null) {
       row.maquina = parsed.maquina || 'Router / Laser CNC';
       row.linha = ['Leve', 'Intermediária', 'Pesada'].includes(parsed.linha) ? parsed.linha : 'Leve';
       row.equipe = '';
-      row.aiInicio = parsed.inicio || '';
+      row.aiInicio = normalizeDateValue(parsed.inicio);
       row.inicio = getPreviewStartDate(row);
-      row.previsao = parsed.previsao || '';
+      row.previsao = normalizeDateValue(parsed.previsao);
 
       row.aiNotes = (parsed.detalhesTecnicos || parsed.obs || '').trim();
       row.obs = '';
@@ -1231,8 +1258,8 @@ function renderImportPreviewTable() {
             <option value="Pesada" ${row.linha === 'Pesada' ? 'selected' : ''}>Pesada</option>
           </select>
         </td>
-        <td><input type="date" class="preview-input" value="${row.inicio || ''}" onchange="updatePreviewRowValue(${idx}, 'inicio', this.value)"></td>
-        <td><input type="date" class="preview-input" value="${row.previsao || ''}" onchange="updatePreviewRowValue(${idx}, 'previsao', this.value)"></td>
+        <td><input type="text" inputmode="numeric" class="preview-input date-preview-input" value="${formatDateBrazilian(row.inicio)}" placeholder="DD/MM/AAAA" maxlength="10" pattern="\\d{2}/\\d{2}/\\d{4}" onchange="updatePreviewDateValue(${idx}, 'inicio', this.value)"></td>
+        <td><input type="text" inputmode="numeric" class="preview-input date-preview-input" value="${formatDateBrazilian(row.previsao)}" placeholder="DD/MM/AAAA" maxlength="10" pattern="\\d{2}/\\d{2}/\\d{4}" onchange="updatePreviewDateValue(${idx}, 'previsao', this.value)"></td>
         <td><input type="text" class="preview-input" value="${escapeHtml(row.aiNotes || '')}" onchange="updatePreviewRowValue(${idx}, 'aiNotes', this.value)" placeholder="Preenchido pela IA"></td>
       </tr>
     `;
@@ -1249,6 +1276,13 @@ function updatePreviewRowValue(idx, key, val) {
   renderImportProgress(currentPreviewRows.length);
 }
 
+function updatePreviewDateValue(idx, key, value) {
+  const isoValue = parseBrazilianDate(value);
+  if (/^\d{4}-\d{2}-\d{2}$/.test(isoValue) || isoValue === '') {
+    updatePreviewRowValue(idx, key, isoValue);
+  }
+}
+
 function toggleSelectAllPreview(masterCheckbox) {
   const isChecked = masterCheckbox.checked;
   currentPreviewRows.forEach(row => row.selected = isChecked);
@@ -1261,6 +1295,12 @@ async function saveImportedRows() {
     alert('Nenhum registo selecionado para salvar.');
     return;
   }
+
+  const saveButton = document.getElementById('btnSaveMulti');
+  const originalSaveLabel = saveButton.innerHTML;
+  const saveStartedAt = Date.now();
+  saveButton.disabled = true;
+  saveButton.innerHTML = '⏳ Salvando...';
 
   const dateRule = document.getElementById('importStartDateRule').value;
   const todayStr = new Date().toISOString().split('T')[0];
@@ -1305,11 +1345,29 @@ async function saveImportedRows() {
   }
 
   await saveData();
+  const elapsed = Date.now() - saveStartedAt;
+  const minimumFeedbackTime = 900;
+  if (elapsed < minimumFeedbackTime) {
+    await new Promise(resolve => setTimeout(resolve, minimumFeedbackTime - elapsed));
+  }
   closeMultiImportModal();
   renderTable();
   updateDashboard();
   updatePodio();
-  alert(`${selectedRows.length} máquina(s) importada(s) com sucesso!`);
+  saveButton.innerHTML = originalSaveLabel;
+  showToast('Ordens atualizadas com sucesso!');
+}
+
+let toastTimeout = null;
+
+function showToast(message) {
+  const toast = document.getElementById('appToast');
+  const messageEl = document.getElementById('appToastMessage');
+  if (!toast || !messageEl) return;
+  messageEl.textContent = message;
+  toast.classList.add('show');
+  clearTimeout(toastTimeout);
+  toastTimeout = setTimeout(() => toast.classList.remove('show'), 4200);
 }
 
 function openConfigModal() {

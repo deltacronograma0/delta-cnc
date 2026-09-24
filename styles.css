@@ -1173,6 +1173,11 @@ body {
   box-shadow: 0 0 0 1px #6366f1;
 }
 
+.date-preview-input {
+  min-width: 112px;
+  letter-spacing: 0.02em;
+}
+
 .import-batch-summary {
   grid-template-columns: repeat(4, minmax(110px, 1fr));
   gap: 0.6rem;
@@ -1358,6 +1363,51 @@ body {
 }
 
 .hidden { display: none !important; }
+
+.app-toast {
+  position: fixed;
+  right: 24px;
+  bottom: 24px;
+  z-index: 200;
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  min-width: 260px;
+  max-width: calc(100vw - 32px);
+  padding: 0.85rem 1rem;
+  border: 1px solid rgba(16, 185, 129, 0.42);
+  border-radius: 12px;
+  background: rgba(8, 25, 23, 0.96);
+  box-shadow: 0 16px 34px rgba(0, 0, 0, 0.4);
+  color: #d1fae5;
+  font-size: 0.82rem;
+  font-weight: 700;
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(12px);
+  transition: opacity 0.22s ease, transform 0.22s ease;
+}
+
+.app-toast.show {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.app-toast-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: #10b981;
+  color: #06251d;
+  font-weight: 900;
+}
+
+@media (max-width: 640px) {
+  .app-toast { right: 16px; bottom: 16px; left: 16px; min-width: 0; }
+}
 .text-muted { color: var(--text-muted); }
 .text-emerald { color: #34d399; }
 .text-amber { color: #fbbf24; }
