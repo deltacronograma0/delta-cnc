@@ -958,7 +958,6 @@ function openMachineModal(id = null) {
     if (!item) return;
     document.getElementById('machineModalTitle').textContent = `Editar Máquina — OS ${item.os || ''}`;
     document.getElementById('machId').value = item.id;
-    document.getElementById('machOs').value = item.os || '';
     if (item.equipe && ![...document.getElementById('machTeam').options].some(option => option.value === item.equipe)) {
       document.getElementById('machTeam').add(new Option(`${item.equipe} (histórica)`, item.equipe));
     }
@@ -993,7 +992,8 @@ function closeMachineModal() {
 async function saveMachine(e) {
   e.preventDefault();
   const id = document.getElementById('machId').value;
-  const os = document.getElementById('machOs').value.trim();
+  const existingMachine = id ? appMachines.find(machine => machine.id === id) : null;
+  const os = existingMachine?.os || `OS-${Date.now()}`;
   const equipe = document.getElementById('machTeam').value;
   const equipeRecord = appTeams.find(team => team.name === equipe);
   const cliente = document.getElementById('machClient').value.trim();

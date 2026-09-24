@@ -510,17 +510,11 @@
       <div class="modal-body">
         <form id="machineForm" onsubmit="saveMachine(event)">
           <input type="hidden" id="machId">
-          <div class="grid-2" style="margin-bottom:1.15rem;">
-            <div class="form-group">
-              <label>OS</label>
-              <input type="text" id="machOs" class="input-delta" placeholder="Ex.: DM12" required>
-            </div>
-            <div class="form-group">
-              <label>Equipe Responsável</label>
-              <select id="machTeam" class="input-delta" required>
-                <!-- populated dynamically -->
-              </select>
-            </div>
+          <div class="form-group" style="margin-bottom:1.15rem;">
+            <label>Equipe Responsável</label>
+            <select id="machTeam" class="input-delta" required>
+              <!-- populated dynamically -->
+            </select>
           </div>
 
           <div class="form-group" style="margin-bottom:1.15rem;">
