@@ -2236,6 +2236,7 @@ function updatePodio() {
   }
 
   const highlightsAnnualTeams = document.getElementById('highlightsAnnualTeams');
+  const highlightsAnnualPodium = document.getElementById('highlightsAnnualPodium');
   const highlightsAnnualLabel = document.getElementById('highlightsAnnualLabel');
   if (highlightsAnnualTeams) {
     if (highlightsAnnualLabel) highlightsAnnualLabel.textContent = `Ano ${anoRef}`;
@@ -2250,15 +2251,36 @@ function updatePodio() {
         annualPlanned: teamMachines.filter(machine => machine.previsao?.startsWith(`${anoRef}-`)).length,
         annualOnTime: teamMachines.filter(machine => machine.previsao?.startsWith(`${anoRef}-`) && machine.entregaReal && machine.entregaReal <= machine.previsao).length
       };
-    }).map(team => ({ ...team, annualEfficiency: team.annualPlanned ? Math.round((team.annualOnTime / team.annualPlanned) * 100) : 0 }))
-      .sort((a, b) => b.annualEfficiency - a.annualEfficiency || b.annualTotal - a.annualTotal);
-    const maxAnnual = Math.max(...annualTeamMetrics.map(team => team.startedInYear), 1);
+    }).map(team => {
+      const monthlyEfficiencies = Array.from({ length: 12 }, (_, monthIndex) => {
+        const monthKey = `${anoRef}-${String(monthIndex + 1).padStart(2, '0')}`;
+        const planned = appMachines.filter(machine => machine.equipe === team.name && machine.previsao?.startsWith(monthKey));
+        if (!planned.length) return null;
+        const onTime = planned.filter(machine => machine.entregaReal && machine.entregaReal <= machine.previsao).length;
+        return Math.round((onTime / planned.length) * 100);
+      }).filter(value => value !== null);
+      const averageMonthlyEfficiency = monthlyEfficiencies.length ? Math.round(monthlyEfficiencies.reduce((sum, value) => sum + value, 0) / monthlyEfficiencies.length) : 0;
+      return { ...team, averageMonthlyEfficiency };
+    }).sort((a, b) => b.averageMonthlyEfficiency - a.averageMonthlyEfficiency || b.annualTotal - a.annualTotal);
+
+    if (highlightsAnnualPodium) {
+      const medals = ['🥇', '🥈', '🥉'];
+      highlightsAnnualPodium.innerHTML = annualTeamMetrics.slice(0, 3).map((team, index) => `
+        <article class="annual-highlight-podium-card podium-rank-${index + 1}">
+          <span class="annual-highlight-medal">${medals[index]}</span>
+          <strong>${escapeHtml(team.name)}</strong>
+          <b>${team.averageMonthlyEfficiency}%</b>
+          <small>média mensal · ${team.annualTotal} máquinas</small>
+        </article>
+      `).join('') || '<div class="dashboard-empty">Sem dados anuais para o pódio.</div>';
+    }
+
     highlightsAnnualTeams.innerHTML = annualTeamMetrics.map((team, index) => `
       <div class="highlights-annual-team-row">
         <div class="highlights-annual-team-rank">${index + 1}</div>
         <div class="highlights-annual-team-main">
-          <div class="highlights-annual-team-name"><strong>${escapeHtml(team.name)}</strong><span>${team.annualEfficiency}% no prazo · ${team.annualPlanned} previstas</span></div>
-          <div class="highlights-annual-team-track"><span style="width:${team.annualEfficiency}%"></span></div>
+          <div class="highlights-annual-team-name"><strong>${escapeHtml(team.name)}</strong><span>${team.averageMonthlyEfficiency}% média mensal · ${team.annualTotal} máquinas</span></div>
+          <div class="highlights-annual-team-track"><span style="width:${team.averageMonthlyEfficiency}%"></span></div>
         </div>
         <div class="highlights-annual-team-numbers"><span><b>${team.annualLight}</b> leves</span><span><b>${team.annualIntermediate}</b> interm.</span><span><b>${team.annualHeavy}</b> pesadas</span><span><b>${team.annualTotal}</b> total</span></div>
       </div>
