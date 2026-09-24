@@ -1636,17 +1636,23 @@ body {
 .highlight-trend-column:hover .highlight-trend-bar { filter: brightness(1.2); }
 .highlights-annual-teams-card { margin-top: 1.25rem; }
 .highlights-annual-team-list { display: grid; gap: 0.85rem; }
-.highlights-annual-team-row { display: grid; grid-template-columns: 30px minmax(0, 1fr) 300px; align-items: center; gap: 0.8rem; padding: 0.7rem 0; border-bottom: 1px solid rgba(147, 197, 253, 0.1); }
-.highlights-annual-team-row:last-child { border-bottom: 0; }
-.highlights-annual-team-rank { display: grid; width: 27px; height: 27px; place-items: center; border-radius: 50%; background: rgba(56, 189, 248, 0.15); color: #7dd3fc; font-size: 0.72rem; font-weight: 800; }
+.highlights-annual-team-row { display: grid; grid-template-columns: 36px minmax(0, 1fr) 300px; align-items: center; gap: 0.9rem; padding: 0.9rem 0.75rem; border: 1px solid rgba(147, 197, 253, 0.1); border-radius: 12px; background: rgba(9, 25, 54, 0.42); transition: transform 0.2s ease, border-color 0.2s ease, background 0.2s ease; }
+.highlights-annual-team-row:hover { transform: translateX(3px); border-color: rgba(96, 165, 250, 0.35); background: rgba(15, 44, 86, 0.62); }
+.highlights-annual-team-rank { display: grid; width: 32px; height: 32px; place-items: center; border-radius: 10px; background: linear-gradient(145deg, rgba(56, 189, 248, 0.25), rgba(37, 99, 235, 0.16)); color: #bae6fd; font-size: 0.78rem; font-weight: 900; box-shadow: inset 0 0 0 1px rgba(125, 211, 252, 0.16); }
 .highlights-annual-team-row:nth-child(1) .highlights-annual-team-rank { background: rgba(251, 191, 36, 0.18); color: #fbbf24; }
 .highlights-annual-team-main { min-width: 0; }
-.highlights-annual-team-name { display: flex; justify-content: space-between; gap: 1rem; margin-bottom: 0.35rem; color: #fff; font-size: 0.76rem; }
-.highlights-annual-team-name span { color: #93c5fd; font-size: 0.68rem; }
-.highlights-annual-team-track { height: 8px; overflow: hidden; border-radius: 999px; background: rgba(255, 255, 255, 0.07); }
-.highlights-annual-team-track span { display: block; height: 100%; border-radius: inherit; background: linear-gradient(90deg, #38bdf8, #2563eb, #7c3aed); }
-.highlights-annual-team-numbers { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 0.55rem; color: var(--text-muted); font-size: 0.62rem; }
-.highlights-annual-team-numbers b { display: block; color: #fff; font-size: 0.85rem; text-align: right; }
+.highlights-annual-team-name { display: flex; align-items: baseline; justify-content: space-between; gap: 1rem; margin-bottom: 0.45rem; color: #fff; font-size: 0.86rem; }
+.highlights-annual-team-name strong { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.highlights-annual-team-name span { flex: 0 0 auto; color: #93c5fd; font-size: 0.68rem; }
+.highlights-annual-team-track { height: 9px; overflow: hidden; border-radius: 999px; background: rgba(255, 255, 255, 0.08); box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.25); }
+.highlights-annual-team-track span { display: block; height: 100%; border-radius: inherit; background: linear-gradient(90deg, #38bdf8, #2563eb 60%, #8b5cf6); box-shadow: 0 0 12px rgba(56, 189, 248, 0.25); }
+.highlights-annual-team-numbers { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 0.4rem; color: var(--text-muted); font-size: 0.6rem; }
+.highlights-annual-team-numbers span { padding: 0.38rem 0.28rem; border: 1px solid rgba(147, 197, 253, 0.12); border-radius: 7px; background: rgba(255, 255, 255, 0.045); text-align: center; }
+.highlights-annual-team-numbers span:nth-child(1) { border-color: rgba(56, 189, 248, 0.24); }
+.highlights-annual-team-numbers span:nth-child(2) { border-color: rgba(192, 132, 252, 0.24); }
+.highlights-annual-team-numbers span:nth-child(3) { border-color: rgba(251, 146, 60, 0.24); }
+.highlights-annual-team-numbers span:nth-child(4) { border-color: rgba(52, 211, 153, 0.3); background: rgba(16, 185, 129, 0.08); }
+.highlights-annual-team-numbers b { display: block; color: #fff; font-size: 0.94rem; line-height: 1.1; }
 .highlights-table thead th { background: linear-gradient(90deg, rgba(16, 52, 104, 0.75), rgba(20, 72, 132, 0.5)); color: #dbeafe; }
 .highlights-table tbody tr:first-child td:first-child strong { color: #fbbf24 !important; }
 .highlights-table tbody tr:nth-child(2) td:first-child strong { color: #cbd5e1 !important; }
