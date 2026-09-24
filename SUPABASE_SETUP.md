@@ -29,11 +29,31 @@ alter table public.delta_app_state replica identity full;
 alter publication supabase_realtime add table public.delta_app_state;
 ```
 
-## 2. Ativar acesso anonimo
+## 2. Criar o armazenamento dos PDFs
+
+No mesmo **SQL Editor**, execute este bloco para criar o bucket privado usado pelas ordens de serviço:
+
+```sql
+insert into storage.buckets (id, name, public)
+values ('delta-pdfs', 'delta-pdfs', false)
+on conflict (id) do nothing;
+
+drop policy if exists "delta pdf authenticated access" on storage.objects;
+create policy "delta pdf authenticated access"
+  on storage.objects
+  for all
+  to authenticated
+  using (bucket_id = 'delta-pdfs')
+  with check (bucket_id = 'delta-pdfs');
+```
+
+O bucket deve permanecer **privado**. O aplicativo usa URLs assinadas temporarias para abrir cada PDF.
+
+## 3. Ativar acesso anonimo
 
 Em **Authentication > Providers**, ative **Anonymous Sign-Ins**. O app usa uma sessao anonima apenas para que a politica RLS permita a sincronizacao; a tela de acesso do aplicativo continua controlando os perfis internos.
 
-## 3. Conectar o app
+## 4. Conectar o app
 
 Em **Project Settings > API**, copie:
 
