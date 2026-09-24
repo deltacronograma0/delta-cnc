@@ -1010,6 +1010,10 @@ body {
   padding: 1rem 1.1rem;
 }
 
+.dashboard-current-grid > .dashboard-chart-card:first-child {
+  min-width: 0;
+}
+
 .dashboard-chart-card.chart-wide {
   grid-column: span 2;
 }
@@ -1051,15 +1055,16 @@ body {
 
 .dashboard-donut-layout {
   display: grid;
-  grid-template-columns: 118px 1fr;
+  grid-template-columns: minmax(86px, 100px) minmax(0, 1fr);
   align-items: center;
-  gap: 1rem;
-  min-height: 150px;
+  gap: 0.8rem;
+  min-height: 132px;
+  width: 100%;
 }
 
 .dashboard-donut {
-  width: 112px;
-  height: 112px;
+  width: 92px;
+  height: 92px;
   border-radius: 50%;
   background: conic-gradient(var(--donut-gradient));
   position: relative;
@@ -1068,7 +1073,7 @@ body {
 .dashboard-donut::after {
   content: '';
   position: absolute;
-  inset: 19px;
+  inset: 16px;
   border-radius: 50%;
   background: var(--card-bg);
   box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.06);
@@ -1076,7 +1081,9 @@ body {
 
 .dashboard-legend {
   display: grid;
-  gap: 0.55rem;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.42rem 0.55rem;
+  min-width: 0;
 }
 
 .dashboard-legend-item {
@@ -1085,7 +1092,7 @@ body {
   justify-content: space-between;
   gap: 0.5rem;
   color: var(--text-muted);
-  font-size: 0.68rem;
+  font-size: 0.61rem;
 }
 
 .dashboard-legend-item span {
@@ -1093,6 +1100,8 @@ body {
   align-items: center;
   min-width: 0;
   gap: 0.38rem;
+  overflow: hidden;
+  white-space: nowrap;
 }
 
 .dashboard-legend-item i {
@@ -1102,7 +1111,7 @@ body {
   border-radius: 50%;
 }
 
-.dashboard-legend-item strong { color: #fff; }
+.dashboard-legend-item strong { flex: 0 0 auto; color: #fff; font-size: 0.72rem; }
 
 .mini-bars {
   display: grid;
