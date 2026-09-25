@@ -41,9 +41,27 @@ create policy "delta users authenticated access"
   on public.delta_users for all to authenticated
   using (true) with check (true);
 
-alter publication supabase_realtime add table public.delta_machines;
-alter publication supabase_realtime add table public.delta_teams;
-alter publication supabase_realtime add table public.delta_users;
+do $$
+begin
+  if not exists (
+    select 1 from pg_publication_tables
+    where pubname = 'supabase_realtime' and schemaname = 'public' and tablename = 'delta_machines'
+  ) then
+    alter publication supabase_realtime add table public.delta_machines;
+  end if;
+  if not exists (
+    select 1 from pg_publication_tables
+    where pubname = 'supabase_realtime' and schemaname = 'public' and tablename = 'delta_teams'
+  ) then
+    alter publication supabase_realtime add table public.delta_teams;
+  end if;
+  if not exists (
+    select 1 from pg_publication_tables
+    where pubname = 'supabase_realtime' and schemaname = 'public' and tablename = 'delta_users'
+  ) then
+    alter publication supabase_realtime add table public.delta_users;
+  end if;
+end $$;
 
 -- Migracao inicial: copia o snapshot atual sem alterar a tabela delta_app_state.
 insert into public.delta_machines (id, payload)
