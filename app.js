@@ -205,7 +205,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
-      navigator.serviceWorker.register('./sw.js?v=2').catch((error) => {
+      navigator.serviceWorker.register('./sw.js?v=3').catch((error) => {
         console.warn('Service worker não registrado:', error);
       });
     });
@@ -328,7 +328,6 @@ function loadStorage() {
       localStorage.setItem(STORAGE_KEYS.AUTH_SESSION_VERSION, '2');
     }
 
-    saveData();
   } catch (err) {
     console.error('Erro ao ler storage, aplicando valores padrão:', err);
     appMachines = [...DEFAULT_SEED_MACHINES];
