@@ -5,6 +5,7 @@ const STORAGE_KEYS = {
   GEMINI_KEY: 'DELTA_GEMINI_KEY',
   CURRENT_USER: 'DELTA_CURRENT_USER',
   AUTH_SESSION_VERSION: 'DELTA_AUTH_SESSION_VERSION',
+  STATE_UPDATED_AT: 'DELTA_STATE_UPDATED_AT',
   SUPABASE_URL: 'DELTA_SUPABASE_URL',
   SUPABASE_KEY: 'DELTA_SUPABASE_KEY'
 };
@@ -330,7 +331,6 @@ function loadStorage() {
       localStorage.setItem(STORAGE_KEYS.AUTH_SESSION_VERSION, '2');
     }
 
-    saveData();
   } catch (err) {
     console.error('Erro ao ler storage, aplicando valores padrão:', err);
     appMachines = [...DEFAULT_SEED_MACHINES];
@@ -345,9 +345,11 @@ function loadStorage() {
 
 async function saveData() {
   try {
+    const updatedAt = Date.now();
     localStorage.setItem(STORAGE_KEYS.MACHINES, JSON.stringify(appMachines));
     localStorage.setItem(STORAGE_KEYS.TEAMS, JSON.stringify(appTeams));
     localStorage.setItem(STORAGE_KEYS.USERS, JSON.stringify(appUsers));
+    localStorage.setItem(STORAGE_KEYS.STATE_UPDATED_AT, String(updatedAt));
     if (currentUser) {
       localStorage.setItem(STORAGE_KEYS.CURRENT_USER, JSON.stringify(currentUser));
       localStorage.setItem(STORAGE_KEYS.AUTH_SESSION_VERSION, '2');
@@ -412,13 +414,19 @@ async function initSupabaseSync() {
     if (authError) throw authError;
     const { data, error } = await supabaseClient
       .from('delta_app_state')
-      .select('machines, teams, users')
+      .select('machines, teams, users, updated_at')
       .eq('id', 'main')
       .maybeSingle();
 
     if (error) throw error;
     if (data) {
-      applySharedState(data);
+      const localUpdatedAt = Number(localStorage.getItem(STORAGE_KEYS.STATE_UPDATED_AT) || 0);
+      const remoteUpdatedAt = Date.parse(data.updated_at || '') || 0;
+      if (localUpdatedAt > remoteUpdatedAt) {
+        await queueSharedStateSave();
+      } else {
+        applySharedState(data);
+      }
     } else {
       await saveSharedState();
     }
@@ -439,12 +447,19 @@ async function initSupabaseSync() {
 }
 
 function applySharedState(data) {
+  const remoteUpdatedAt = Date.parse(data.updated_at || '') || 0;
+  const localUpdatedAt = Number(localStorage.getItem(STORAGE_KEYS.STATE_UPDATED_AT) || 0);
+  if (remoteUpdatedAt && localUpdatedAt > remoteUpdatedAt) return;
+
   isApplyingRemoteState = true;
   try {
     appMachines = Array.isArray(data.machines) ? data.machines : [];
     appData = appMachines;
     appTeams = Array.isArray(data.teams) ? data.teams : [];
     appUsers = Array.isArray(data.users) ? data.users : [];
+    if (remoteUpdatedAt) {
+      localStorage.setItem(STORAGE_KEYS.STATE_UPDATED_AT, String(remoteUpdatedAt));
+    }
     populateTeamFilters();
     renderTable();
     updateDashboard();
