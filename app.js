@@ -5,6 +5,7 @@ const STORAGE_KEYS = {
   GEMINI_KEY: 'DELTA_GEMINI_KEY',
   CURRENT_USER: 'DELTA_CURRENT_USER',
   AUTH_SESSION_VERSION: 'DELTA_AUTH_SESSION_VERSION',
+  STATE_UPDATED_AT: 'DELTA_STATE_UPDATED_AT',
   SUPABASE_URL: 'DELTA_SUPABASE_URL',
   SUPABASE_KEY: 'DELTA_SUPABASE_KEY'
 };
@@ -53,6 +54,8 @@ let currentAiIndex = null;
 let supabaseClient = null;
 let supabaseChannel = null;
 let isApplyingRemoteState = false;
+let sharedSaveInFlight = null;
+let sharedSaveQueued = false;
 
 function idbAbrir() {
   return new Promise((resolve, reject) => {
@@ -205,7 +208,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
-      navigator.serviceWorker.register('./sw.js?v=5').catch((error) => {
+      navigator.serviceWorker.register('./sw.js?v=21').catch((error) => {
         console.warn('Service worker não registrado:', error);
       });
     });
@@ -342,9 +345,11 @@ function loadStorage() {
 
 async function saveData() {
   try {
+    const updatedAt = Date.now();
     localStorage.setItem(STORAGE_KEYS.MACHINES, JSON.stringify(appMachines));
     localStorage.setItem(STORAGE_KEYS.TEAMS, JSON.stringify(appTeams));
     localStorage.setItem(STORAGE_KEYS.USERS, JSON.stringify(appUsers));
+    localStorage.setItem(STORAGE_KEYS.STATE_UPDATED_AT, String(updatedAt));
     if (currentUser) {
       localStorage.setItem(STORAGE_KEYS.CURRENT_USER, JSON.stringify(currentUser));
       localStorage.setItem(STORAGE_KEYS.AUTH_SESSION_VERSION, '2');
@@ -352,6 +357,9 @@ async function saveData() {
       localStorage.removeItem(STORAGE_KEYS.CURRENT_USER);
     }
 
+    if (supabaseClient && !isApplyingRemoteState) {
+      await queueSharedStateSave();
+    }
   } catch (e) {
     console.warn('Erro de gravação no localStorage (possível quota excedida):', e);
     try {
@@ -381,9 +389,21 @@ async function saveData() {
 
 function setSupabaseSyncStatus(message, connected = false) {
   const status = document.getElementById('supabaseSyncStatus');
+  const indicator = document.getElementById('supabaseIndicator');
+  const indicatorLabel = document.getElementById('supabaseIndicatorLabel');
   if (!status) return;
   status.textContent = message;
   status.classList.toggle('is-connected', connected);
+  if (indicator) {
+    const isSaving = /salvando/i.test(message);
+    const stateClass = connected ? 'sync-online' : (isSaving ? 'sync-saving' : (currentUser ? 'sync-error' : 'sync-local'));
+    indicator.classList.remove('sync-online', 'sync-saving', 'sync-error', 'sync-local');
+    indicator.classList.add(stateClass);
+    indicator.title = connected ? 'Dados sincronizados' : (currentUser ? message : 'Visualização disponível sem conexão');
+  }
+  if (indicatorLabel) {
+    indicatorLabel.textContent = connected ? 'Sincronizado' : (/salvando/i.test(message) ? 'Salvando' : (currentUser ? 'Sem conexão' : 'Modo leitura'));
+  }
 }
 
 function getSupabaseConfig() {
@@ -406,13 +426,19 @@ async function initSupabaseSync() {
     if (authError) throw authError;
     const { data, error } = await supabaseClient
       .from('delta_app_state')
-      .select('machines, teams, users')
+      .select('machines, teams, users, updated_at')
       .eq('id', 'main')
       .maybeSingle();
 
     if (error) throw error;
     if (data) {
-      applySharedState(data);
+      const localUpdatedAt = Number(localStorage.getItem(STORAGE_KEYS.STATE_UPDATED_AT) || 0);
+      const remoteUpdatedAt = Date.parse(data.updated_at || '') || 0;
+      if (localUpdatedAt > remoteUpdatedAt) {
+        await queueSharedStateSave();
+      } else {
+        applySharedState(data);
+      }
     } else {
       await saveSharedState();
     }
@@ -424,21 +450,30 @@ async function initSupabaseSync() {
       })
       .subscribe(status => {
         setSupabaseSyncStatus(status === 'SUBSCRIBED' ? 'Sincronização online' : `Estado: ${status}`, status === 'SUBSCRIBED');
+        setupPermissions();
       });
   } catch (error) {
     console.error('Erro ao conectar ao Supabase:', error);
     supabaseClient = null;
     setSupabaseSyncStatus('Erro de conexão');
+    setupPermissions();
   }
 }
 
 function applySharedState(data) {
+  const remoteUpdatedAt = Date.parse(data.updated_at || '') || 0;
+  const localUpdatedAt = Number(localStorage.getItem(STORAGE_KEYS.STATE_UPDATED_AT) || 0);
+  if (remoteUpdatedAt && localUpdatedAt > remoteUpdatedAt) return;
+
   isApplyingRemoteState = true;
   try {
     appMachines = Array.isArray(data.machines) ? data.machines : [];
     appData = appMachines;
     appTeams = Array.isArray(data.teams) ? data.teams : [];
     appUsers = Array.isArray(data.users) ? data.users : [];
+    if (remoteUpdatedAt) {
+      localStorage.setItem(STORAGE_KEYS.STATE_UPDATED_AT, String(remoteUpdatedAt));
+    }
     populateTeamFilters();
     renderTable();
     updateDashboard();
@@ -452,6 +487,7 @@ function applySharedState(data) {
 
 async function saveSharedState() {
   if (!supabaseClient) return;
+  setSupabaseSyncStatus('Salvando automaticamente...', false);
   const { error } = await supabaseClient.from('delta_app_state').upsert({
     id: 'main',
     machines: appMachines,
@@ -462,6 +498,27 @@ async function saveSharedState() {
   if (error) {
     console.error('Erro ao sincronizar dados:', error);
     setSupabaseSyncStatus('Erro ao salvar');
+    return;
+  }
+  setSupabaseSyncStatus('Sincronizado automaticamente', true);
+}
+
+async function queueSharedStateSave() {
+  if (sharedSaveInFlight) {
+    sharedSaveQueued = true;
+    await sharedSaveInFlight;
+    return;
+  }
+
+  sharedSaveInFlight = saveSharedState();
+  try {
+    await sharedSaveInFlight;
+  } finally {
+    sharedSaveInFlight = null;
+    if (sharedSaveQueued) {
+      sharedSaveQueued = false;
+      await queueSharedStateSave();
+    }
   }
 }
 
@@ -483,8 +540,8 @@ function setupPermissions() {
     userLabel.textContent = `${currentUser.email.split('@')[0]} (${currentUser.role})`;
     authBtn.textContent = 'Terminar Sessão';
     authBtn.className = 'btn-delta btn-danger btn-sm';
-    editorEls.forEach(el => el.style.display = '');
-    adminEls.forEach(el => el.style.display = currentUser.role === 'Administrador' ? '' : 'none');
+    editorEls.forEach(el => el.style.display = supabaseClient ? '' : 'none');
+    adminEls.forEach(el => el.style.display = currentUser.role === 'Administrador' && supabaseClient ? '' : 'none');
   } else {
     userLabel.textContent = 'Visitante (Leitura)';
     authBtn.textContent = 'Entrar';
@@ -492,19 +549,29 @@ function setupPermissions() {
     editorEls.forEach(el => el.style.display = 'none');
     adminEls.forEach(el => el.style.display = 'none');
   }
+  checkGeminiBanner();
 }
 
 function requireEditor() {
-  if (currentUser) return true;
-  showToast('Entre como Editor ou Administrador para editar.', 'error');
-  toggleAuthModal();
-  return false;
+  if (!currentUser) {
+    showToast('Entre como Editor ou Administrador para editar.', 'error');
+    toggleAuthModal();
+    return false;
+  }
+  if (!supabaseClient) {
+    showToast('Sem conexão. Conecte o Supabase antes de editar.', 'error');
+    return false;
+  }
+  return true;
 }
 
 function requireAdmin() {
-  if (currentUser?.role === 'Administrador') return true;
-  showToast('Acesso restrito ao Administrador.', 'error');
-  return false;
+  if (!requireEditor()) return false;
+  if (currentUser.role !== 'Administrador') {
+    showToast('Acesso restrito ao Administrador.', 'error');
+    return false;
+  }
+  return true;
 }
 
 function toggleAuthModal() {
@@ -564,7 +631,7 @@ async function handleLoginSubmit() {
 }
 
 function switchTab(tabId) {
-  const tabs = ['acompanhamento', 'dashboard', 'equipas', 'usuarios'];
+  const tabs = ['acompanhamento', 'dashboard', 'destaques', 'equipas', 'usuarios'];
   if (tabId === 'usuarios' && !requireAdmin()) return;
   tabs.forEach(t => {
     const sec = document.getElementById(`tab-${t}`);
@@ -926,9 +993,8 @@ function deleteSelectedMachines() {
 
 async function syncData() {
   if (supabaseClient) {
-    await saveSharedState();
-    setSupabaseSyncStatus('Sincronização online', true);
-    alert('Últimas atualizações enviadas ao Supabase com sucesso!');
+    await queueSharedStateSave();
+    showToast('Dados conferidos e sincronizados automaticamente!');
     return;
   }
 
@@ -955,7 +1021,7 @@ async function verPdfOs(id) {
     try {
       const remotePdf = await supabaseBuscarPdf(item.pdfPath);
       if (remotePdf) {
-        window.open(remotePdf, '_blank');
+        await openPdfFromUrl(remotePdf);
         return;
       }
     } catch (err) {
@@ -997,6 +1063,20 @@ function openPdfFromBase64(pdfDataUri) {
   } catch (err) {
     console.warn('Erro ao abrir PDF via Blob, a recorrer à abertura direta:', err);
     window.open(pdfDataUri, '_blank');
+  }
+}
+
+async function openPdfFromUrl(pdfUrl) {
+  try {
+    const response = await fetch(pdfUrl, { credentials: 'omit' });
+    if (!response.ok) throw new Error(`PDF retornou status ${response.status}`);
+    const pdfBlob = await response.blob();
+    const blobUrl = URL.createObjectURL(new Blob([pdfBlob], { type: 'application/pdf' }));
+    window.open(blobUrl, '_blank');
+    setTimeout(() => URL.revokeObjectURL(blobUrl), 120000);
+  } catch (err) {
+    console.warn('Não foi possível converter o PDF remoto para visualização:', err);
+    window.open(pdfUrl, '_blank');
   }
 }
 
@@ -1535,7 +1615,6 @@ function showToast(message, type = 'success') {
 }
 
 function openConfigModal() {
-  if (!requireEditor()) return;
   document.getElementById('geminiApiKeyInput').value = geminiApiKey;
   const config = getSupabaseConfig();
   document.getElementById('supabaseUrlInput').value = config.url;
@@ -1577,14 +1656,36 @@ async function saveSupabaseConfig() {
   }
 }
 
+async function disconnectSupabase() {
+  if (!supabaseClient && !getSupabaseConfig().url) {
+    setSupabaseSyncStatus('Sem conexão');
+    return;
+  }
+
+  if (!confirm('Desconectar a sincronização entre gestores neste dispositivo? Os dados locais serão mantidos.')) return;
+
+  if (supabaseChannel && supabaseClient) {
+    await supabaseClient.removeChannel(supabaseChannel);
+  }
+  if (supabaseClient) {
+    await supabaseClient.auth.signOut().catch(() => {});
+  }
+  supabaseChannel = null;
+  supabaseClient = null;
+  localStorage.removeItem(STORAGE_KEYS.SUPABASE_URL);
+  localStorage.removeItem(STORAGE_KEYS.SUPABASE_KEY);
+  document.getElementById('supabaseUrlInput').value = '';
+  document.getElementById('supabaseKeyInput').value = '';
+  setSupabaseSyncStatus('Sem conexão');
+  setupPermissions();
+  showToast('Sincronização desconectada neste dispositivo.');
+}
+
 function checkGeminiBanner() {
   const banner = document.getElementById('geminiAlertBanner');
   if (banner) {
-    if (geminiApiKey && geminiApiKey.length > 5) {
-      banner.style.display = 'none';
-    } else {
-      banner.style.display = 'flex';
-    }
+    const needsConnection = Boolean(currentUser) && !supabaseClient;
+    banner.style.display = needsConnection ? 'flex' : 'none';
   }
 }
 
@@ -1773,7 +1874,10 @@ function renderUsers() {
       <td><strong style="color:#ffffff;">${escapeHtml(u.email)}</strong></td>
       <td><span class="badge-status status-andamento">${escapeHtml(u.role)}</span></td>
       <td style="text-align:right;">
-        ${idx > 0 ? `<button class="btn-delta btn-danger btn-sm editor-only" onclick="deleteUser(${idx})">🗑️ Excluir</button>` : '<span class="text-muted" style="font-size:0.75rem;">Sistema (Protegido)</span>'}
+        <div class="user-actions">
+          <button class="btn-delta btn-slate btn-sm admin-only" onclick="openUserModal(${idx})">✏️ Editar</button>
+          ${idx > 0 ? `<button class="btn-delta btn-danger btn-sm admin-only" onclick="deleteUser(${idx})">🗑️ Excluir</button>` : '<span class="text-muted" style="font-size:0.75rem;">Sistema (Protegido)</span>'}
+        </div>
       </td>
     </tr>
   `).join('');
@@ -1781,9 +1885,12 @@ function renderUsers() {
   setupPermissions();
 }
 
-function openUserModal() {
+function openUserModal(idx = -1) {
   if (!requireAdmin()) return;
-  document.getElementById('newEditorEmail').value = '';
+  document.getElementById('userEditIndex').value = idx;
+  document.getElementById('userModalTitle').textContent = idx >= 0 ? 'Editar Utilizador' : 'Registar Novo Editor';
+  document.getElementById('userModalSaveButton').textContent = idx >= 0 ? 'Guardar alterações' : 'Criar Acesso';
+  document.getElementById('newEditorEmail').value = idx >= 0 ? appUsers[idx]?.email || '' : '';
   document.getElementById('newEditorPass').value = '';
   document.getElementById('userModal').classList.add('open');
 }
@@ -1796,16 +1903,27 @@ function saveNewUserSubmit() {
   if (!requireAdmin()) return;
   const email = document.getElementById('newEditorEmail').value.trim();
   const pass = document.getElementById('newEditorPass').value;
-  if (!email || !pass) {
-    alert('Preencha o e-mail e a palavra-passe.');
+  const idx = parseInt(document.getElementById('userEditIndex').value, 10);
+  if (!email || (idx < 0 && !pass)) {
+    alert(idx >= 0 ? 'Preencha o e-mail.' : 'Preencha o e-mail e a palavra-passe.');
     return;
   }
 
-  appUsers.push({ email, pass, role: 'Editor' });
+  const duplicateEmail = appUsers.some((user, userIndex) => userIndex !== idx && user.email.toLowerCase() === email.toLowerCase());
+  if (duplicateEmail) {
+    alert('Já existe um utilizador com esse e-mail.');
+    return;
+  }
+
+  if (idx >= 0 && appUsers[idx]) {
+    appUsers[idx] = { ...appUsers[idx], email, pass: pass || appUsers[idx].pass };
+  } else {
+    appUsers.push({ email, pass, role: 'Editor' });
+  }
   saveData();
   closeUserModal();
   renderUsers();
-  alert('Utilizador criado com sucesso!');
+  alert(idx >= 0 ? 'Utilizador atualizado com sucesso!' : 'Utilizador criado com sucesso!');
 }
 
 function deleteUser(idx) {

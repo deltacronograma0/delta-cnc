@@ -417,6 +417,41 @@ body::before {
   font-weight: 500;
 }
 
+.sync-indicator {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.28rem 0.58rem;
+  border: 1px solid rgba(148, 163, 184, 0.22);
+  border-radius: 999px;
+  background: rgba(15, 23, 42, 0.46);
+  color: #cbd5e1;
+  font-size: 0.68rem;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.sync-indicator-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #94a3b8;
+  box-shadow: 0 0 0 3px rgba(148, 163, 184, 0.12);
+}
+
+.sync-indicator.sync-local { color: #a7f3d0; border-color: rgba(16, 185, 129, 0.35); }
+.sync-indicator.sync-local .sync-indicator-dot { background: #34d399; box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.14); }
+.sync-indicator.sync-online { color: #a7f3d0; border-color: rgba(16, 185, 129, 0.35); }
+.sync-indicator.sync-online .sync-indicator-dot { background: #34d399; box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.14); }
+.sync-indicator.sync-saving { color: #fde68a; border-color: rgba(245, 158, 11, 0.35); }
+.sync-indicator.sync-saving .sync-indicator-dot { background: #fbbf24; box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.14); animation: sync-pulse 1s ease-in-out infinite; }
+.sync-indicator.sync-error { color: #fecdd3; border-color: rgba(244, 63, 94, 0.38); }
+.sync-indicator.sync-error .sync-indicator-dot { background: #fb7185; box-shadow: 0 0 0 3px rgba(244, 63, 94, 0.14); }
+
+@keyframes sync-pulse {
+  50% { opacity: 0.45; transform: scale(0.78); }
+}
+
 .meta-status {
   background: rgba(255, 255, 255, 0.025);
   padding: 0.42rem 0.65rem;
@@ -1578,6 +1613,39 @@ body::before {
 }
 .delta-table tr.selected-row {
   background-color: rgba(99, 102, 241, 0.12) !important;
+}
+
+.user-actions {
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.45rem;
+  white-space: nowrap;
+}
+
+@media (max-width: 700px) {
+  .user-access-card { overflow: hidden; }
+  .user-access-scroll {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: thin;
+  }
+  .user-access-table {
+    display: table;
+    min-width: 560px;
+  }
+  .user-access-table thead { display: table-header-group; }
+  .user-access-table tbody { display: table-row-group; }
+  .user-access-table tr { display: table-row; }
+  .user-access-table td { display: table-cell; padding: 0.75rem 1rem; }
+  .user-access-table .btn-danger {
+    display: inline-flex !important;
+    min-height: 42px;
+    padding: 0.6rem 0.75rem;
+    white-space: nowrap;
+  }
+  .user-actions { justify-content: flex-start; }
+  .user-actions .btn-delta { min-height: 40px; }
 }
 
 .badge-status {
