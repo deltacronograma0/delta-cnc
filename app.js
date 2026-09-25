@@ -209,7 +209,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
-      navigator.serviceWorker.register('./sw.js?v=22').catch((error) => {
+      navigator.serviceWorker.register('./sw.js?v=23').catch((error) => {
         console.warn('Service worker não registrado:', error);
       });
     });
@@ -421,45 +421,59 @@ async function initSupabaseSync() {
     return;
   }
 
-  try {
-    supabaseClient = window.supabase.createClient(config.url, config.key);
-    const { error: authError } = await supabaseClient.auth.signInAnonymously();
-    if (authError) throw authError;
-    const { data, error } = await supabaseClient
-      .from('delta_app_state')
-      .select('machines, teams, users, updated_at')
-      .eq('id', 'main')
-      .maybeSingle();
-
-    if (error) throw error;
-    if (data) {
-      const localUpdatedAt = Number(localStorage.getItem(STORAGE_KEYS.STATE_UPDATED_AT) || 0);
-      const remoteUpdatedAt = Date.parse(data.updated_at || '') || 0;
-      if (localUpdatedAt > remoteUpdatedAt) {
-        await queueSharedStateSave();
-      } else {
-        applySharedState(data);
+  setSupabaseSyncStatus('Conectando...');
+  for (let attempt = 1; attempt <= 3; attempt++) {
+    try {
+      supabaseClient = window.supabase.createClient(config.url, config.key);
+      const { data: sessionData, error: sessionError } = await supabaseClient.auth.getSession();
+      if (sessionError) throw sessionError;
+      if (!sessionData.session) {
+        const { error: authError } = await supabaseClient.auth.signInAnonymously();
+        if (authError) throw authError;
       }
-    } else {
-      await saveSharedState();
-    }
 
-    supabaseChannel = supabaseClient
-      .channel('delta-app-state-changes')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'delta_app_state', filter: 'id=eq.main' }, payload => {
-        if (payload.new) applySharedState(payload.new);
-      })
-      .subscribe(status => {
-        setSupabaseSyncStatus(status === 'SUBSCRIBED' ? 'Sincronização online' : `Estado: ${status}`, status === 'SUBSCRIBED');
-        setupPermissions();
-      });
-  } catch (error) {
-    console.error('Erro ao conectar ao Supabase:', error);
-    supabaseClient = null;
-    supabaseLastError = error?.message || 'Não foi possível iniciar a conexão.';
-    setSupabaseSyncStatus('Sem conexão');
-    setupPermissions();
+      const { data, error } = await supabaseClient
+        .from('delta_app_state')
+        .select('machines, teams, users, updated_at')
+        .eq('id', 'main')
+        .maybeSingle();
+
+      if (error) throw error;
+      if (data) {
+        const localUpdatedAt = Number(localStorage.getItem(STORAGE_KEYS.STATE_UPDATED_AT) || 0);
+        const remoteUpdatedAt = Date.parse(data.updated_at || '') || 0;
+        if (localUpdatedAt > remoteUpdatedAt) {
+          await queueSharedStateSave();
+        } else {
+          applySharedState(data);
+        }
+      } else {
+        await saveSharedState();
+      }
+
+      supabaseChannel = supabaseClient
+        .channel('delta-app-state-changes')
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'delta_app_state', filter: 'id=eq.main' }, payload => {
+          if (payload.new) applySharedState(payload.new);
+        })
+        .subscribe(status => {
+          setSupabaseSyncStatus(status === 'SUBSCRIBED' ? 'Sincronização online' : `Estado: ${status}`, status === 'SUBSCRIBED');
+          setupPermissions();
+        });
+      supabaseLastError = '';
+      return;
+    } catch (error) {
+      console.warn(`Tentativa ${attempt} de conexão ao Supabase falhou:`, error);
+      if (supabaseChannel && supabaseClient) await supabaseClient.removeChannel(supabaseChannel).catch(() => {});
+      supabaseChannel = null;
+      supabaseClient = null;
+      supabaseLastError = error?.message || 'Não foi possível iniciar a conexão.';
+      if (attempt < 3) await new Promise(resolve => setTimeout(resolve, 800 * attempt));
+    }
   }
+
+  setSupabaseSyncStatus('Sem conexão');
+  setupPermissions();
 }
 
 function applySharedState(data) {
