@@ -63,3 +63,9 @@ Em **Project Settings > API**, copie:
 No app, abra **Definicoes**, preencha os dois campos de Supabase e clique em **Conectar e sincronizar** uma vez em cada computador ou celular. Depois disso, cada alteração salva é enviada automaticamente e as mudanças dos outros usuários chegam em tempo real. O botão **Sincronizar** fica apenas como conferência manual.
 
 A chave `service_role` nunca deve ser colocada no navegador.
+
+## 5. Sincronização profissional por registros
+
+O modelo antigo guarda máquinas, equipes e utilizadores em uma única linha JSON. Para evitar que três gestores sobrescrevam alterações uns dos outros, execute o arquivo `supabase_normalized_migration.sql` no SQL Editor.
+
+Esse script cria tabelas separadas e copia os dados atuais sem apagar `delta_app_state`. A aplicação só deve ser trocada para o novo modelo depois de confirmar que a migração terminou sem erros.
