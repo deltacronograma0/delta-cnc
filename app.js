@@ -352,12 +352,18 @@ function loadStorage() {
 
 async function saveData() {
   try {
+    const nextState = getCurrentSyncState();
+    const previousState = getSyncBaseState();
+    const hasRealChange = !syncItemsEqual(nextState, previousState);
+    const hasPendingChange = localStorage.getItem(STORAGE_KEYS.SYNC_DIRTY) === '1';
     const updatedAt = Date.now();
     localStorage.setItem(STORAGE_KEYS.MACHINES, JSON.stringify(appMachines));
     localStorage.setItem(STORAGE_KEYS.TEAMS, JSON.stringify(appTeams));
     localStorage.setItem(STORAGE_KEYS.USERS, JSON.stringify(appUsers));
-    localStorage.setItem(STORAGE_KEYS.STATE_UPDATED_AT, String(updatedAt));
-    if (!isApplyingRemoteState) localStorage.setItem(STORAGE_KEYS.SYNC_DIRTY, '1');
+    if (hasRealChange && !isApplyingRemoteState) {
+      localStorage.setItem(STORAGE_KEYS.STATE_UPDATED_AT, String(updatedAt));
+      localStorage.setItem(STORAGE_KEYS.SYNC_DIRTY, '1');
+    }
     if (currentUser) {
       localStorage.setItem(STORAGE_KEYS.CURRENT_USER, JSON.stringify(currentUser));
       localStorage.setItem(STORAGE_KEYS.AUTH_SESSION_VERSION, '2');
@@ -365,7 +371,7 @@ async function saveData() {
       localStorage.removeItem(STORAGE_KEYS.CURRENT_USER);
     }
 
-    if (supabaseClient && !isApplyingRemoteState) {
+    if (supabaseClient && !isApplyingRemoteState && (hasRealChange || hasPendingChange)) {
       await queueSharedStateSave();
     }
   } catch (e) {
