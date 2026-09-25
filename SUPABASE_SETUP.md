@@ -60,6 +60,6 @@ Em **Project Settings > API**, copie:
 - Project URL
 - Publishable key ou anon key
 
-No app, abra **Definicoes**, preencha os dois campos de Supabase e clique em **Conectar e sincronizar** uma vez em cada computador ou celular. Depois disso, cada alteração salva é enviada automaticamente e as mudanças dos outros usuários chegam em tempo real. O botão **Sincronizar** fica apenas como conferência manual.
+No app, abra **Definicoes**, preencha os dois campos de Supabase e clique em **Conectar e sincronizar**.
 
 A chave `service_role` nunca deve ser colocada no navegador.

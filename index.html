@@ -14,7 +14,7 @@
   <link rel="apple-touch-icon" href="logo.png">
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/basecoat-css@1.0.2/dist/basecoat.cdn.min.css">
-  <link rel="stylesheet" href="styles.css?v=20260925-menu25">
+  <link rel="stylesheet" href="styles.css?v=20260925-auth">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body>
@@ -44,9 +44,9 @@
             <div class="meta-tag meta-status" id="refMonthBadge">
               <span style="color:#818cf8;">📅</span> <strong id="lblRefMonth">Setembro/2026</strong>
             </div>
-            <div id="supabaseIndicator" class="sync-indicator sync-local" title="Modo leitura">
-              <span class="sync-indicator-dot"></span>
-              <span id="supabaseIndicatorLabel">Modo leitura</span>
+            <div class="meta-tag meta-status">
+              <span class="status-dot"></span>
+              <span>Online</span>
             </div>
             <div class="meta-tag meta-status" id="clockEl">
               ⏱️ 00:00:00
@@ -61,13 +61,10 @@
         </div>
         <nav class="top-navigation" aria-label="Navegação principal">
           <button class="sidebar-link active" data-tab="acompanhamento" onclick="switchTab('acompanhamento')">
-            <span>📋</span> Produção
+            <span>📋</span> Acompanhamento
           </button>
           <button class="sidebar-link" data-tab="dashboard" onclick="switchTab('dashboard')">
             <span>📊</span> Dashboard
-          </button>
-          <button class="sidebar-link" data-tab="destaques" onclick="switchTab('destaques')">
-            <span>🏆</span> Destaques
           </button>
           <button class="sidebar-link" data-tab="equipas" onclick="switchTab('equipas')">
             <span>👥</span> Equipes
@@ -78,10 +75,10 @@
         </nav>
       </header>
 
-      <!-- Editor connection warning (visible only after login without Supabase) -->
+      <!-- Gemini Key Warning Banner (auto-hidden when key exists) -->
       <div id="geminiAlertBanner" class="gemini-alert">
-        <span>⚠️ <strong>Edição bloqueada:</strong> conecte o Supabase para compartilhar e salvar alterações.</span>
-        <button class="btn-delta btn-amber btn-sm" onclick="openConfigModal()">Conectar Supabase</button>
+        <span>⚠️ <strong>Atenção:</strong> Chave da API do Gemini necessária para leitura inteligente de PDFs de OS.</span>
+        <button class="btn-delta btn-amber btn-sm" onclick="openConfigModal()">Configurar Chave</button>
       </div>
 
       <!-- Main Content Area -->
@@ -215,6 +212,7 @@
             <label for="dashboardPeriod">Período de análise</label>
             <input type="month" id="dashboardPeriod" class="input-delta" value="2026-09" onchange="updateDashboard()">
           </div>
+          <button class="btn-delta btn-slate" onclick="switchTab('acompanhamento')">📋 Abrir acompanhamento</button>
         </div>
       </div>
 
@@ -439,9 +437,8 @@
         </button>
       </div>
 
-      <div class="table-card user-access-card" style="max-width:850px;">
-        <div class="table-scroll user-access-scroll">
-          <table class="delta-table user-access-table">
+      <div class="table-card" style="max-width:850px;">
+        <table class="delta-table">
           <thead>
             <tr>
               <th>E-mail</th>
@@ -452,8 +449,7 @@
           <tbody id="usersTableBody">
             <!-- JS -->
           </tbody>
-          </table>
-        </div>
+        </table>
       </div>
     </section>
 
@@ -784,7 +780,6 @@
           </div>
           <div class="sync-config-actions">
             <button class="btn-delta btn-indigo" onclick="saveSupabaseConfig()">🔗 Conectar e sincronizar</button>
-            <button class="btn-delta btn-danger" onclick="disconnectSupabase()">Desconectar</button>
             <span id="supabaseSyncStatus" class="sync-status">Modo local</span>
           </div>
         </div>
@@ -841,11 +836,10 @@
   <div id="userModal" class="modal-overlay">
     <div class="modal-dialog">
       <div class="modal-header">
-        <h3 id="userModalTitle">Registar Novo Editor</h3>
+        <h3>Registar Novo Editor</h3>
         <button class="modal-close" onclick="closeUserModal()">&times;</button>
       </div>
       <div class="modal-body">
-        <input type="hidden" id="userEditIndex" value="-1">
         <div class="form-group" style="margin-bottom:1.15rem;">
           <label>E-mail do Utilizador</label>
           <input type="email" id="newEditorEmail" class="input-delta" placeholder="tecnico@deltacnc.pt" required>
@@ -857,7 +851,7 @@
       </div>
       <div class="modal-footer">
         <button class="btn-delta btn-slate" onclick="closeUserModal()">Cancelar</button>
-        <button id="userModalSaveButton" class="btn-delta btn-indigo" onclick="saveNewUserSubmit()">Criar Acesso</button>
+        <button class="btn-delta btn-indigo" onclick="saveNewUserSubmit()">Criar Acesso</button>
       </div>
     </div>
   </div>
@@ -867,6 +861,6 @@
     <span id="appToastMessage">Ordens atualizadas com sucesso!</span>
   </div>
 
-  <script src="app.js?v=20260925-menu25"></script>
+  <script src="app.js?v=20260925-auth"></script>
 </body>
 </html>
