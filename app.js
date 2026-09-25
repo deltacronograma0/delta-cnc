@@ -607,7 +607,7 @@ async function handleLoginSubmit() {
 }
 
 function switchTab(tabId) {
-  const tabs = ['acompanhamento', 'dashboard', 'equipas', 'usuarios'];
+  const tabs = ['acompanhamento', 'dashboard', 'destaques', 'equipas', 'usuarios'];
   if (tabId === 'usuarios' && !requireAdmin()) return;
   tabs.forEach(t => {
     const sec = document.getElementById(`tab-${t}`);
