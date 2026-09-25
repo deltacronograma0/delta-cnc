@@ -208,7 +208,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
-      navigator.serviceWorker.register('./sw.js?v=12').catch((error) => {
+      navigator.serviceWorker.register('./sw.js?v=13').catch((error) => {
         console.warn('Service worker não registrado:', error);
       });
     });
@@ -450,11 +450,13 @@ async function initSupabaseSync() {
       })
       .subscribe(status => {
         setSupabaseSyncStatus(status === 'SUBSCRIBED' ? 'Sincronização online' : `Estado: ${status}`, status === 'SUBSCRIBED');
+        setupPermissions();
       });
   } catch (error) {
     console.error('Erro ao conectar ao Supabase:', error);
     supabaseClient = null;
     setSupabaseSyncStatus('Erro de conexão');
+    setupPermissions();
   }
 }
 
@@ -538,8 +540,8 @@ function setupPermissions() {
     userLabel.textContent = `${currentUser.email.split('@')[0]} (${currentUser.role})`;
     authBtn.textContent = 'Terminar Sessão';
     authBtn.className = 'btn-delta btn-danger btn-sm';
-    editorEls.forEach(el => el.style.display = '');
-    adminEls.forEach(el => el.style.display = currentUser.role === 'Administrador' ? '' : 'none');
+    editorEls.forEach(el => el.style.display = supabaseClient ? '' : 'none');
+    adminEls.forEach(el => el.style.display = currentUser.role === 'Administrador' && supabaseClient ? '' : 'none');
   } else {
     userLabel.textContent = 'Visitante (Leitura)';
     authBtn.textContent = 'Entrar';
@@ -550,16 +552,25 @@ function setupPermissions() {
 }
 
 function requireEditor() {
-  if (currentUser) return true;
-  showToast('Entre como Editor ou Administrador para editar.', 'error');
-  toggleAuthModal();
-  return false;
+  if (!currentUser) {
+    showToast('Entre como Editor ou Administrador para editar.', 'error');
+    toggleAuthModal();
+    return false;
+  }
+  if (!supabaseClient) {
+    showToast('Sem conexão. Conecte o Supabase antes de editar.', 'error');
+    return false;
+  }
+  return true;
 }
 
 function requireAdmin() {
-  if (currentUser?.role === 'Administrador') return true;
-  showToast('Acesso restrito ao Administrador.', 'error');
-  return false;
+  if (!requireEditor()) return false;
+  if (currentUser.role !== 'Administrador') {
+    showToast('Acesso restrito ao Administrador.', 'error');
+    return false;
+  }
+  return true;
 }
 
 function toggleAuthModal() {
