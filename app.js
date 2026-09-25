@@ -55,6 +55,7 @@ let supabaseClient = null;
 let supabaseChannel = null;
 let isApplyingRemoteState = false;
 let draftSaveTimer = null;
+let pendingDraftSave = false;
 let sharedSaveInFlight = null;
 let sharedSaveQueued = false;
 
@@ -209,7 +210,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
-      navigator.serviceWorker.register('./sw.js?v=25').catch((error) => {
+      navigator.serviceWorker.register('./sw.js?v=26').catch((error) => {
         console.warn('Service worker não registrado:', error);
       });
     });
@@ -257,6 +258,12 @@ document.addEventListener('DOMContentLoaded', async () => {
   renderUsers();
   checkGeminiBanner();
   setupDraftAutosave();
+});
+
+window.addEventListener('beforeunload', (event) => {
+  if (!pendingDraftSave && !draftSaveTimer && !sharedSaveInFlight) return;
+  event.preventDefault();
+  event.returnValue = 'Existe uma alteração sendo salva. Aguarde a confirmação antes de sair.';
 });
 
 document.addEventListener('click', (event) => {
@@ -369,6 +376,7 @@ async function saveData() {
 
     if (supabaseClient && !isApplyingRemoteState) {
       await queueSharedStateSave();
+      pendingDraftSave = false;
     }
   } catch (e) {
     console.warn('Erro de gravação no localStorage (possível quota excedida):', e);
@@ -399,9 +407,12 @@ async function saveData() {
 
 function scheduleDraftSave(saveDraft) {
   clearTimeout(draftSaveTimer);
+  pendingDraftSave = true;
   draftSaveTimer = setTimeout(async () => {
+    draftSaveTimer = null;
     try {
       if (saveDraft()) await saveData();
+      else pendingDraftSave = false;
     } catch (error) {
       console.warn('Autosave do rascunho falhou:', error);
     }
@@ -588,7 +599,7 @@ async function saveSharedState() {
   if (error) {
     console.error('Erro ao sincronizar dados:', error);
     setSupabaseSyncStatus('Erro ao salvar');
-    return;
+    throw error;
   }
   setSupabaseSyncStatus('Sincronizado automaticamente', true);
 }

@@ -1,9 +1,9 @@
-const CACHE_NAME = 'delta-cnc-v25';
+const CACHE_NAME = 'delta-cnc-v26';
 const APP_SHELL = [
   './',
   './index.html',
-  './styles.css?v=20260925-draft-autosave',
-  './app.js?v=20260925-draft-autosave',
+  './styles.css?v=20260925-save-guard',
+  './app.js?v=20260925-save-guard',
   './logo.png',
   './manifest.webmanifest'
 ];
