@@ -208,7 +208,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
-      navigator.serviceWorker.register('./sw.js?v=22').catch((error) => {
+      navigator.serviceWorker.register('./sw.js?v=23').catch((error) => {
         console.warn('Service worker não registrado:', error);
       });
     });
@@ -422,8 +422,12 @@ async function initSupabaseSync() {
 
   try {
     supabaseClient = window.supabase.createClient(config.url, config.key);
-    const { error: authError } = await supabaseClient.auth.signInAnonymously();
-    if (authError) throw authError;
+    const { data: sessionData, error: sessionError } = await supabaseClient.auth.getSession();
+    if (sessionError) throw sessionError;
+    if (!sessionData.session) {
+      const { error: authError } = await supabaseClient.auth.signInAnonymously();
+      if (authError) throw authError;
+    }
     const { data, error } = await supabaseClient
       .from('delta_app_state')
       .select('machines, teams, users, updated_at')
@@ -455,7 +459,9 @@ async function initSupabaseSync() {
   } catch (error) {
     console.error('Erro ao conectar ao Supabase:', error);
     supabaseClient = null;
-    const detail = error?.message ? `Erro de conexão: ${error.message}` : 'Erro de conexão';
+    const detail = /rate limit|too many|429/i.test(error?.message || '')
+      ? 'Limite temporário do Supabase. Aguarde alguns minutos e tente novamente.'
+      : (error?.message ? `Erro de conexão: ${error.message}` : 'Erro de conexão');
     setSupabaseSyncStatus(detail);
     setupPermissions();
   }
