@@ -14,7 +14,7 @@
   <link rel="apple-touch-icon" href="logo.png">
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/basecoat-css@1.0.2/dist/basecoat.cdn.min.css">
-  <link rel="stylesheet" href="styles.css?v=20260925-menu19">
+  <link rel="stylesheet" href="styles.css?v=20260925-menu20">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body>
@@ -841,10 +841,11 @@
   <div id="userModal" class="modal-overlay">
     <div class="modal-dialog">
       <div class="modal-header">
-        <h3>Registar Novo Editor</h3>
+        <h3 id="userModalTitle">Registar Novo Editor</h3>
         <button class="modal-close" onclick="closeUserModal()">&times;</button>
       </div>
       <div class="modal-body">
+        <input type="hidden" id="userEditIndex" value="-1">
         <div class="form-group" style="margin-bottom:1.15rem;">
           <label>E-mail do Utilizador</label>
           <input type="email" id="newEditorEmail" class="input-delta" placeholder="tecnico@deltacnc.pt" required>
@@ -856,7 +857,7 @@
       </div>
       <div class="modal-footer">
         <button class="btn-delta btn-slate" onclick="closeUserModal()">Cancelar</button>
-        <button class="btn-delta btn-indigo" onclick="saveNewUserSubmit()">Criar Acesso</button>
+        <button id="userModalSaveButton" class="btn-delta btn-indigo" onclick="saveNewUserSubmit()">Criar Acesso</button>
       </div>
     </div>
   </div>
@@ -866,6 +867,6 @@
     <span id="appToastMessage">Ordens atualizadas com sucesso!</span>
   </div>
 
-  <script src="app.js?v=20260925-menu19"></script>
+  <script src="app.js?v=20260925-menu20"></script>
 </body>
 </html>

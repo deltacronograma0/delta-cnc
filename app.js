@@ -208,7 +208,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
-      navigator.serviceWorker.register('./sw.js?v=19').catch((error) => {
+      navigator.serviceWorker.register('./sw.js?v=20').catch((error) => {
         console.warn('Service worker não registrado:', error);
       });
     });
@@ -1874,7 +1874,10 @@ function renderUsers() {
       <td><strong style="color:#ffffff;">${escapeHtml(u.email)}</strong></td>
       <td><span class="badge-status status-andamento">${escapeHtml(u.role)}</span></td>
       <td style="text-align:right;">
-        ${idx > 0 ? `<button class="btn-delta btn-danger btn-sm editor-only" onclick="deleteUser(${idx})">🗑️ Excluir</button>` : '<span class="text-muted" style="font-size:0.75rem;">Sistema (Protegido)</span>'}
+        <div class="user-actions">
+          <button class="btn-delta btn-slate btn-sm admin-only" onclick="openUserModal(${idx})">✏️ Editar</button>
+          ${idx > 0 ? `<button class="btn-delta btn-danger btn-sm admin-only" onclick="deleteUser(${idx})">🗑️ Excluir</button>` : '<span class="text-muted" style="font-size:0.75rem;">Sistema (Protegido)</span>'}
+        </div>
       </td>
     </tr>
   `).join('');
@@ -1882,9 +1885,12 @@ function renderUsers() {
   setupPermissions();
 }
 
-function openUserModal() {
+function openUserModal(idx = -1) {
   if (!requireAdmin()) return;
-  document.getElementById('newEditorEmail').value = '';
+  document.getElementById('userEditIndex').value = idx;
+  document.getElementById('userModalTitle').textContent = idx >= 0 ? 'Editar Utilizador' : 'Registar Novo Editor';
+  document.getElementById('userModalSaveButton').textContent = idx >= 0 ? 'Guardar alterações' : 'Criar Acesso';
+  document.getElementById('newEditorEmail').value = idx >= 0 ? appUsers[idx]?.email || '' : '';
   document.getElementById('newEditorPass').value = '';
   document.getElementById('userModal').classList.add('open');
 }
@@ -1897,16 +1903,27 @@ function saveNewUserSubmit() {
   if (!requireAdmin()) return;
   const email = document.getElementById('newEditorEmail').value.trim();
   const pass = document.getElementById('newEditorPass').value;
-  if (!email || !pass) {
-    alert('Preencha o e-mail e a palavra-passe.');
+  const idx = parseInt(document.getElementById('userEditIndex').value, 10);
+  if (!email || (idx < 0 && !pass)) {
+    alert(idx >= 0 ? 'Preencha o e-mail.' : 'Preencha o e-mail e a palavra-passe.');
     return;
   }
 
-  appUsers.push({ email, pass, role: 'Editor' });
+  const duplicateEmail = appUsers.some((user, userIndex) => userIndex !== idx && user.email.toLowerCase() === email.toLowerCase());
+  if (duplicateEmail) {
+    alert('Já existe um utilizador com esse e-mail.');
+    return;
+  }
+
+  if (idx >= 0 && appUsers[idx]) {
+    appUsers[idx] = { ...appUsers[idx], email, pass: pass || appUsers[idx].pass };
+  } else {
+    appUsers.push({ email, pass, role: 'Editor' });
+  }
   saveData();
   closeUserModal();
   renderUsers();
-  alert('Utilizador criado com sucesso!');
+  alert(idx >= 0 ? 'Utilizador atualizado com sucesso!' : 'Utilizador criado com sucesso!');
 }
 
 function deleteUser(idx) {
