@@ -3,8 +3,15 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#0b1020">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="DELTA CNC">
+  <meta name="description" content="DELTA CNC — Controle de produção e acompanhamento de máquinas.">
   <title>DELTA CNC — Controle de Produção</title>
   <link rel="icon" type="image/png" href="logo.png">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="apple-touch-icon" href="logo.png">
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/basecoat-css@1.0.2/dist/basecoat.cdn.min.css">
   <link rel="stylesheet" href="styles.css">
@@ -16,6 +23,9 @@
     <strong>DELTA CNC</strong>
     <span>Controle de Produção</span>
   </div>
+  <button id="installAppBtn" class="install-app-btn hidden" type="button" aria-label="Instalar app DELTA CNC">
+    ⬇ Instalar app
+  </button>
   <div class="app-shell">
     <div class="workspace">
       <!-- Top Header -->
