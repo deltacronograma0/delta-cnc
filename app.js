@@ -56,6 +56,7 @@ let supabaseChannel = null;
 let isApplyingRemoteState = false;
 let sharedSaveInFlight = null;
 let sharedSaveQueued = false;
+let supabaseLastError = '';
 
 function idbAbrir() {
   return new Promise((resolve, reject) => {
@@ -208,7 +209,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
-      navigator.serviceWorker.register('./sw.js?v=21').catch((error) => {
+      navigator.serviceWorker.register('./sw.js?v=22').catch((error) => {
         console.warn('Service worker não registrado:', error);
       });
     });
@@ -455,7 +456,8 @@ async function initSupabaseSync() {
   } catch (error) {
     console.error('Erro ao conectar ao Supabase:', error);
     supabaseClient = null;
-    setSupabaseSyncStatus('Erro de conexão');
+    supabaseLastError = error?.message || 'Não foi possível iniciar a conexão.';
+    setSupabaseSyncStatus('Sem conexão');
     setupPermissions();
   }
 }
@@ -1620,6 +1622,9 @@ function openConfigModal() {
   document.getElementById('supabaseUrlInput').value = config.url;
   document.getElementById('supabaseKeyInput').value = config.key;
   setSupabaseSyncStatus(supabaseClient ? 'Sincronização online' : (config.url && config.key ? 'Pronto para conectar' : 'Modo local'), Boolean(supabaseClient));
+  if (supabaseLastError && !supabaseClient) {
+    setSupabaseSyncStatus('Sem conexão');
+  }
   document.getElementById('configModal').classList.add('open');
 }
 
@@ -1649,10 +1654,16 @@ async function saveSupabaseConfig() {
   if (supabaseChannel && supabaseClient) await supabaseClient.removeChannel(supabaseChannel);
   supabaseChannel = null;
   supabaseClient = null;
+  supabaseLastError = '';
   setSupabaseSyncStatus('Conectando...');
   await initSupabaseSync();
   if (supabaseClient) {
     alert('Supabase conectado. As alterações serão compartilhadas em tempo real.');
+  } else {
+    const detail = /anonymous|anon/i.test(supabaseLastError)
+      ? 'Ative o login anônimo em Authentication > Providers no Supabase.'
+      : 'Confira a Project URL e a chave anon/publishable.';
+    alert(`Não foi possível conectar ao Supabase. ${detail}`);
   }
 }
 
