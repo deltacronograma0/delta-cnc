@@ -54,6 +54,7 @@ let currentAiIndex = null;
 let supabaseClient = null;
 let supabaseChannel = null;
 let isApplyingRemoteState = false;
+let draftSaveTimer = null;
 let sharedSaveInFlight = null;
 let sharedSaveQueued = false;
 
@@ -208,7 +209,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
-      navigator.serviceWorker.register('./sw.js?v=24').catch((error) => {
+      navigator.serviceWorker.register('./sw.js?v=25').catch((error) => {
         console.warn('Service worker não registrado:', error);
       });
     });
@@ -255,6 +256,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   updatePodio();
   renderUsers();
   checkGeminiBanner();
+  setupDraftAutosave();
 });
 
 document.addEventListener('click', (event) => {
@@ -393,6 +395,79 @@ async function saveData() {
 
     alert('Não foi possível salvar: espaço de armazenamento cheio. Remova PDFs antigos ou exporte um backup.');
   }
+}
+
+function scheduleDraftSave(saveDraft) {
+  clearTimeout(draftSaveTimer);
+  draftSaveTimer = setTimeout(async () => {
+    try {
+      if (saveDraft()) await saveData();
+    } catch (error) {
+      console.warn('Autosave do rascunho falhou:', error);
+    }
+  }, 700);
+}
+
+function setupDraftAutosave() {
+  const machineForm = document.getElementById('machineForm');
+  machineForm?.addEventListener('input', () => scheduleDraftSave(saveMachineDraft));
+  machineForm?.addEventListener('change', () => scheduleDraftSave(saveMachineDraft));
+
+  const teamForm = document.getElementById('teamModal');
+  teamForm?.addEventListener('input', () => scheduleDraftSave(saveTeamDraft));
+  teamForm?.addEventListener('change', () => scheduleDraftSave(saveTeamDraft));
+
+  const observation = document.getElementById('obsModalContent');
+  observation?.addEventListener('input', () => scheduleDraftSave(saveObservationDraft));
+}
+
+function canAutosaveDraft() {
+  return Boolean(currentUser && supabaseClient && !isApplyingRemoteState);
+}
+
+function saveMachineDraft() {
+  if (!canAutosaveDraft()) return false;
+  const id = document.getElementById('machId')?.value;
+  if (!id) return false;
+  const index = appMachines.findIndex(machine => machine.id === id);
+  if (index < 0) return false;
+  const target = appMachines[index];
+  const team = document.getElementById('machTeam')?.value || '—';
+  const teamRecord = appTeams.find(item => item.name === team);
+  appMachines[index] = {
+    ...target,
+    equipe: team,
+    equipeId: teamRecord?.id || target.equipeId || '',
+    cliente: document.getElementById('machClient')?.value.trim() || '',
+    maquina: document.getElementById('machModel')?.value.trim() || '',
+    linha: document.getElementById('machLinha')?.value || target.linha,
+    statusManual: document.getElementById('machStatusManual')?.value || target.statusManual,
+    inicio: document.getElementById('machStart')?.value || '',
+    previsao: document.getElementById('machForecast')?.value || '',
+    entregaReal: document.getElementById('machReal')?.value || '',
+    obs: document.getElementById('machNotes')?.value.trim() || ''
+  };
+  return true;
+}
+
+function saveTeamDraft() {
+  if (!canAutosaveDraft()) return false;
+  const index = Number(document.getElementById('teamEditIndex')?.value);
+  if (!Number.isInteger(index) || index < 0 || !appTeams[index]) return false;
+  appTeams[index] = {
+    ...appTeams[index],
+    name: document.getElementById('teamNameInput')?.value.trim() || '',
+    id: document.getElementById('teamIdInput')?.value.trim().toUpperCase() || ''
+  };
+  return true;
+}
+
+function saveObservationDraft() {
+  if (!canAutosaveDraft() || !currentObservationMachineId) return false;
+  const item = appMachines.find(machine => machine.id === currentObservationMachineId);
+  if (!item) return false;
+  item.obs = document.getElementById('obsModalContent')?.value.trim() || '';
+  return true;
 }
 
 function setSupabaseSyncStatus(message, connected = false) {
