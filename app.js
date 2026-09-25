@@ -211,7 +211,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
-      navigator.serviceWorker.register('./sw.js?v=28').catch((error) => {
+      navigator.serviceWorker.register('./sw.js?v=29').catch((error) => {
         console.warn('Service worker não registrado:', error);
       });
     });
@@ -379,6 +379,7 @@ async function saveData() {
       await queueSharedStateSave();
       pendingDraftSave = false;
     }
+    return true;
   } catch (e) {
     console.warn('Erro de gravação no localStorage (possível quota excedida):', e);
     try {
@@ -397,12 +398,13 @@ async function saveData() {
       localStorage.setItem(STORAGE_KEYS.MACHINES, JSON.stringify(appMachines));
       localStorage.setItem(STORAGE_KEYS.TEAMS, JSON.stringify(appTeams));
       localStorage.setItem(STORAGE_KEYS.USERS, JSON.stringify(appUsers));
-      return;
+      return false;
     } catch (retryErr) {
       console.error('Ainda sem quota após limpeza:', retryErr);
     }
 
     alert('Não foi possível salvar: espaço de armazenamento cheio. Remova PDFs antigos ou exporte um backup.');
+    return false;
   }
 }
 
@@ -1931,7 +1933,7 @@ function closeTeamModal() {
   document.getElementById('teamModal').classList.remove('open');
 }
 
-function saveTeamSubmit() {
+async function saveTeamSubmit() {
   if (!requireEditor()) return;
   const idx = parseInt(document.getElementById('teamEditIndex').value, 10);
   const name = document.getElementById('teamNameInput').value.trim();
@@ -1959,7 +1961,11 @@ function saveTeamSubmit() {
     appTeams.push({ id, name, tags: [] });
   }
 
-  saveData();
+  const saved = await saveData();
+  if (!saved) {
+    showToast('A equipe não foi confirmada no Supabase.', 'error');
+    return;
+  }
   closeTeamModal();
   renderTeams();
   populateTeamFilters();
@@ -1967,11 +1973,15 @@ function saveTeamSubmit() {
   updatePodio();
 }
 
-function deleteTeam(idx) {
+async function deleteTeam(idx) {
   if (!requireEditor()) return;
   if (confirm(`Deseja retirar a equipe "${appTeams[idx].name}" da lista ativa? As máquinas já registadas continuarão com o histórico dessa equipe.`)) {
     appTeams.splice(idx, 1);
-    saveData();
+    const saved = await saveData();
+    if (!saved) {
+      showToast('A exclusão não foi confirmada no Supabase.', 'error');
+      return;
+    }
     renderTeams();
     populateTeamFilters();
     updateDashboard();
