@@ -208,7 +208,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
-      navigator.serviceWorker.register('./sw.js?v=13').catch((error) => {
+      navigator.serviceWorker.register('./sw.js?v=14').catch((error) => {
         console.warn('Service worker não registrado:', error);
       });
     });
@@ -1640,6 +1640,31 @@ async function saveSupabaseConfig() {
   if (supabaseClient) {
     alert('Supabase conectado. As alterações serão compartilhadas em tempo real.');
   }
+}
+
+async function disconnectSupabase() {
+  if (!supabaseClient && !getSupabaseConfig().url) {
+    setSupabaseSyncStatus('Sem conexão');
+    return;
+  }
+
+  if (!confirm('Desconectar a sincronização entre gestores neste dispositivo? Os dados locais serão mantidos.')) return;
+
+  if (supabaseChannel && supabaseClient) {
+    await supabaseClient.removeChannel(supabaseChannel);
+  }
+  if (supabaseClient) {
+    await supabaseClient.auth.signOut().catch(() => {});
+  }
+  supabaseChannel = null;
+  supabaseClient = null;
+  localStorage.removeItem(STORAGE_KEYS.SUPABASE_URL);
+  localStorage.removeItem(STORAGE_KEYS.SUPABASE_KEY);
+  document.getElementById('supabaseUrlInput').value = '';
+  document.getElementById('supabaseKeyInput').value = '';
+  setSupabaseSyncStatus('Sem conexão');
+  setupPermissions();
+  showToast('Sincronização desconectada neste dispositivo.');
 }
 
 function checkGeminiBanner() {
