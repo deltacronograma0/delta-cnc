@@ -1221,6 +1221,22 @@ body::before {
 
 @media (max-width: 700px) {
   .delta-main { padding: 0.7rem; }
+  .app-shell { padding: 0; }
+  .workspace { border-radius: 0; border-left: 0; border-right: 0; }
+  .delta-header { padding: 0.7rem 0.7rem 0; }
+  .header-content { gap: 0.55rem; }
+  .brand-group { gap: 0.65rem; }
+  .header-brand-logo { width: 48px; height: 48px; }
+  .brand-titles h1 { font-size: 1rem; }
+  .brand-titles p { font-size: 0.68rem; }
+  .header-reference { display: none; }
+  .header-meta { gap: 0.35rem; }
+  .header-meta .meta-tag { display: none; }
+  .header-meta .meta-status:first-child,
+  .header-meta .user-status { display: inline-flex; }
+  .header-meta .user-status { max-width: 36px; overflow: hidden; white-space: nowrap; }
+  .header-meta .user-status span { display: none; }
+  .header-meta #authBtn { padding: 0.45rem 0.65rem; }
   .dashboard-heading { align-items: flex-start; flex-direction: column; }
   .dashboard-team-header { align-items: flex-start; flex-direction: column; }
   .dashboard-team-stats { justify-content: flex-start; }
@@ -1251,6 +1267,12 @@ body::before {
   .top-navigation .sidebar-link {
     padding: 0.55rem 0.72rem;
     font-size: 0.72rem;
+  }
+
+  .install-app-btn {
+    right: 0.7rem;
+    bottom: calc(0.7rem + env(safe-area-inset-bottom));
+    padding: 0.7rem 0.85rem;
   }
 }
 
