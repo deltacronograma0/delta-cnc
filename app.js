@@ -208,7 +208,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
-      navigator.serviceWorker.register('./sw.js?v=23').catch((error) => {
+      navigator.serviceWorker.register('./sw.js?v=24').catch((error) => {
         console.warn('Service worker não registrado:', error);
       });
     });
@@ -329,6 +329,14 @@ function loadStorage() {
       currentUser = null;
       localStorage.removeItem(STORAGE_KEYS.CURRENT_USER);
       localStorage.setItem(STORAGE_KEYS.AUTH_SESSION_VERSION, '2');
+    }
+
+    const configuredSupabase = localStorage.getItem(STORAGE_KEYS.SUPABASE_URL) && localStorage.getItem(STORAGE_KEYS.SUPABASE_KEY);
+    if (configuredSupabase) {
+      appMachines = [];
+      appData = appMachines;
+      appTeams = [];
+      appUsers = [];
     }
 
   } catch (err) {
