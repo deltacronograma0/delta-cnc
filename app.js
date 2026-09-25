@@ -589,6 +589,7 @@ async function saveSharedState() {
     return;
   }
   setSupabaseSyncStatus('Salvando automaticamente...', false);
+  showToast('Aguardando confirmação do Supabase...');
   const { error } = await supabaseClient.from('delta_app_state').upsert({
     id: 'main',
     machines: appMachines,
@@ -599,10 +600,12 @@ async function saveSharedState() {
   if (error) {
     console.error('Erro ao sincronizar dados:', error);
     setSupabaseSyncStatus('Erro ao salvar');
+    showToast('Não foi possível confirmar a alteração.', 'error');
     throw error;
   }
   setLastConfirmedState(currentState);
   setSupabaseSyncStatus('Sincronizado automaticamente', true);
+  showToast('Alteração sincronizada com sucesso!');
 }
 
 function getLastConfirmedState() {
