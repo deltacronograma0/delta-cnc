@@ -6,6 +6,8 @@ const STORAGE_KEYS = {
   CURRENT_USER: 'DELTA_CURRENT_USER',
   AUTH_SESSION_VERSION: 'DELTA_AUTH_SESSION_VERSION',
   STATE_UPDATED_AT: 'DELTA_STATE_UPDATED_AT',
+  SYNC_BASE_STATE: 'DELTA_SYNC_BASE_STATE',
+  SYNC_DIRTY: 'DELTA_SYNC_DIRTY',
   SUPABASE_URL: 'DELTA_SUPABASE_URL',
   SUPABASE_KEY: 'DELTA_SUPABASE_KEY'
 };
@@ -209,7 +211,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
-      navigator.serviceWorker.register('./sw.js?v=23').catch((error) => {
+      navigator.serviceWorker.register('./sw.js?v=24').catch((error) => {
         console.warn('Service worker não registrado:', error);
       });
     });
@@ -319,6 +321,9 @@ function loadStorage() {
       id: team.id || `EQ-${String(index + 1).padStart(3, '0')}`,
       name: normalizeTeamName(team.name)
     }));
+    if (!localStorage.getItem(STORAGE_KEYS.SYNC_BASE_STATE)) {
+      setSyncBaseState(getCurrentSyncState());
+    }
 
     geminiApiKey = localStorage.getItem(STORAGE_KEYS.GEMINI_KEY) || '';
 
@@ -351,6 +356,7 @@ async function saveData() {
     localStorage.setItem(STORAGE_KEYS.TEAMS, JSON.stringify(appTeams));
     localStorage.setItem(STORAGE_KEYS.USERS, JSON.stringify(appUsers));
     localStorage.setItem(STORAGE_KEYS.STATE_UPDATED_AT, String(updatedAt));
+    if (!isApplyingRemoteState) localStorage.setItem(STORAGE_KEYS.SYNC_DIRTY, '1');
     if (currentUser) {
       localStorage.setItem(STORAGE_KEYS.CURRENT_USER, JSON.stringify(currentUser));
       localStorage.setItem(STORAGE_KEYS.AUTH_SESSION_VERSION, '2');
@@ -440,9 +446,7 @@ async function initSupabaseSync() {
 
       if (error) throw error;
       if (data) {
-        const localUpdatedAt = Number(localStorage.getItem(STORAGE_KEYS.STATE_UPDATED_AT) || 0);
-        const remoteUpdatedAt = Date.parse(data.updated_at || '') || 0;
-        if (localUpdatedAt > remoteUpdatedAt) {
+        if (localStorage.getItem(STORAGE_KEYS.SYNC_DIRTY) === '1') {
           await queueSharedStateSave();
         } else {
           applySharedState(data);
@@ -477,9 +481,10 @@ async function initSupabaseSync() {
 }
 
 function applySharedState(data) {
-  const remoteUpdatedAt = Date.parse(data.updated_at || '') || 0;
-  const localUpdatedAt = Number(localStorage.getItem(STORAGE_KEYS.STATE_UPDATED_AT) || 0);
-  if (remoteUpdatedAt && localUpdatedAt > remoteUpdatedAt) return;
+  if (localStorage.getItem(STORAGE_KEYS.SYNC_DIRTY) === '1') {
+    queueSharedStateSave();
+    return;
+  }
 
   isApplyingRemoteState = true;
   try {
@@ -487,9 +492,7 @@ function applySharedState(data) {
     appData = appMachines;
     appTeams = Array.isArray(data.teams) ? data.teams : [];
     appUsers = Array.isArray(data.users) ? data.users : [];
-    if (remoteUpdatedAt) {
-      localStorage.setItem(STORAGE_KEYS.STATE_UPDATED_AT, String(remoteUpdatedAt));
-    }
+    setSyncBaseState(getCurrentSyncState());
     populateTeamFilters();
     renderTable();
     updateDashboard();
@@ -504,11 +507,17 @@ function applySharedState(data) {
 async function saveSharedState() {
   if (!supabaseClient) return;
   setSupabaseSyncStatus('Salvando automaticamente...', false);
+  const { data: remoteState } = await supabaseClient
+    .from('delta_app_state')
+    .select('machines, teams, users')
+    .eq('id', 'main')
+    .maybeSingle();
+  const mergedState = mergeSyncState(remoteState || {}, getCurrentSyncState(), getSyncBaseState());
   const { error } = await supabaseClient.from('delta_app_state').upsert({
     id: 'main',
-    machines: appMachines,
-    teams: appTeams,
-    users: appUsers,
+    machines: mergedState.machines,
+    teams: mergedState.teams,
+    users: mergedState.users,
     updated_at: new Date().toISOString()
   });
   if (error) {
@@ -516,7 +525,61 @@ async function saveSharedState() {
     setSupabaseSyncStatus('Erro ao salvar');
     return;
   }
+  appMachines = mergedState.machines;
+  appData = appMachines;
+  appTeams = mergedState.teams;
+  appUsers = mergedState.users;
+  localStorage.setItem(STORAGE_KEYS.MACHINES, JSON.stringify(appMachines));
+  localStorage.setItem(STORAGE_KEYS.TEAMS, JSON.stringify(appTeams));
+  localStorage.setItem(STORAGE_KEYS.USERS, JSON.stringify(appUsers));
+  setSyncBaseState(mergedState);
+  localStorage.removeItem(STORAGE_KEYS.SYNC_DIRTY);
   setSupabaseSyncStatus('Sincronizado automaticamente', true);
+}
+
+function getCurrentSyncState() {
+  return { machines: appMachines, teams: appTeams, users: appUsers };
+}
+
+function getSyncBaseState() {
+  try { return JSON.parse(localStorage.getItem(STORAGE_KEYS.SYNC_BASE_STATE) || '{}'); } catch (_) { return {}; }
+}
+
+function setSyncBaseState(state) {
+  localStorage.setItem(STORAGE_KEYS.SYNC_BASE_STATE, JSON.stringify(state));
+}
+
+function syncItemKey(item, collection) {
+  return String(item?.id || (collection === 'users' ? item?.email : ''));
+}
+
+function syncItemsEqual(left, right) {
+  return JSON.stringify(left || null) === JSON.stringify(right || null);
+}
+
+function mergeSyncCollection(remoteItems = [], localItems = [], baseItems = [], collection) {
+  const remoteMap = new Map(remoteItems.map(item => [syncItemKey(item, collection), item]));
+  const localMap = new Map(localItems.map(item => [syncItemKey(item, collection), item]));
+  const baseMap = new Map(baseItems.map(item => [syncItemKey(item, collection), item]));
+  const keys = new Set([...remoteMap.keys(), ...localMap.keys(), ...baseMap.keys()]);
+  return [...keys].map(key => {
+    const local = localMap.get(key);
+    const remote = remoteMap.get(key);
+    const base = baseMap.get(key);
+    const localChanged = !syncItemsEqual(local, base);
+    const remoteChanged = !syncItemsEqual(remote, base);
+    if (localChanged) return local;
+    if (remoteChanged) return remote;
+    return local || remote;
+  }).filter(Boolean);
+}
+
+function mergeSyncState(remote, local, base) {
+  return {
+    machines: mergeSyncCollection(remote.machines, local.machines, base.machines, 'machines'),
+    teams: mergeSyncCollection(remote.teams, local.teams, base.teams, 'teams'),
+    users: mergeSyncCollection(remote.users, local.users, base.users, 'users')
+  };
 }
 
 async function queueSharedStateSave() {
