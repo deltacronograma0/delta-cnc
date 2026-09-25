@@ -208,7 +208,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
-      navigator.serviceWorker.register('./sw.js?v=16').catch((error) => {
+      navigator.serviceWorker.register('./sw.js?v=17').catch((error) => {
         console.warn('Service worker não registrado:', error);
       });
     });
@@ -1021,7 +1021,7 @@ async function verPdfOs(id) {
     try {
       const remotePdf = await supabaseBuscarPdf(item.pdfPath);
       if (remotePdf) {
-        window.open(remotePdf, '_blank');
+        await openPdfFromUrl(remotePdf);
         return;
       }
     } catch (err) {
@@ -1063,6 +1063,20 @@ function openPdfFromBase64(pdfDataUri) {
   } catch (err) {
     console.warn('Erro ao abrir PDF via Blob, a recorrer à abertura direta:', err);
     window.open(pdfDataUri, '_blank');
+  }
+}
+
+async function openPdfFromUrl(pdfUrl) {
+  try {
+    const response = await fetch(pdfUrl, { credentials: 'omit' });
+    if (!response.ok) throw new Error(`PDF retornou status ${response.status}`);
+    const pdfBlob = await response.blob();
+    const blobUrl = URL.createObjectURL(new Blob([pdfBlob], { type: 'application/pdf' }));
+    window.open(blobUrl, '_blank');
+    setTimeout(() => URL.revokeObjectURL(blobUrl), 120000);
+  } catch (err) {
+    console.warn('Não foi possível converter o PDF remoto para visualização:', err);
+    window.open(pdfUrl, '_blank');
   }
 }
 
