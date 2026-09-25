@@ -1588,7 +1588,7 @@ body::before {
   .user-access-table tr { display: block; }
   .user-access-table tr {
     display: grid;
-    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-columns: minmax(0, 1fr);
     gap: 0.45rem 0.6rem;
     padding: 0.7rem;
     border-bottom: 1px solid var(--border);
@@ -1600,12 +1600,12 @@ body::before {
   .user-access-table td:first-child { grid-column: 1; }
   .user-access-table td:nth-child(2) { grid-column: 1; }
   .user-access-table td:last-child {
-    grid-column: 2;
-    grid-row: 1 / span 2;
-    align-self: center;
-    text-align: right !important;
+    grid-column: 1;
+    grid-row: auto;
+    text-align: left !important;
   }
   .user-access-table .btn-danger {
+    width: 100%;
     min-height: 42px;
     padding: 0.6rem 0.75rem;
     white-space: nowrap;
