@@ -6,6 +6,7 @@ const STORAGE_KEYS = {
   CURRENT_USER: 'DELTA_CURRENT_USER',
   AUTH_SESSION_VERSION: 'DELTA_AUTH_SESSION_VERSION',
   STATE_UPDATED_AT: 'DELTA_STATE_UPDATED_AT',
+  SYNC_REMOTE_UPDATED_AT: 'DELTA_SYNC_REMOTE_UPDATED_AT',
   SYNC_BASE_STATE: 'DELTA_SYNC_BASE_STATE',
   SYNC_DIRTY: 'DELTA_SYNC_DIRTY',
   SUPABASE_URL: 'DELTA_SUPABASE_URL',
@@ -211,7 +212,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
-      navigator.serviceWorker.register('./sw.js?v=24').catch((error) => {
+      navigator.serviceWorker.register('./sw.js?v=25').catch((error) => {
         console.warn('Service worker não registrado:', error);
       });
     });
@@ -486,12 +487,19 @@ function applySharedState(data) {
     return;
   }
 
+  const remoteUpdatedAt = Date.parse(data.updated_at || '') || 0;
+  const lastRemoteUpdatedAt = Number(localStorage.getItem(STORAGE_KEYS.SYNC_REMOTE_UPDATED_AT) || 0);
+  if (remoteUpdatedAt && lastRemoteUpdatedAt > remoteUpdatedAt) return;
+
   isApplyingRemoteState = true;
   try {
     appMachines = Array.isArray(data.machines) ? data.machines : [];
     appData = appMachines;
     appTeams = Array.isArray(data.teams) ? data.teams : [];
     appUsers = Array.isArray(data.users) ? data.users : [];
+    if (remoteUpdatedAt) {
+      localStorage.setItem(STORAGE_KEYS.SYNC_REMOTE_UPDATED_AT, String(remoteUpdatedAt));
+    }
     setSyncBaseState(getCurrentSyncState());
     populateTeamFilters();
     renderTable();
@@ -513,13 +521,14 @@ async function saveSharedState() {
     .eq('id', 'main')
     .maybeSingle();
   const mergedState = mergeSyncState(remoteState || {}, getCurrentSyncState(), getSyncBaseState());
-  const { error } = await supabaseClient.from('delta_app_state').upsert({
+  const savedAt = new Date().toISOString();
+  const { data: savedState, error } = await supabaseClient.from('delta_app_state').upsert({
     id: 'main',
     machines: mergedState.machines,
     teams: mergedState.teams,
     users: mergedState.users,
-    updated_at: new Date().toISOString()
-  });
+    updated_at: savedAt
+  }).select('updated_at').single();
   if (error) {
     console.error('Erro ao sincronizar dados:', error);
     setSupabaseSyncStatus('Erro ao salvar');
@@ -532,6 +541,7 @@ async function saveSharedState() {
   localStorage.setItem(STORAGE_KEYS.MACHINES, JSON.stringify(appMachines));
   localStorage.setItem(STORAGE_KEYS.TEAMS, JSON.stringify(appTeams));
   localStorage.setItem(STORAGE_KEYS.USERS, JSON.stringify(appUsers));
+  localStorage.setItem(STORAGE_KEYS.SYNC_REMOTE_UPDATED_AT, String(Date.parse(savedState?.updated_at || savedAt)));
   setSyncBaseState(mergedState);
   localStorage.removeItem(STORAGE_KEYS.SYNC_DIRTY);
   setSupabaseSyncStatus('Sincronizado automaticamente', true);
