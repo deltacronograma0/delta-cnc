@@ -208,7 +208,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
-      navigator.serviceWorker.register('./sw.js?v=21').catch((error) => {
+      navigator.serviceWorker.register('./sw.js?v=22').catch((error) => {
         console.warn('Service worker não registrado:', error);
       });
     });
@@ -455,7 +455,8 @@ async function initSupabaseSync() {
   } catch (error) {
     console.error('Erro ao conectar ao Supabase:', error);
     supabaseClient = null;
-    setSupabaseSyncStatus('Erro de conexão');
+    const detail = error?.message ? `Erro de conexão: ${error.message}` : 'Erro de conexão';
+    setSupabaseSyncStatus(detail);
     setupPermissions();
   }
 }
@@ -1653,6 +1654,8 @@ async function saveSupabaseConfig() {
   await initSupabaseSync();
   if (supabaseClient) {
     alert('Supabase conectado. As alterações serão compartilhadas em tempo real.');
+  } else {
+    alert('Não foi possível conectar. Verifique a Project URL e a chave anon/publishable. Se aparecer erro de acesso anônimo, ative Authentication > Providers > Anonymous Sign-Ins no Supabase.');
   }
 }
 
