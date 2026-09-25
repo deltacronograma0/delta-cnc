@@ -211,7 +211,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
-      navigator.serviceWorker.register('./sw.js?v=27').catch((error) => {
+      navigator.serviceWorker.register('./sw.js?v=28').catch((error) => {
         console.warn('Service worker não registrado:', error);
       });
     });
@@ -304,7 +304,7 @@ async function migrarPdfsAntigosParaIdb() {
     }
   }
   if (mudou) {
-    saveData();
+    localStorage.setItem(STORAGE_KEYS.MACHINES, JSON.stringify(appMachines));
   }
 }
 
@@ -729,8 +729,8 @@ async function handleLoginSubmit() {
       submitButton.classList.add('is-loading');
     }
     currentUser = user;
+    localStorage.setItem(STORAGE_KEYS.CURRENT_USER, JSON.stringify(currentUser));
     localStorage.setItem(STORAGE_KEYS.AUTH_SESSION_VERSION, '2');
-    await saveData();
     setupPermissions();
     closeAuthModal();
     showToast(`Sessão iniciada com sucesso. Bem-vindo, ${user.role}!`);
