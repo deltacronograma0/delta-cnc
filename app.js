@@ -208,7 +208,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
-      navigator.serviceWorker.register('./sw.js?v=15').catch((error) => {
+      navigator.serviceWorker.register('./sw.js?v=16').catch((error) => {
         console.warn('Service worker não registrado:', error);
       });
     });
@@ -549,6 +549,7 @@ function setupPermissions() {
     editorEls.forEach(el => el.style.display = 'none');
     adminEls.forEach(el => el.style.display = 'none');
   }
+  checkGeminiBanner();
 }
 
 function requireEditor() {
@@ -1669,11 +1670,8 @@ async function disconnectSupabase() {
 function checkGeminiBanner() {
   const banner = document.getElementById('geminiAlertBanner');
   if (banner) {
-    if (geminiApiKey && geminiApiKey.length > 5) {
-      banner.style.display = 'none';
-    } else {
-      banner.style.display = 'flex';
-    }
+    const needsConnection = Boolean(currentUser) && !supabaseClient;
+    banner.style.display = needsConnection ? 'flex' : 'none';
   }
 }
 

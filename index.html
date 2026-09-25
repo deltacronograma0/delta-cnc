@@ -14,7 +14,7 @@
   <link rel="apple-touch-icon" href="logo.png">
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/basecoat-css@1.0.2/dist/basecoat.cdn.min.css">
-  <link rel="stylesheet" href="styles.css?v=20260925-menu15">
+  <link rel="stylesheet" href="styles.css?v=20260925-menu16">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body>
@@ -78,10 +78,10 @@
         </nav>
       </header>
 
-      <!-- Gemini Key Warning Banner (auto-hidden when key exists) -->
+      <!-- Editor connection warning (visible only after login without Supabase) -->
       <div id="geminiAlertBanner" class="gemini-alert">
-        <span>⚠️ <strong>Atenção:</strong> Chave da API do Gemini necessária para leitura inteligente de PDFs de OS.</span>
-        <button class="btn-delta btn-amber btn-sm" onclick="openConfigModal()">Configurar Chave</button>
+        <span>⚠️ <strong>Edição bloqueada:</strong> conecte o Supabase para compartilhar e salvar alterações.</span>
+        <button class="btn-delta btn-amber btn-sm" onclick="openConfigModal()">Conectar Supabase</button>
       </div>
 
       <!-- Main Content Area -->
@@ -866,6 +866,6 @@
     <span id="appToastMessage">Ordens atualizadas com sucesso!</span>
   </div>
 
-  <script src="app.js?v=20260925-menu15"></script>
+  <script src="app.js?v=20260925-menu16"></script>
 </body>
 </html>
