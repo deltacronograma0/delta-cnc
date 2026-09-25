@@ -439,6 +439,8 @@ body::before {
   box-shadow: 0 0 0 3px rgba(148, 163, 184, 0.12);
 }
 
+.sync-indicator.sync-local { color: #a7f3d0; border-color: rgba(16, 185, 129, 0.35); }
+.sync-indicator.sync-local .sync-indicator-dot { background: #34d399; box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.14); }
 .sync-indicator.sync-online { color: #a7f3d0; border-color: rgba(16, 185, 129, 0.35); }
 .sync-indicator.sync-online .sync-indicator-dot { background: #34d399; box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.14); }
 .sync-indicator.sync-saving { color: #fde68a; border-color: rgba(245, 158, 11, 0.35); }
