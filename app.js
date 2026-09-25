@@ -55,6 +55,7 @@ let currentAiIndex = null;
 let supabaseClient = null;
 let supabaseChannel = null;
 let isApplyingRemoteState = false;
+let syncReady = false;
 let draftSaveTimer = null;
 let pendingDraftSave = false;
 let remoteWriteRequested = false;
@@ -212,7 +213,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
-      navigator.serviceWorker.register('./sw.js?v=30').catch((error) => {
+      navigator.serviceWorker.register('./sw.js?v=31').catch((error) => {
         console.warn('Service worker não registrado:', error);
       });
     });
@@ -519,10 +520,12 @@ function getSupabaseConfig() {
 async function initSupabaseSync() {
   const config = getSupabaseConfig();
   if (!config.url || !config.key || !window.supabase?.createClient) {
+    syncReady = true;
     setSupabaseSyncStatus('Modo local');
     return;
   }
 
+  syncReady = false;
   try {
     supabaseClient = window.supabase.createClient(config.url, config.key);
     const { data: sessionData, error: sessionError } = await supabaseClient.auth.getSession();
@@ -543,6 +546,7 @@ async function initSupabaseSync() {
     } else {
       await saveSharedState();
     }
+    syncReady = true;
 
     supabaseChannel = supabaseClient
       .channel('delta-app-state-changes')
@@ -556,6 +560,7 @@ async function initSupabaseSync() {
   } catch (error) {
     console.error('Erro ao conectar ao Supabase:', error);
     supabaseClient = null;
+    syncReady = false;
     const detail = /rate limit|too many|429/i.test(error?.message || '')
       ? 'Limite temporário do Supabase. Aguarde alguns minutos e tente novamente.'
       : (error?.message ? `Erro de conexão: ${error.message}` : 'Erro de conexão');
@@ -731,6 +736,11 @@ async function handleLoginSubmit() {
   if (submitButton?.disabled) return;
   const email = document.getElementById('loginEmail').value.trim();
   const pass = document.getElementById('loginPassword').value;
+
+  if (getSupabaseConfig().url && getSupabaseConfig().key && !syncReady) {
+    showToast('Aguarde a conexão com o Supabase terminar antes de entrar.', 'error');
+    return;
+  }
 
   const user = appUsers.find(u => u.email.toLowerCase() === email.toLowerCase() && u.pass === pass);
   if (user) {
