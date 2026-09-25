@@ -208,7 +208,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
-      navigator.serviceWorker.register('./sw.js?v=20').catch((error) => {
+      navigator.serviceWorker.register('./sw.js?v=21').catch((error) => {
         console.warn('Service worker não registrado:', error);
       });
     });

@@ -1615,6 +1615,14 @@ body::before {
   background-color: rgba(99, 102, 241, 0.12) !important;
 }
 
+.user-actions {
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.45rem;
+  white-space: nowrap;
+}
+
 @media (max-width: 700px) {
   .user-access-card { overflow: hidden; }
   .user-access-scroll {
@@ -1636,6 +1644,8 @@ body::before {
     padding: 0.6rem 0.75rem;
     white-space: nowrap;
   }
+  .user-actions { justify-content: flex-start; }
+  .user-actions .btn-delta { min-height: 40px; }
 }
 
 .badge-status {
