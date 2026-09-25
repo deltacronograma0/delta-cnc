@@ -52,7 +52,7 @@
               ⏱️ 00:00:00
             </div>
             <div class="meta-tag meta-status user-status">
-              👤 <span id="currentUserLabel" style="font-weight:600; color: #c7d2fe;">Administrador</span>
+              👤 <span id="currentUserLabel" style="font-weight:600; color: #c7d2fe;">Visitante (Leitura)</span>
             </div>
             <button id="authBtn" class="btn-delta btn-slate btn-sm" onclick="toggleAuthModal()">
               Entrar
@@ -69,7 +69,7 @@
           <button class="sidebar-link" data-tab="equipas" onclick="switchTab('equipas')">
             <span>👥</span> Equipes
           </button>
-          <button class="sidebar-link" data-tab="usuarios" onclick="switchTab('usuarios')">
+          <button class="sidebar-link admin-only" data-tab="usuarios" onclick="switchTab('usuarios')">
             <span>🔐</span> Utilizadores
           </button>
         </nav>
@@ -432,7 +432,7 @@
     <section id="tab-usuarios" class="hidden">
       <div class="action-bar">
         <h2 style="font-size:1.2rem; margin:0; color:#ffffff; font-weight:700;">Gestão de Acessos &amp; Utilizadores</h2>
-        <button class="btn-delta btn-indigo editor-only" onclick="openUserModal()">
+        <button class="btn-delta btn-indigo admin-only" onclick="openUserModal()">
           ➕ Registar Novo Editor
         </button>
       </div>

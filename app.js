@@ -4,6 +4,7 @@ const STORAGE_KEYS = {
   USERS: 'DELTA_USERS_DATA',
   GEMINI_KEY: 'DELTA_GEMINI_KEY',
   CURRENT_USER: 'DELTA_CURRENT_USER',
+  AUTH_SESSION_VERSION: 'DELTA_AUTH_SESSION_VERSION',
   SUPABASE_URL: 'DELTA_SUPABASE_URL',
   SUPABASE_KEY: 'DELTA_SUPABASE_KEY'
 };
@@ -318,11 +319,13 @@ function loadStorage() {
     geminiApiKey = localStorage.getItem(STORAGE_KEYS.GEMINI_KEY) || '';
 
     const cur = localStorage.getItem(STORAGE_KEYS.CURRENT_USER);
-    if (cur) {
+    const sessionVersion = localStorage.getItem(STORAGE_KEYS.AUTH_SESSION_VERSION);
+    if (cur && sessionVersion === '2') {
       currentUser = JSON.parse(cur);
     } else {
-      currentUser = appUsers[0];
-      localStorage.setItem(STORAGE_KEYS.CURRENT_USER, JSON.stringify(currentUser));
+      currentUser = null;
+      localStorage.removeItem(STORAGE_KEYS.CURRENT_USER);
+      localStorage.setItem(STORAGE_KEYS.AUTH_SESSION_VERSION, '2');
     }
 
     saveData();
@@ -332,7 +335,9 @@ function loadStorage() {
     appData = appMachines;
     appTeams = [...DEFAULT_SEED_TEAMS];
     appUsers = [...DEFAULT_SEED_USERS];
-    currentUser = appUsers[0];
+    currentUser = null;
+    localStorage.removeItem(STORAGE_KEYS.CURRENT_USER);
+    localStorage.setItem(STORAGE_KEYS.AUTH_SESSION_VERSION, '2');
   }
 }
 
@@ -343,6 +348,7 @@ async function saveData() {
     localStorage.setItem(STORAGE_KEYS.USERS, JSON.stringify(appUsers));
     if (currentUser) {
       localStorage.setItem(STORAGE_KEYS.CURRENT_USER, JSON.stringify(currentUser));
+      localStorage.setItem(STORAGE_KEYS.AUTH_SESSION_VERSION, '2');
     } else {
       localStorage.removeItem(STORAGE_KEYS.CURRENT_USER);
     }
@@ -475,18 +481,34 @@ function setupPermissions() {
   const userLabel = document.getElementById('currentUserLabel');
   const authBtn = document.getElementById('authBtn');
   const editorEls = document.querySelectorAll('.editor-only');
+  const adminEls = document.querySelectorAll('.admin-only');
 
   if (currentUser) {
     userLabel.textContent = `${currentUser.email.split('@')[0]} (${currentUser.role})`;
     authBtn.textContent = 'Terminar Sessão';
     authBtn.className = 'btn-delta btn-danger btn-sm';
     editorEls.forEach(el => el.style.display = '');
+    adminEls.forEach(el => el.style.display = currentUser.role === 'Administrador' ? '' : 'none');
   } else {
     userLabel.textContent = 'Visitante (Leitura)';
     authBtn.textContent = 'Entrar';
     authBtn.className = 'btn-delta btn-slate btn-sm';
     editorEls.forEach(el => el.style.display = 'none');
+    adminEls.forEach(el => el.style.display = 'none');
   }
+}
+
+function requireEditor() {
+  if (currentUser) return true;
+  showToast('Entre como Editor ou Administrador para editar.', 'error');
+  toggleAuthModal();
+  return false;
+}
+
+function requireAdmin() {
+  if (currentUser?.role === 'Administrador') return true;
+  showToast('Acesso restrito ao Administrador.', 'error');
+  return false;
 }
 
 function toggleAuthModal() {
@@ -530,6 +552,7 @@ async function handleLoginSubmit() {
       submitButton.classList.add('is-loading');
     }
     currentUser = user;
+    localStorage.setItem(STORAGE_KEYS.AUTH_SESSION_VERSION, '2');
     await saveData();
     setupPermissions();
     closeAuthModal();
@@ -546,6 +569,7 @@ async function handleLoginSubmit() {
 
 function switchTab(tabId) {
   const tabs = ['acompanhamento', 'dashboard', 'equipas', 'usuarios'];
+  if (tabId === 'usuarios' && !requireAdmin()) return;
   tabs.forEach(t => {
     const sec = document.getElementById(`tab-${t}`);
     if (sec) sec.classList.add('hidden');
@@ -691,6 +715,7 @@ function closeObsModal() {
 }
 
 async function saveObservation() {
+  if (!requireEditor()) return;
   if (!currentObservationMachineId) return;
   const item = appMachines.find(machine => machine.id === currentObservationMachineId);
   if (!item) return;
@@ -886,6 +911,7 @@ function toggleSelectAll(masterCheckbox) {
 }
 
 function deleteSelectedMachines() {
+  if (!requireEditor()) return;
   if (selectedMachineIds.size === 0) {
     alert('Selecione pelo menos uma máquina para excluir.');
     return;
@@ -979,6 +1005,7 @@ function openPdfFromBase64(pdfDataUri) {
 }
 
 function openMachineModal(id = null) {
+  if (!requireEditor()) return;
   populateTeamFilters();
   const form = document.getElementById('machineForm');
   form.reset();
@@ -1021,6 +1048,7 @@ function closeMachineModal() {
 }
 
 async function saveMachine(e) {
+  if (!requireEditor()) return;
   e.preventDefault();
   const id = document.getElementById('machId').value;
   const existingMachine = id ? appMachines.find(machine => machine.id === id) : null;
@@ -1138,6 +1166,7 @@ function applyImportDateRule() {
 }
 
 function openMultiImportModal() {
+  if (!requireEditor()) return;
   currentPreviewRows = [];
   document.getElementById('multiPdfInput').value = '';
   const dateRuleSelect = document.getElementById('importStartDateRule');
@@ -1510,6 +1539,7 @@ function showToast(message, type = 'success') {
 }
 
 function openConfigModal() {
+  if (!requireEditor()) return;
   document.getElementById('geminiApiKeyInput').value = geminiApiKey;
   const config = getSupabaseConfig();
   document.getElementById('supabaseUrlInput').value = config.url;
@@ -1667,6 +1697,7 @@ function renderTeams() {
 }
 
 function openTeamModal(idx = -1) {
+  if (!requireEditor()) return;
   document.getElementById('teamEditIndex').value = idx;
   if (idx >= 0 && appTeams[idx]) {
     document.getElementById('teamModalTitle').textContent = 'Editar Equipe';
@@ -1685,6 +1716,7 @@ function closeTeamModal() {
 }
 
 function saveTeamSubmit() {
+  if (!requireEditor()) return;
   const idx = parseInt(document.getElementById('teamEditIndex').value, 10);
   const name = document.getElementById('teamNameInput').value.trim();
   const id = document.getElementById('teamIdInput').value.trim().toUpperCase();
@@ -1720,6 +1752,7 @@ function saveTeamSubmit() {
 }
 
 function deleteTeam(idx) {
+  if (!requireEditor()) return;
   if (confirm(`Deseja retirar a equipe "${appTeams[idx].name}" da lista ativa? As máquinas já registadas continuarão com o histórico dessa equipe.`)) {
     appTeams.splice(idx, 1);
     saveData();
@@ -1733,6 +1766,11 @@ function deleteTeam(idx) {
 function renderUsers() {
   const tbody = document.getElementById('usersTableBody');
   if (!tbody) return;
+  if (currentUser?.role !== 'Administrador') {
+    const usersTab = document.getElementById('tab-usuarios');
+    if (usersTab) usersTab.classList.add('hidden');
+    return;
+  }
 
   tbody.innerHTML = appUsers.map((u, idx) => `
     <tr>
@@ -1748,6 +1786,7 @@ function renderUsers() {
 }
 
 function openUserModal() {
+  if (!requireAdmin()) return;
   document.getElementById('newEditorEmail').value = '';
   document.getElementById('newEditorPass').value = '';
   document.getElementById('userModal').classList.add('open');
@@ -1758,6 +1797,7 @@ function closeUserModal() {
 }
 
 function saveNewUserSubmit() {
+  if (!requireAdmin()) return;
   const email = document.getElementById('newEditorEmail').value.trim();
   const pass = document.getElementById('newEditorPass').value;
   if (!email || !pass) {
@@ -1773,6 +1813,7 @@ function saveNewUserSubmit() {
 }
 
 function deleteUser(idx) {
+  if (!requireAdmin()) return;
   if (idx === 0) {
     alert('Não é possível excluir o Administrador principal.');
     return;
