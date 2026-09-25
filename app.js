@@ -545,7 +545,7 @@ async function handleLoginSubmit() {
 }
 
 function switchTab(tabId) {
-  const tabs = ['acompanhamento', 'dashboard', 'equipas', 'destaques', 'usuarios'];
+  const tabs = ['acompanhamento', 'dashboard', 'equipas', 'usuarios'];
   tabs.forEach(t => {
     const sec = document.getElementById(`tab-${t}`);
     if (sec) sec.classList.add('hidden');
