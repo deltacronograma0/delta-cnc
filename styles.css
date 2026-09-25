@@ -1605,6 +1605,7 @@ body::before {
     text-align: left !important;
   }
   .user-access-table .btn-danger {
+    display: inline-flex !important;
     width: 100%;
     min-height: 42px;
     padding: 0.6rem 0.75rem;
