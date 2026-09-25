@@ -6,6 +6,7 @@ const STORAGE_KEYS = {
   CURRENT_USER: 'DELTA_CURRENT_USER',
   AUTH_SESSION_VERSION: 'DELTA_AUTH_SESSION_VERSION',
   STATE_UPDATED_AT: 'DELTA_STATE_UPDATED_AT',
+  LAST_CONFIRMED_STATE: 'DELTA_LAST_CONFIRMED_STATE',
   SUPABASE_URL: 'DELTA_SUPABASE_URL',
   SUPABASE_KEY: 'DELTA_SUPABASE_KEY'
 };
@@ -210,7 +211,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
-      navigator.serviceWorker.register('./sw.js?v=26').catch((error) => {
+      navigator.serviceWorker.register('./sw.js?v=27').catch((error) => {
         console.warn('Service worker não registrado:', error);
       });
     });
@@ -530,13 +531,7 @@ async function initSupabaseSync() {
 
     if (error) throw error;
     if (data) {
-      const localUpdatedAt = Number(localStorage.getItem(STORAGE_KEYS.STATE_UPDATED_AT) || 0);
-      const remoteUpdatedAt = Date.parse(data.updated_at || '') || 0;
-      if (localUpdatedAt > remoteUpdatedAt) {
-        await queueSharedStateSave();
-      } else {
-        applySharedState(data);
-      }
+      applySharedState(data);
     } else {
       await saveSharedState();
     }
@@ -563,8 +558,6 @@ async function initSupabaseSync() {
 
 function applySharedState(data) {
   const remoteUpdatedAt = Date.parse(data.updated_at || '') || 0;
-  const localUpdatedAt = Number(localStorage.getItem(STORAGE_KEYS.STATE_UPDATED_AT) || 0);
-  if (remoteUpdatedAt && localUpdatedAt > remoteUpdatedAt) return;
 
   isApplyingRemoteState = true;
   try {
@@ -575,6 +568,7 @@ function applySharedState(data) {
     if (remoteUpdatedAt) {
       localStorage.setItem(STORAGE_KEYS.STATE_UPDATED_AT, String(remoteUpdatedAt));
     }
+    setLastConfirmedState({ machines: appMachines, teams: appTeams, users: appUsers });
     populateTeamFilters();
     renderTable();
     updateDashboard();
@@ -588,6 +582,12 @@ function applySharedState(data) {
 
 async function saveSharedState() {
   if (!supabaseClient) return;
+  const currentState = { machines: appMachines, teams: appTeams, users: appUsers };
+  const confirmedState = getLastConfirmedState();
+  if (JSON.stringify(currentState) === JSON.stringify(confirmedState)) {
+    setSupabaseSyncStatus('Sincronizado automaticamente', true);
+    return;
+  }
   setSupabaseSyncStatus('Salvando automaticamente...', false);
   const { error } = await supabaseClient.from('delta_app_state').upsert({
     id: 'main',
@@ -601,7 +601,20 @@ async function saveSharedState() {
     setSupabaseSyncStatus('Erro ao salvar');
     throw error;
   }
+  setLastConfirmedState(currentState);
   setSupabaseSyncStatus('Sincronizado automaticamente', true);
+}
+
+function getLastConfirmedState() {
+  try {
+    return JSON.parse(localStorage.getItem(STORAGE_KEYS.LAST_CONFIRMED_STATE) || '{}');
+  } catch (_) {
+    return {};
+  }
+}
+
+function setLastConfirmedState(state) {
+  localStorage.setItem(STORAGE_KEYS.LAST_CONFIRMED_STATE, JSON.stringify(state));
 }
 
 async function queueSharedStateSave() {
