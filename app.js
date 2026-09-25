@@ -53,6 +53,8 @@ let currentAiIndex = null;
 let supabaseClient = null;
 let supabaseChannel = null;
 let isApplyingRemoteState = false;
+let sharedSaveInFlight = null;
+let sharedSaveQueued = false;
 
 function idbAbrir() {
   return new Promise((resolve, reject) => {
@@ -354,7 +356,7 @@ async function saveData() {
     }
 
     if (supabaseClient && !isApplyingRemoteState) {
-      await saveSharedState();
+      await queueSharedStateSave();
     }
   } catch (e) {
     console.warn('Erro de gravação no localStorage (possível quota excedida):', e);
@@ -456,6 +458,7 @@ function applySharedState(data) {
 
 async function saveSharedState() {
   if (!supabaseClient) return;
+  setSupabaseSyncStatus('Salvando automaticamente...', false);
   const { error } = await supabaseClient.from('delta_app_state').upsert({
     id: 'main',
     machines: appMachines,
@@ -466,6 +469,27 @@ async function saveSharedState() {
   if (error) {
     console.error('Erro ao sincronizar dados:', error);
     setSupabaseSyncStatus('Erro ao salvar');
+    return;
+  }
+  setSupabaseSyncStatus('Sincronizado automaticamente', true);
+}
+
+async function queueSharedStateSave() {
+  if (sharedSaveInFlight) {
+    sharedSaveQueued = true;
+    await sharedSaveInFlight;
+    return;
+  }
+
+  sharedSaveInFlight = saveSharedState();
+  try {
+    await sharedSaveInFlight;
+  } finally {
+    sharedSaveInFlight = null;
+    if (sharedSaveQueued) {
+      sharedSaveQueued = false;
+      await queueSharedStateSave();
+    }
   }
 }
 
@@ -930,9 +954,8 @@ function deleteSelectedMachines() {
 
 async function syncData() {
   if (supabaseClient) {
-    await saveSharedState();
-    setSupabaseSyncStatus('Sincronização online', true);
-    alert('Últimas atualizações enviadas ao Supabase com sucesso!');
+    await queueSharedStateSave();
+    showToast('Dados conferidos e sincronizados automaticamente!');
     return;
   }
 
