@@ -1220,7 +1220,7 @@ body::before {
 }
 
 @media (max-width: 700px) {
-  .delta-main { padding: 0.7rem; }
+  .delta-main { padding: 0.7rem 0.7rem calc(5.3rem + env(safe-area-inset-bottom)); }
   .app-shell { padding: 0; }
   .workspace { border-radius: 0; border-left: 0; border-right: 0; }
   .delta-header { padding: 0.7rem 0.7rem 0; }
@@ -1265,8 +1265,38 @@ body::before {
   }
 
   .top-navigation .sidebar-link {
-    padding: 0.55rem 0.72rem;
-    font-size: 0.72rem;
+    min-width: 0;
+    flex: 1 1 0;
+    justify-content: center;
+    flex-direction: column;
+    gap: 0.18rem;
+    padding: 0.48rem 0.25rem;
+    border-radius: 10px;
+    font-size: 0.64rem;
+    line-height: 1.1;
+  }
+
+  .top-navigation .sidebar-link span {
+    font-size: 1.05rem;
+    line-height: 1;
+  }
+
+  .top-navigation {
+    position: fixed;
+    left: 0.55rem;
+    right: 0.55rem;
+    bottom: calc(0.55rem + env(safe-area-inset-bottom));
+    z-index: 100;
+    justify-content: space-around;
+    gap: 0.2rem;
+    margin: 0;
+    padding: 0.35rem;
+    border: 1px solid rgba(148, 163, 184, 0.2);
+    border-radius: 16px;
+    background: rgba(8, 15, 29, 0.94);
+    box-shadow: 0 16px 36px rgba(2, 6, 23, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.06);
+    backdrop-filter: blur(18px);
+    -webkit-backdrop-filter: blur(18px);
   }
 
   .install-app-btn {
