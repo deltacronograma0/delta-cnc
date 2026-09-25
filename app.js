@@ -66,6 +66,7 @@ let sharedSaveInFlight = null;
 let sharedSaveQueued = false;
 let supabaseLastError = '';
 let normalizedSyncActive = false;
+let normalizedMeta = { machines: {}, teams: {}, users: {} };
 
 function idbAbrir() {
   return new Promise((resolve, reject) => {
@@ -218,7 +219,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
-      navigator.serviceWorker.register('./sw.js?v=26').catch((error) => {
+      navigator.serviceWorker.register('./sw.js?v=27').catch((error) => {
         console.warn('Service worker não registrado:', error);
       });
     });
@@ -372,7 +373,15 @@ async function saveData() {
     }
 
     if (supabaseClient && !isApplyingRemoteState) {
-      await queueSharedStateSave();
+      try {
+        await queueSharedStateSave();
+      } catch (syncError) {
+        console.error('Erro de sincronização:', syncError);
+        localStorage.setItem(STORAGE_KEYS.SYNC_DIRTY, '1');
+        setSupabaseSyncStatus('Sem conexão');
+        showToast('A alteração não foi confirmada. Atualize e tente novamente.', 'error');
+        return;
+      }
     }
   } catch (e) {
     console.warn('Erro de gravação no localStorage (possível quota excedida):', e);
@@ -481,10 +490,14 @@ async function initSupabaseSync() {
 
 async function loadNormalizedState() {
   const result = {};
+  normalizedMeta = { machines: {}, teams: {}, users: {} };
   for (const [collection, table] of Object.entries(NORMALIZED_TABLES)) {
     const { data, error } = await supabaseClient.from(table).select('id, payload, updated_at, updated_by');
     if (error) throw error;
-    result[collection] = (data || []).map(row => row.payload || {});
+    result[collection] = (data || []).map(row => {
+      normalizedMeta[collection][row.id] = { updated_at: row.updated_at, updated_by: row.updated_by };
+      return row.payload || {};
+    });
   }
   return result;
 }
@@ -519,9 +532,14 @@ function applyNormalizedChange(collection, payload) {
   const index = target.findIndex(item => syncItemKey(item, collection) === id);
   if (payload.eventType === 'DELETE') {
     if (index >= 0) target.splice(index, 1);
+    delete normalizedMeta[collection][id];
   } else if (payload.new?.payload) {
     if (index >= 0) target[index] = payload.new.payload;
     else target.push(payload.new.payload);
+    normalizedMeta[collection][id] = {
+      updated_at: payload.new.updated_at,
+      updated_by: payload.new.updated_by
+    };
   }
   applyNormalizedState(getCurrentSyncState());
 }
@@ -600,40 +618,50 @@ async function saveNormalizedState() {
   setSupabaseSyncStatus('Salvando automaticamente...', false);
   const localState = getCurrentSyncState();
   const baseState = getSyncBaseState();
-  const mergedState = {};
   const updatedBy = currentUser?.email || 'gestor-anonimo';
 
   for (const [collection, table] of Object.entries(NORMALIZED_TABLES)) {
     const { data: remoteRows, error: readError } = await supabaseClient
       .from(table)
-      .select('id, payload');
+      .select('id, payload, updated_at, updated_by');
     if (readError) throw readError;
 
     const remoteState = (remoteRows || []).map(row => row.payload || {});
     const mergedItems = mergeSyncCollection(remoteState, localState[collection], baseState[collection] || [], collection);
-    const rows = mergedItems.map(item => ({
-      id: syncItemKey(item, collection),
-      payload: item,
-      updated_at: new Date().toISOString(),
-      updated_by: updatedBy
-    }));
+    const localMap = new Map((localState[collection] || []).map(item => [syncItemKey(item, collection), item]));
+    const baseMap = new Map((baseState[collection] || []).map(item => [syncItemKey(item, collection), item]));
 
-    if (rows.length) {
-      const { error: writeError } = await supabaseClient.from(table).upsert(rows, { onConflict: 'id' });
-      if (writeError) throw writeError;
+    for (const item of mergedItems) {
+      const id = syncItemKey(item, collection);
+      const localChanged = !syncItemsEqual(localMap.get(id), baseMap.get(id));
+      if (!localChanged) continue;
+      const expectedUpdatedAt = normalizedMeta[collection]?.[id]?.updated_at || null;
+      const { error: writeError } = await supabaseClient.rpc('delta_save_record', {
+        p_collection: collection,
+        p_id: id,
+        p_payload: item,
+        p_expected_updated_at: expectedUpdatedAt,
+        p_updated_by: updatedBy
+      });
+      if (writeError) throw new Error(writeError.message || 'Conflito ao salvar registro.');
     }
 
-    const keepIds = new Set(rows.map(row => row.id));
-    for (const remoteRow of remoteRows || []) {
-      if (!keepIds.has(remoteRow.id)) {
-        const { error: deleteError } = await supabaseClient.from(table).delete().eq('id', remoteRow.id);
-        if (deleteError) throw deleteError;
+    const mergedIds = new Set(mergedItems.map(item => syncItemKey(item, collection)));
+    for (const baseItem of baseState[collection] || []) {
+      const id = syncItemKey(baseItem, collection);
+      if (id && !mergedIds.has(id)) {
+        const { error: deleteError } = await supabaseClient.rpc('delta_delete_record', {
+          p_collection: collection,
+          p_id: id,
+          p_expected_updated_at: normalizedMeta[collection]?.[id]?.updated_at || null
+        });
+        if (deleteError) throw new Error(deleteError.message || 'Conflito ao excluir registro.');
       }
     }
-    mergedState[collection] = mergedItems;
   }
 
-  applyNormalizedState(mergedState);
+  const confirmedState = await loadNormalizedState();
+  applyNormalizedState(confirmedState);
   setSupabaseSyncStatus('Sincronizado automaticamente', true);
 }
 

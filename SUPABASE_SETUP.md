@@ -79,3 +79,5 @@ Depois de executar a migração normalizada, execute também `supabase_concurren
 3. Atualizar todos os celulares para a versão publicada pelo app
 
 Quando essas duas migrações estiverem concluídas, uma alteração feita com dados antigos não poderá sobrescrever silenciosamente a alteração de outro gestor.
+
+O app usa as funções `delta_save_record` e `delta_delete_record` para confirmar cada alteração no servidor antes de exibir o estado como sincronizado.
