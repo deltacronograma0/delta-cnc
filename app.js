@@ -208,7 +208,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
-      navigator.serviceWorker.register('./sw.js?v=17').catch((error) => {
+      navigator.serviceWorker.register('./sw.js?v=18').catch((error) => {
         console.warn('Service worker não registrado:', error);
       });
     });
@@ -396,13 +396,13 @@ function setSupabaseSyncStatus(message, connected = false) {
   status.classList.toggle('is-connected', connected);
   if (indicator) {
     const isSaving = /salvando/i.test(message);
-    const stateClass = connected ? 'sync-online' : (isSaving ? 'sync-saving' : 'sync-error');
+    const stateClass = connected ? 'sync-online' : (isSaving ? 'sync-saving' : (currentUser ? 'sync-error' : 'sync-local'));
     indicator.classList.remove('sync-online', 'sync-saving', 'sync-error', 'sync-local');
     indicator.classList.add(stateClass);
-    indicator.title = connected ? 'Conectado e sincronizando' : message;
+    indicator.title = connected ? 'Dados sincronizados' : (currentUser ? message : 'Visualização disponível sem conexão');
   }
   if (indicatorLabel) {
-    indicatorLabel.textContent = connected ? 'Conectado' : (/salvando/i.test(message) ? 'Salvando' : 'Sem conexão');
+    indicatorLabel.textContent = connected ? 'Sincronizado' : (/salvando/i.test(message) ? 'Salvando' : (currentUser ? 'Sem conexão' : 'Modo leitura'));
   }
 }
 
