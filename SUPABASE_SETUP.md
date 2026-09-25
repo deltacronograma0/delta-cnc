@@ -68,4 +68,4 @@ A chave `service_role` nunca deve ser colocada no navegador.
 
 O modelo antigo guarda máquinas, equipes e utilizadores em uma única linha JSON. Para evitar que três gestores sobrescrevam alterações uns dos outros, execute o arquivo `supabase_normalized_migration.sql` no SQL Editor.
 
-Esse script cria tabelas separadas e copia os dados atuais sem apagar `delta_app_state`. A aplicação só deve ser trocada para o novo modelo depois de confirmar que a migração terminou sem erros.
+Esse script cria tabelas separadas e copia os dados atuais sem apagar `delta_app_state`. Depois de executar com sucesso, a aplicação passa a usar as tabelas separadas; `delta_app_state` permanece como backup histórico.

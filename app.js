@@ -16,6 +16,11 @@ const STORAGE_KEYS = {
 const IDB_NAME = 'delta-cnc-db';
 const IDB_VERSION = 1;
 const IDB_STORE = 'pdfs';
+const NORMALIZED_TABLES = {
+  machines: 'delta_machines',
+  teams: 'delta_teams',
+  users: 'delta_users'
+};
 
 const GEMINI_MODELS = ['gemini-3.5-flash-lite', 'gemini-3.6-flash', 'gemini-3.8-flash'];
 const MODELO_GEMINI = GEMINI_MODELS[0];
@@ -60,6 +65,7 @@ let isApplyingRemoteState = false;
 let sharedSaveInFlight = null;
 let sharedSaveQueued = false;
 let supabaseLastError = '';
+let normalizedSyncActive = false;
 
 function idbAbrir() {
   return new Promise((resolve, reject) => {
@@ -212,7 +218,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
-      navigator.serviceWorker.register('./sw.js?v=25').catch((error) => {
+      navigator.serviceWorker.register('./sw.js?v=26').catch((error) => {
         console.warn('Service worker não registrado:', error);
       });
     });
@@ -439,32 +445,24 @@ async function initSupabaseSync() {
         if (authError) throw authError;
       }
 
-      const { data, error } = await supabaseClient
-        .from('delta_app_state')
-        .select('machines, teams, users, updated_at')
-        .eq('id', 'main')
-        .maybeSingle();
-
-      if (error) throw error;
-      if (data) {
-        if (localStorage.getItem(STORAGE_KEYS.SYNC_DIRTY) === '1') {
-          await queueSharedStateSave();
-        } else {
-          applySharedState(data);
-        }
+      const normalizedState = await loadNormalizedState();
+      normalizedSyncActive = true;
+      if (localStorage.getItem(STORAGE_KEYS.SYNC_DIRTY) === '1') {
+        await queueSharedStateSave();
       } else {
-        await saveSharedState();
+        applyNormalizedState(normalizedState);
       }
 
-      supabaseChannel = supabaseClient
-        .channel('delta-app-state-changes')
-        .on('postgres_changes', { event: '*', schema: 'public', table: 'delta_app_state', filter: 'id=eq.main' }, payload => {
-          if (payload.new) applySharedState(payload.new);
-        })
-        .subscribe(status => {
-          setSupabaseSyncStatus(status === 'SUBSCRIBED' ? 'Sincronização online' : `Estado: ${status}`, status === 'SUBSCRIBED');
-          setupPermissions();
+      supabaseChannel = supabaseClient.channel('delta-normalized-state-changes');
+      Object.entries(NORMALIZED_TABLES).forEach(([collection, table]) => {
+        supabaseChannel.on('postgres_changes', { event: '*', schema: 'public', table }, payload => {
+          applyNormalizedChange(collection, payload);
         });
+      });
+      supabaseChannel.subscribe(status => {
+        setSupabaseSyncStatus(status === 'SUBSCRIBED' ? 'Sincronização online' : `Estado: ${status}`, status === 'SUBSCRIBED');
+        setupPermissions();
+      });
       supabaseLastError = '';
       return;
     } catch (error) {
@@ -479,6 +477,53 @@ async function initSupabaseSync() {
 
   setSupabaseSyncStatus('Sem conexão');
   setupPermissions();
+}
+
+async function loadNormalizedState() {
+  const result = {};
+  for (const [collection, table] of Object.entries(NORMALIZED_TABLES)) {
+    const { data, error } = await supabaseClient.from(table).select('id, payload, updated_at, updated_by');
+    if (error) throw error;
+    result[collection] = (data || []).map(row => row.payload || {});
+  }
+  return result;
+}
+
+function applyNormalizedState(state) {
+  isApplyingRemoteState = true;
+  try {
+    appMachines = Array.isArray(state.machines) ? state.machines : [];
+    appData = appMachines;
+    appTeams = Array.isArray(state.teams) ? state.teams : [];
+    appUsers = Array.isArray(state.users) ? state.users : [];
+    setSyncBaseState(getCurrentSyncState());
+    localStorage.removeItem(STORAGE_KEYS.SYNC_DIRTY);
+    localStorage.setItem(STORAGE_KEYS.MACHINES, JSON.stringify(appMachines));
+    localStorage.setItem(STORAGE_KEYS.TEAMS, JSON.stringify(appTeams));
+    localStorage.setItem(STORAGE_KEYS.USERS, JSON.stringify(appUsers));
+    populateTeamFilters();
+    renderTable();
+    updateDashboard();
+    renderTeams();
+    updatePodio();
+    renderUsers();
+  } finally {
+    isApplyingRemoteState = false;
+  }
+}
+
+function applyNormalizedChange(collection, payload) {
+  if (localStorage.getItem(STORAGE_KEYS.SYNC_DIRTY) === '1') return;
+  const target = collection === 'machines' ? appMachines : collection === 'teams' ? appTeams : appUsers;
+  const id = String(payload.old?.id || payload.new?.id || '');
+  const index = target.findIndex(item => syncItemKey(item, collection) === id);
+  if (payload.eventType === 'DELETE') {
+    if (index >= 0) target.splice(index, 1);
+  } else if (payload.new?.payload) {
+    if (index >= 0) target[index] = payload.new.payload;
+    else target.push(payload.new.payload);
+  }
+  applyNormalizedState(getCurrentSyncState());
 }
 
 function applySharedState(data) {
@@ -514,6 +559,10 @@ function applySharedState(data) {
 
 async function saveSharedState() {
   if (!supabaseClient) return;
+  if (normalizedSyncActive) {
+    await saveNormalizedState();
+    return;
+  }
   setSupabaseSyncStatus('Salvando automaticamente...', false);
   const { data: remoteState } = await supabaseClient
     .from('delta_app_state')
@@ -544,6 +593,47 @@ async function saveSharedState() {
   localStorage.setItem(STORAGE_KEYS.SYNC_REMOTE_UPDATED_AT, String(Date.parse(savedState?.updated_at || savedAt)));
   setSyncBaseState(mergedState);
   localStorage.removeItem(STORAGE_KEYS.SYNC_DIRTY);
+  setSupabaseSyncStatus('Sincronizado automaticamente', true);
+}
+
+async function saveNormalizedState() {
+  setSupabaseSyncStatus('Salvando automaticamente...', false);
+  const localState = getCurrentSyncState();
+  const baseState = getSyncBaseState();
+  const mergedState = {};
+  const updatedBy = currentUser?.email || 'gestor-anonimo';
+
+  for (const [collection, table] of Object.entries(NORMALIZED_TABLES)) {
+    const { data: remoteRows, error: readError } = await supabaseClient
+      .from(table)
+      .select('id, payload');
+    if (readError) throw readError;
+
+    const remoteState = (remoteRows || []).map(row => row.payload || {});
+    const mergedItems = mergeSyncCollection(remoteState, localState[collection], baseState[collection] || [], collection);
+    const rows = mergedItems.map(item => ({
+      id: syncItemKey(item, collection),
+      payload: item,
+      updated_at: new Date().toISOString(),
+      updated_by: updatedBy
+    }));
+
+    if (rows.length) {
+      const { error: writeError } = await supabaseClient.from(table).upsert(rows, { onConflict: 'id' });
+      if (writeError) throw writeError;
+    }
+
+    const keepIds = new Set(rows.map(row => row.id));
+    for (const remoteRow of remoteRows || []) {
+      if (!keepIds.has(remoteRow.id)) {
+        const { error: deleteError } = await supabaseClient.from(table).delete().eq('id', remoteRow.id);
+        if (deleteError) throw deleteError;
+      }
+    }
+    mergedState[collection] = mergedItems;
+  }
+
+  applyNormalizedState(mergedState);
   setSupabaseSyncStatus('Sincronizado automaticamente', true);
 }
 
