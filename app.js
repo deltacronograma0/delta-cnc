@@ -57,6 +57,7 @@ let supabaseChannel = null;
 let isApplyingRemoteState = false;
 let draftSaveTimer = null;
 let pendingDraftSave = false;
+let remoteWriteRequested = false;
 let sharedSaveInFlight = null;
 let sharedSaveQueued = false;
 
@@ -211,7 +212,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
-      navigator.serviceWorker.register('./sw.js?v=29').catch((error) => {
+      navigator.serviceWorker.register('./sw.js?v=30').catch((error) => {
         console.warn('Service worker não registrado:', error);
       });
     });
@@ -375,7 +376,8 @@ async function saveData() {
       localStorage.removeItem(STORAGE_KEYS.CURRENT_USER);
     }
 
-    if (supabaseClient && !isApplyingRemoteState) {
+    if (supabaseClient && !isApplyingRemoteState && (remoteWriteRequested || pendingDraftSave)) {
+      remoteWriteRequested = false;
       await queueSharedStateSave();
       pendingDraftSave = false;
     }
@@ -406,6 +408,10 @@ async function saveData() {
     alert('Não foi possível salvar: espaço de armazenamento cheio. Remova PDFs antigos ou exporte um backup.');
     return false;
   }
+}
+
+function requestRemoteWrite() {
+  remoteWriteRequested = true;
 }
 
 function scheduleDraftSave(saveDraft) {
@@ -903,6 +909,7 @@ async function saveObservation() {
   if (!item) return;
 
   item.obs = document.getElementById('obsModalContent').value.trim();
+  requestRemoteWrite();
   await saveData();
   renderTable();
   updateDashboard();
@@ -1104,6 +1111,7 @@ function deleteSelectedMachines() {
 
   appMachines = appMachines.filter(m => !selectedMachineIds.has(m.id));
   selectedMachineIds.clear();
+  requestRemoteWrite();
   saveData();
   renderTable();
   updateDashboard();
@@ -1320,6 +1328,7 @@ async function saveMachine(e) {
     appMachines.unshift(newMachine);
   }
 
+  requestRemoteWrite();
   await saveData();
   renderTable();
   updateDashboard();
@@ -1706,6 +1715,7 @@ async function saveImportedRows() {
     appMachines.unshift(newMach);
   }
 
+  requestRemoteWrite();
   await saveData();
   const elapsed = Date.now() - saveStartedAt;
   const minimumFeedbackTime = 900;
@@ -1961,6 +1971,7 @@ async function saveTeamSubmit() {
     appTeams.push({ id, name, tags: [] });
   }
 
+  requestRemoteWrite();
   const saved = await saveData();
   if (!saved) {
     showToast('A equipe não foi confirmada no Supabase.', 'error');
@@ -1977,6 +1988,7 @@ async function deleteTeam(idx) {
   if (!requireEditor()) return;
   if (confirm(`Deseja retirar a equipe "${appTeams[idx].name}" da lista ativa? As máquinas já registadas continuarão com o histórico dessa equipe.`)) {
     appTeams.splice(idx, 1);
+    requestRemoteWrite();
     const saved = await saveData();
     if (!saved) {
       showToast('A exclusão não foi confirmada no Supabase.', 'error');
@@ -2049,6 +2061,7 @@ function saveNewUserSubmit() {
   } else {
     appUsers.push({ email, pass, role: 'Editor' });
   }
+  requestRemoteWrite();
   saveData();
   closeUserModal();
   renderUsers();
@@ -2063,6 +2076,7 @@ function deleteUser(idx) {
   }
   if (confirm(`Deseja excluir o acesso de ${appUsers[idx].email}?`)) {
     appUsers.splice(idx, 1);
+    requestRemoteWrite();
     saveData();
     renderUsers();
   }
