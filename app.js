@@ -208,7 +208,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
-      navigator.serviceWorker.register('./sw.js?v=14').catch((error) => {
+      navigator.serviceWorker.register('./sw.js?v=15').catch((error) => {
         console.warn('Service worker não registrado:', error);
       });
     });
@@ -1600,7 +1600,6 @@ function showToast(message, type = 'success') {
 }
 
 function openConfigModal() {
-  if (!requireEditor()) return;
   document.getElementById('geminiApiKeyInput').value = geminiApiKey;
   const config = getSupabaseConfig();
   document.getElementById('supabaseUrlInput').value = config.url;
