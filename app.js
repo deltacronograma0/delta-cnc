@@ -1856,13 +1856,14 @@ async function importBackup(e) {
         appMachines = data.machines;
         if (Array.isArray(data.teams)) appTeams = data.teams;
         if (Array.isArray(data.users)) appUsers = data.users;
-        await saveData();
+        requestRemoteWrite();
+        const saved = await saveData();
         renderTable();
         updateDashboard();
         updatePodio();
         renderTeams();
         renderUsers();
-        alert('Backup restaurado com sucesso!');
+        alert(saved ? 'Backup restaurado com sucesso!' : 'Backup restaurado localmente, mas não foi possível confirmar a sincronização com o Supabase.');
       } else {
         alert('Ficheiro de backup inválido ou corrompido.');
       }

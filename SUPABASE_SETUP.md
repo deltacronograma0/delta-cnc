@@ -2,6 +2,8 @@
 
 O aplicativo usa uma linha unica em `delta_app_state` para compartilhar maquinas, equipes e utilizadores entre os gestores.
 
+Para migrar o projeto existente, que tambem possui as tabelas antigas `delta_machines`, `delta_teams` e `delta_users`, execute o script [SUPABASE_MIGRATION.sql](SUPABASE_MIGRATION.sql) no SQL Editor depois de confirmar que o projeto correto esta selecionado. O script adiciona `updated_at` se necessario e une os registros de base, legados e centrais por ID/e-mail, preservando os dados ja existentes nas tabelas antigas.
+
 ## 1. Criar a tabela
 
 No Supabase, abra **SQL Editor**, cole e execute:
