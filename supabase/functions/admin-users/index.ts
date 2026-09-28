@@ -31,8 +31,11 @@ Deno.serve(async (request) => {
   const supabaseUrl = Deno.env.get('SUPABASE_URL');
   const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
   const authorization = request.headers.get('Authorization');
-  if (!supabaseUrl || !serviceRoleKey || !authorization) {
-    return jsonResponse({ error: 'A função não está configurada ou a sessão expirou.' }, 500);
+  if (!authorization) {
+    return jsonResponse({ error: 'Autenticação necessária.' }, 401);
+  }
+  if (!supabaseUrl || !serviceRoleKey) {
+    return jsonResponse({ error: 'A função não está configurada no servidor.' }, 500);
   }
 
   const adminClient = createClient(supabaseUrl, serviceRoleKey, {
