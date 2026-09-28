@@ -107,6 +107,15 @@ function dataUrlToBlob(dataUrl) {
   return new Blob([buffer], { type: mime });
 }
 
+function blobToDataUrl(blob) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result);
+    reader.onerror = () => reject(reader.error || new Error('Não foi possível ler um PDF do backup.'));
+    reader.readAsDataURL(blob);
+  });
+}
+
 async function supabaseSalvarPdf(id, dataUrl) {
   if (!supabaseClient || !id || !dataUrl) return null;
   const path = `ordens/${String(id)}.pdf`;
@@ -206,7 +215,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
-      navigator.serviceWorker.register('./sw.js?v=37').catch((error) => {
+      navigator.serviceWorker.register('./sw.js?v=38').catch((error) => {
         console.warn('Service worker não registrado:', error);
       });
     });
@@ -1878,20 +1887,59 @@ function checkGeminiBanner() {
   }
 }
 
-function exportBackup() {
-  const backupObj = {
-    version: '1.0',
-    exportDate: new Date().toISOString(),
-    machines: appMachines,
-    teams: appTeams
-  };
-  const blob = new Blob([JSON.stringify(backupObj, null, 2)], { type: 'application/json' });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = `DELTA_Backup_${new Date().toISOString().split('T')[0]}.json`;
-  a.click();
-  setTimeout(() => URL.revokeObjectURL(url), 5000);
+async function exportBackup() {
+  if (!requireEditor()) return;
+  const button = document.getElementById('exportBackupBtn');
+  if (button) {
+    button.disabled = true;
+    button.textContent = 'Preparando backup...';
+  }
+
+  try {
+    const machines = [];
+    let pdfCount = 0;
+    for (const machine of appMachines) {
+      let pdfData = machine.pdfData || '';
+      if (machine.hasPdf && !pdfData) pdfData = await idbBuscarPdf(machine.id) || '';
+      if (machine.hasPdf && !pdfData && machine.pdfPath && supabaseClient) {
+        const signedUrl = await supabaseBuscarPdf(machine.pdfPath);
+        if (signedUrl) {
+          const response = await fetch(signedUrl);
+          if (!response.ok) throw new Error(`Não foi possível baixar o PDF da OS ${machine.os || machine.id}.`);
+          pdfData = await blobToDataUrl(await response.blob());
+        }
+      }
+      if (machine.hasPdf && !pdfData) {
+        throw new Error(`O PDF da OS ${machine.os || machine.id} não está disponível para backup. Verifique o arquivo e tente de novo.`);
+      }
+      if (pdfData) pdfCount++;
+      machines.push({ ...machine, pdfData, pdfPath: '', hasPdf: Boolean(pdfData || machine.hasPdf) });
+    }
+
+    const backupObj = {
+      format: 'delta-cnc-backup',
+      version: '2.0',
+      exportDate: new Date().toISOString(),
+      machines,
+      teams: appTeams
+    };
+    const blob = new Blob([JSON.stringify(backupObj)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `DELTA_Backup_Completo_${new Date().toISOString().slice(0, 10)}.json`;
+    link.click();
+    setTimeout(() => URL.revokeObjectURL(url), 30000);
+    showToast(`Backup completo baixado: ${machines.length} máquinas, ${appTeams.length} equipes e ${pdfCount} PDFs. Salve uma cópia no Drive.`);
+  } catch (error) {
+    console.error('Erro ao criar backup completo:', error);
+    showToast(error.message || 'Não foi possível criar o backup completo.', 'error');
+  } finally {
+    if (button) {
+      button.disabled = false;
+      button.innerHTML = '💾 Baixar backup completo';
+    }
+  }
 }
 
 async function importBackup(e) {
@@ -1903,7 +1951,25 @@ async function importBackup(e) {
     try {
       const data = JSON.parse(evt.target.result);
       if (data && Array.isArray(data.machines)) {
-        appMachines = data.machines;
+        const machinesWithStorage = [];
+        for (const machine of data.machines) {
+          const pdfData = machine.pdfData || '';
+          let pdfPath = machine.pdfPath || '';
+          if (pdfData) {
+            await idbSalvarPdf(machine.id, pdfData);
+            if (supabaseClient) pdfPath = await supabaseSalvarPdf(machine.id, pdfData);
+          } else if (machine.hasPdf && !pdfPath) {
+            throw new Error(`O backup não contém o PDF da OS ${machine.os || machine.id}; os dados não foram restaurados.`);
+          }
+          machinesWithStorage.push({
+            ...machine,
+            pdfData: '',
+            pdfPath,
+            hasPdf: Boolean(pdfData || machine.hasPdf)
+          });
+        }
+
+        appMachines = machinesWithStorage;
         if (Array.isArray(data.teams)) appTeams = data.teams;
         requestRemoteWrite();
         const saved = await saveData();
@@ -1912,7 +1978,7 @@ async function importBackup(e) {
         updatePodio();
         renderTeams();
         renderUsers();
-        alert(saved ? 'Backup restaurado com sucesso!' : 'Backup restaurado localmente, mas não foi possível confirmar a sincronização com o Supabase.');
+        alert(saved ? `Backup restaurado: ${appMachines.length} máquinas, ${appTeams.length} equipes e PDFs incluídos.` : 'Backup restaurado localmente, mas não foi possível confirmar a sincronização com o Supabase.');
       } else {
         alert('Ficheiro de backup inválido ou corrompido.');
       }

@@ -19,7 +19,7 @@ O app usa `delta_app_state` para máquinas e equipes, Supabase Auth para autenti
 - `delta_user_roles` só permite ao usuário consultar o próprio perfil; administradores podem consultar a lista. A Edge Function valida a sessão, permite a todos os Admins gerir Editores e reserva mudanças de contas Admin ao principal.
 - O bucket `delta-pdfs` permanece privado. Apenas perfis autenticados podem obter ou enviar PDFs.
 - `delta_app_state` continua legível sem login para exibir o cronograma público. Se nomes de clientes ou cronogramas forem confidenciais, remova a policy `delta app state public read` e exija login também para leitura antes de divulgar o app.
-- Configure backups automáticos no plano disponível e teste uma restauração periódica. Guarde uma cópia JSON exportada fora do dispositivo que opera o app.
+- A cópia sem custo adicional é manual: em **Definições & Backup**, baixe o JSON completo (máquinas, equipes e PDFs) e envie-o para uma pasta compartilhada do Google Drive. Faça semanalmente e após mudanças grandes; confira o tamanho do arquivo e teste uma restauração de tempos em tempos. Isso não substitui snapshots automáticos do banco, que dependem do plano Supabase.
 - Use apenas a Project URL e Publishable Key no navegador. Nunca exponha `service_role` ou uma Secret Key.
 
 ## Conectar dispositivos

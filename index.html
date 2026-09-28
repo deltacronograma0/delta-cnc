@@ -822,13 +822,13 @@
         </div>
 
         <div>
-          <h4 style="margin:0 0 0.5rem; font-size:0.95rem; color:#ffffff; font-weight:700;">Segurança de Dados (Backup Completo)</h4>
+          <h4 style="margin:0 0 0.5rem; font-size:0.95rem; color:#ffffff; font-weight:700;">Backup para o Google Drive</h4>
           <p style="font-size:0.76rem; color:var(--text-muted); margin-bottom:1.15rem; line-height:1.4;">
-            Exporte ou restaure todo o ecossistema (Máquinas, Equipes e Utilizadores) em ficheiro JSON estruturado.
+            Baixe um arquivo completo com máquinas, equipes e PDFs e envie-o para uma pasta do Drive. Faça isso semanalmente e após mudanças importantes; a rotina é manual e sem custo de serviço adicional.
           </p>
           <div style="display:flex; flex-wrap:wrap; gap:0.75rem;">
-            <button class="btn-delta btn-slate" onclick="exportBackup()">
-              💾 Exportar Backup (JSON)
+            <button id="exportBackupBtn" class="btn-delta btn-slate" onclick="exportBackup()">
+              💾 Baixar backup completo
             </button>
             <label class="btn-delta btn-slate" style="margin:0; cursor:pointer;">
               📂 Restaurar Backup (JSON)
@@ -874,6 +874,6 @@
     <span id="appToastMessage">Ordens atualizadas com sucesso!</span>
   </div>
 
-  <script src="app.js?v=20260928-persistent-passwords"></script>
+  <script src="app.js?v=20260928-complete-backup-v2"></script>
 </body>
 </html>
