@@ -434,10 +434,10 @@
     <section id="tab-usuarios" class="hidden">
       <div class="action-bar">
         <h2 style="font-size:1.2rem; margin:0; color:#ffffff; font-weight:700;">Gestão de Acessos &amp; Utilizadores</h2>
-        <a class="btn-delta btn-indigo admin-only" href="https://supabase.com/dashboard/project/eqeiwhdrreahuwigvkpt/auth/users" target="_blank" rel="noopener noreferrer">Gerir convites no Supabase Auth</a>
+        <button class="btn-delta btn-indigo admin-only primary-admin-only" onclick="openUserModal()">Adicionar acesso</button>
       </div>
 
-      <p class="settings-description admin-only">Convide utilizadores no Supabase Auth. Depois, atribua o perfil Editor ou Administrador à tabela delta_user_roles pelo SQL Editor. Senhas não são guardadas neste app.</p>
+      <p class="settings-description admin-only primary-admin-only">Só o Administrador principal pode gerir perfis. Defina uma senha temporária com pelo menos 12 caracteres e entregue-a diretamente ao usuário. A senha é enviada apenas à função segura do servidor e não fica guardada no app.</p>
 
       <div class="table-card user-access-card" style="max-width:850px;">
         <div class="table-scroll user-access-scroll">
@@ -446,7 +446,7 @@
             <tr>
               <th>E-mail</th>
               <th>Perfil de Permissões</th>
-              <th>Gestão de conta</th>
+              <th style="text-align:right;">Ações</th>
             </tr>
           </thead>
           <tbody id="usersTableBody">
@@ -456,6 +456,36 @@
         </div>
       </div>
     </section>
+
+    <div id="userModal" class="modal-overlay">
+      <div class="modal-dialog">
+        <div class="modal-header">
+          <h3 id="userModalTitle">Adicionar acesso</h3>
+          <button class="modal-close" onclick="closeUserModal()">&times;</button>
+        </div>
+        <div class="modal-body">
+          <div class="form-group" style="margin-bottom:1rem;">
+            <label for="managedUserEmail">E-mail</label>
+            <input type="email" id="managedUserEmail" class="input-delta" autocomplete="email" placeholder="nome@deltacnc.pt" required>
+          </div>
+          <div class="form-group" style="margin-bottom:1rem;">
+            <label for="managedUserPassword">Senha temporária</label>
+            <input type="password" id="managedUserPassword" class="input-delta" autocomplete="new-password" minlength="12" placeholder="Mínimo de 12 caracteres" required>
+          </div>
+          <div class="form-group">
+            <label for="managedUserRole">Perfil</label>
+            <select id="managedUserRole" class="input-delta">
+              <option value="Editor">Editor</option>
+              <option value="Administrador">Administrador</option>
+            </select>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn-delta btn-slate" onclick="closeUserModal()">Cancelar</button>
+          <button id="managedUserSaveButton" class="btn-delta btn-indigo" onclick="saveUserAccess()">Salvar acesso</button>
+        </div>
+      </div>
+    </div>
 
       </main>
     </div>
@@ -843,6 +873,6 @@
     <span id="appToastMessage">Ordens atualizadas com sucesso!</span>
   </div>
 
-  <script src="app.js?v=20260928-auth-roles-v2"></script>
+  <script src="app.js?v=20260928-inapp-user-admin-v2"></script>
 </body>
 </html>

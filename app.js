@@ -206,7 +206,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
-      navigator.serviceWorker.register('./sw.js?v=34').catch((error) => {
+      navigator.serviceWorker.register('./sw.js?v=35').catch((error) => {
         console.warn('Service worker não registrado:', error);
       });
     });
@@ -701,6 +701,7 @@ function setupPermissions() {
   const authBtn = document.getElementById('authBtn');
   const editorEls = document.querySelectorAll('.editor-only');
   const adminEls = document.querySelectorAll('.admin-only');
+  const primaryAdminEls = document.querySelectorAll('.primary-admin-only');
 
   if (currentUser) {
     userLabel.textContent = `${currentUser.email.split('@')[0]} (${currentUser.role})`;
@@ -708,12 +709,14 @@ function setupPermissions() {
     authBtn.className = 'btn-delta btn-danger btn-sm';
     editorEls.forEach(el => el.style.display = supabaseClient ? '' : 'none');
     adminEls.forEach(el => el.style.display = currentUser.role === 'Administrador' && supabaseClient ? '' : 'none');
+    primaryAdminEls.forEach(el => el.style.display = currentUser.email.toLowerCase() === 'deltacronograma@gmail.com' && supabaseClient ? '' : 'none');
   } else {
     userLabel.textContent = 'Visitante';
     authBtn.textContent = 'Entrar';
     authBtn.className = 'btn-delta btn-slate btn-sm';
     editorEls.forEach(el => el.style.display = 'none');
     adminEls.forEach(el => el.style.display = 'none');
+    primaryAdminEls.forEach(el => el.style.display = 'none');
   }
   checkGeminiBanner();
 }
@@ -735,6 +738,15 @@ function requireAdmin() {
   if (!requireEditor()) return false;
   if (currentUser.role !== 'Administrador') {
     showToast('Acesso restrito ao Administrador.', 'error');
+    return false;
+  }
+  return true;
+}
+
+function requirePrimaryAdmin() {
+  if (!requireAdmin()) return false;
+  if (currentUser.email.toLowerCase() !== 'deltacronograma@gmail.com') {
+    showToast('Somente o Administrador principal pode gerir acessos.', 'error');
     return false;
   }
   return true;
@@ -2065,15 +2077,95 @@ function renderUsers() {
     return;
   }
 
-  tbody.innerHTML = appUsers.map(user => `
-    <tr>
-      <td><strong style="color:#ffffff;">${escapeHtml(user.email)}</strong></td>
-      <td><span class="badge-status status-andamento">${escapeHtml(user.role)}</span></td>
-      <td>Conta gerida no Supabase Auth</td>
-    </tr>
-  `).join('');
+  tbody.innerHTML = appUsers.map(user => {
+    const encodedEmail = encodeURIComponent(user.email);
+    const protectedAdmin = user.email.toLowerCase() === 'deltacronograma@gmail.com';
+    const canManage = currentUser.email.toLowerCase() === 'deltacronograma@gmail.com';
+    const canDelete = canManage && !protectedAdmin && user.email.toLowerCase() !== currentUser.email.toLowerCase();
+    return `
+      <tr>
+        <td><strong style="color:#ffffff;">${escapeHtml(user.email)}</strong></td>
+        <td><span class="badge-status status-andamento">${escapeHtml(user.role)}</span></td>
+        <td style="text-align:right;">
+          ${canManage ? `<div class="user-actions"><button class="btn-delta btn-slate btn-sm" onclick="openUserModal(decodeURIComponent('${encodedEmail}'), '${escapeHtml(user.role)}')">Senha/perfil</button>${canDelete ? `<button class="btn-delta btn-danger btn-sm" onclick="deleteUserAccess(decodeURIComponent('${encodedEmail}'))">Excluir</button>` : ''}</div>` : '<span class="text-muted">Gerido pelo Administrador principal</span>'}
+        </td>
+      </tr>
+    `;
+  }).join('');
 
   setupPermissions();
+}
+
+function openUserModal(email = '', role = 'Editor') {
+  if (!requirePrimaryAdmin()) return;
+  const isPrimaryAdmin = email.toLowerCase() === 'deltacronograma@gmail.com';
+  document.getElementById('userModalTitle').textContent = email ? 'Redefinir acesso' : 'Adicionar acesso';
+  document.getElementById('managedUserEmail').value = email;
+  document.getElementById('managedUserEmail').readOnly = Boolean(email);
+  document.getElementById('managedUserPassword').value = '';
+  document.getElementById('managedUserRole').value = role;
+  document.getElementById('managedUserRole').disabled = isPrimaryAdmin;
+  document.getElementById('userModal').classList.add('open');
+}
+
+function closeUserModal() {
+  document.getElementById('userModal').classList.remove('open');
+}
+
+async function saveUserAccess() {
+  if (!requirePrimaryAdmin()) return;
+  const email = document.getElementById('managedUserEmail').value.trim().toLowerCase();
+  const password = document.getElementById('managedUserPassword').value;
+  const role = document.getElementById('managedUserRole').value;
+  const button = document.getElementById('managedUserSaveButton');
+  if (!email || password.length < 12) {
+    showToast('Informe um e-mail válido e uma senha temporária com pelo menos 12 caracteres.', 'error');
+    return;
+  }
+
+  button.disabled = true;
+  try {
+    const { error } = await supabaseClient.functions.invoke('admin-users', {
+      body: { action: 'upsert', email, password, role }
+    });
+    if (error) throw error;
+    const { data: roles, error: rolesError } = await supabaseClient
+      .from('delta_user_roles')
+      .select('email, role')
+      .order('email');
+    if (rolesError) throw rolesError;
+    appUsers = roles || [];
+    closeUserModal();
+    renderUsers();
+    showToast('Acesso salvo no Supabase Auth. Entregue a senha temporária diretamente ao usuário.');
+  } catch (error) {
+    console.error('Erro ao gerir acesso:', error);
+    showToast(error.message || 'Não foi possível salvar o acesso.', 'error');
+  } finally {
+    button.disabled = false;
+  }
+}
+
+async function deleteUserAccess(email) {
+  if (!requirePrimaryAdmin()) return;
+  if (!confirm(`Excluir o acesso de ${email}? Essa ação não pode ser desfeita.`)) return;
+  try {
+    const { error } = await supabaseClient.functions.invoke('admin-users', {
+      body: { action: 'delete', email }
+    });
+    if (error) throw error;
+    const { data: roles, error: rolesError } = await supabaseClient
+      .from('delta_user_roles')
+      .select('email, role')
+      .order('email');
+    if (rolesError) throw rolesError;
+    appUsers = roles || [];
+    renderUsers();
+    showToast('Acesso excluído do Supabase Auth.');
+  } catch (error) {
+    console.error('Erro ao excluir acesso:', error);
+    showToast(error.message || 'Não foi possível excluir o acesso.', 'error');
+  }
 }
 
 function updateDashboard() {
