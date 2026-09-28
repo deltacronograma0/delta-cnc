@@ -94,6 +94,12 @@ on conflict (id) do update set public = false;
 
 drop policy if exists "delta pdf authenticated access" on storage.objects;
 drop policy if exists "delta pdf editor access" on storage.objects;
+drop policy if exists "delta pdf public read" on storage.objects;
+create policy "delta pdf public read"
+  on storage.objects
+  for select
+  to anon, authenticated
+  using (bucket_id = 'delta-pdfs');
 create policy "delta pdf editor access"
   on storage.objects
   for all
