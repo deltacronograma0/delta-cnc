@@ -53,9 +53,10 @@ Deno.serve(async (request) => {
     .select('role')
     .eq('email', actorEmail)
     .maybeSingle();
-  if (actorRoleError || actorRole?.role !== 'Administrador' || actorEmail !== primaryAdminEmail) {
-    return jsonResponse({ error: 'Apenas o Administrador principal pode gerir acessos.' }, 403);
+  if (actorRoleError || actorRole?.role !== 'Administrador') {
+    return jsonResponse({ error: 'Apenas administradores podem gerir acessos de Editores.' }, 403);
   }
+  const isPrimaryAdmin = actorEmail === primaryAdminEmail;
 
   let body: { action?: string; email?: string; password?: string; role?: string };
   try {
@@ -81,6 +82,16 @@ Deno.serve(async (request) => {
     }
     if (email === primaryAdminEmail && role !== 'Administrador') {
       return jsonResponse({ error: 'O administrador principal não pode perder o perfil de Administrador.' }, 400);
+    }
+
+    const { data: existingRole, error: existingRoleError } = await adminClient
+      .from('delta_user_roles')
+      .select('role')
+      .eq('email', email)
+      .maybeSingle();
+    if (existingRoleError) return jsonResponse({ error: existingRoleError.message }, 500);
+    if (!isPrimaryAdmin && (role !== 'Editor' || existingRole?.role === 'Administrador')) {
+      return jsonResponse({ error: 'Somente o Administrador principal pode gerir contas Administrador.' }, 403);
     }
 
     const existingUser = await findAuthUserByEmail(adminClient, email);
@@ -128,6 +139,9 @@ Deno.serve(async (request) => {
       .maybeSingle();
     if (targetRoleError) return jsonResponse({ error: targetRoleError.message }, 500);
     if (!targetRole) return jsonResponse({ error: 'Conta não encontrada.' }, 404);
+    if (!isPrimaryAdmin && targetRole.role !== 'Editor') {
+      return jsonResponse({ error: 'Administradores só podem excluir contas Editor.' }, 403);
+    }
 
     if (targetRole.role === 'Administrador') {
       const { count, error } = await adminClient

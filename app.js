@@ -743,15 +743,6 @@ function requireAdmin() {
   return true;
 }
 
-function requirePrimaryAdmin() {
-  if (!requireAdmin()) return false;
-  if (currentUser.email.toLowerCase() !== 'deltacronograma@gmail.com') {
-    showToast('Somente o Administrador principal pode gerir acessos.', 'error');
-    return false;
-  }
-  return true;
-}
-
 function toggleAuthModal() {
   if (currentUser) {
     document.getElementById('logoutModal').classList.add('open');
@@ -2080,14 +2071,15 @@ function renderUsers() {
   tbody.innerHTML = appUsers.map(user => {
     const encodedEmail = encodeURIComponent(user.email);
     const protectedAdmin = user.email.toLowerCase() === 'deltacronograma@gmail.com';
-    const canManage = currentUser.email.toLowerCase() === 'deltacronograma@gmail.com';
+    const isPrimaryAdmin = currentUser.email.toLowerCase() === 'deltacronograma@gmail.com';
+    const canManage = isPrimaryAdmin || user.role === 'Editor';
     const canDelete = canManage && !protectedAdmin && user.email.toLowerCase() !== currentUser.email.toLowerCase();
     return `
       <tr>
         <td><strong style="color:#ffffff;">${escapeHtml(user.email)}</strong></td>
         <td><span class="badge-status status-andamento">${escapeHtml(user.role)}</span></td>
         <td style="text-align:right;">
-          ${canManage ? `<div class="user-actions"><button class="btn-delta btn-slate btn-sm" onclick="openUserModal(decodeURIComponent('${encodedEmail}'), '${escapeHtml(user.role)}')">Senha/perfil</button>${canDelete ? `<button class="btn-delta btn-danger btn-sm" onclick="deleteUserAccess(decodeURIComponent('${encodedEmail}'))">Excluir</button>` : ''}</div>` : '<span class="text-muted">Gerido pelo Administrador principal</span>'}
+          ${canManage ? `<div class="user-actions"><button class="btn-delta btn-slate btn-sm" onclick="openUserModal(decodeURIComponent('${encodedEmail}'), '${escapeHtml(user.role)}')">${isPrimaryAdmin ? 'Senha/perfil' : 'Redefinir senha'}</button>${canDelete ? `<button class="btn-delta btn-danger btn-sm" onclick="deleteUserAccess(decodeURIComponent('${encodedEmail}'))">Excluir</button>` : ''}</div>` : '<span class="text-muted">Gerido pelo Administrador principal</span>'}
         </td>
       </tr>
     `;
@@ -2097,14 +2089,20 @@ function renderUsers() {
 }
 
 function openUserModal(email = '', role = 'Editor') {
-  if (!requirePrimaryAdmin()) return;
-  const isPrimaryAdmin = email.toLowerCase() === 'deltacronograma@gmail.com';
+  if (!requireAdmin()) return;
+  const isPrimaryActor = currentUser.email.toLowerCase() === 'deltacronograma@gmail.com';
+  const targetUser = appUsers.find(user => user.email.toLowerCase() === email.toLowerCase());
+  if (!isPrimaryActor && targetUser?.role === 'Administrador') {
+    showToast('Somente o Administrador principal pode alterar outro Administrador.', 'error');
+    return;
+  }
+  const isPrimaryTarget = email.toLowerCase() === 'deltacronograma@gmail.com';
   document.getElementById('userModalTitle').textContent = email ? 'Redefinir acesso' : 'Adicionar acesso';
   document.getElementById('managedUserEmail').value = email;
   document.getElementById('managedUserEmail').readOnly = Boolean(email);
   document.getElementById('managedUserPassword').value = '';
-  document.getElementById('managedUserRole').value = role;
-  document.getElementById('managedUserRole').disabled = isPrimaryAdmin;
+  document.getElementById('managedUserRole').value = isPrimaryActor ? role : 'Editor';
+  document.getElementById('managedUserRole').disabled = !isPrimaryActor || isPrimaryTarget;
   document.getElementById('userModal').classList.add('open');
 }
 
@@ -2113,11 +2111,17 @@ function closeUserModal() {
 }
 
 async function saveUserAccess() {
-  if (!requirePrimaryAdmin()) return;
+  if (!requireAdmin()) return;
   const email = document.getElementById('managedUserEmail').value.trim().toLowerCase();
   const password = document.getElementById('managedUserPassword').value;
-  const role = document.getElementById('managedUserRole').value;
+  const isPrimaryAdmin = currentUser.email.toLowerCase() === 'deltacronograma@gmail.com';
+  const targetUser = appUsers.find(user => user.email.toLowerCase() === email);
+  const role = isPrimaryAdmin ? document.getElementById('managedUserRole').value : 'Editor';
   const button = document.getElementById('managedUserSaveButton');
+  if (!isPrimaryAdmin && targetUser?.role === 'Administrador') {
+    showToast('Somente o Administrador principal pode alterar outro Administrador.', 'error');
+    return;
+  }
   if (!email || password.length < 12) {
     showToast('Informe um e-mail válido e uma senha temporária com pelo menos 12 caracteres.', 'error');
     return;
@@ -2147,7 +2151,13 @@ async function saveUserAccess() {
 }
 
 async function deleteUserAccess(email) {
-  if (!requirePrimaryAdmin()) return;
+  if (!requireAdmin()) return;
+  const targetUser = appUsers.find(user => user.email.toLowerCase() === email.toLowerCase());
+  const isPrimaryAdmin = currentUser.email.toLowerCase() === 'deltacronograma@gmail.com';
+  if (!isPrimaryAdmin && targetUser?.role !== 'Editor') {
+    showToast('Administradores só podem excluir contas Editor.', 'error');
+    return;
+  }
   if (!confirm(`Excluir o acesso de ${email}? Essa ação não pode ser desfeita.`)) return;
   try {
     const { error } = await supabaseClient.functions.invoke('admin-users', {

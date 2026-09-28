@@ -434,10 +434,11 @@
     <section id="tab-usuarios" class="hidden">
       <div class="action-bar">
         <h2 style="font-size:1.2rem; margin:0; color:#ffffff; font-weight:700;">Gestão de Acessos &amp; Utilizadores</h2>
-        <button class="btn-delta btn-indigo admin-only primary-admin-only" onclick="openUserModal()">Adicionar acesso</button>
+        <button class="btn-delta btn-indigo admin-only" onclick="openUserModal()">Adicionar Editor</button>
       </div>
 
-      <p class="settings-description admin-only primary-admin-only">Só o Administrador principal pode gerir perfis. Defina uma senha temporária com pelo menos 12 caracteres e entregue-a diretamente ao usuário. A senha é enviada apenas à função segura do servidor e não fica guardada no app.</p>
+      <p class="settings-description admin-only">Administradores podem cadastrar, redefinir senha e excluir Editores pelo app. Use uma senha temporária forte e entregue-a diretamente ao usuário.</p>
+      <p class="settings-description admin-only primary-admin-only">Somente o Administrador principal pode promover ou rebaixar outros Administradores.</p>
 
       <div class="table-card user-access-card" style="max-width:850px;">
         <div class="table-scroll user-access-scroll">

@@ -11,12 +11,12 @@ O app usa `delta_app_state` para máquinas e equipes, Supabase Auth para autenti
 5. O e-mail `deltacronograma@gmail.com` é o Administrador principal. Use o convite já enviado para essa conta e defina uma senha nova; depois entre no app.
 6. Publique a função `supabase/functions/admin-users/index.ts` com `supabase functions deploy admin-users --project-ref eqeiwhdrreahuwigvkpt` ou pelo editor de Edge Functions do Dashboard.
 7. Em **Edge Functions > Secrets**, configure `SUPABASE_SERVICE_ROLE_KEY` usando a chave `service_role` do projeto se o ambiente não a fornecer automaticamente. Essa chave fica somente no servidor e nunca no JavaScript do app.
-8. Depois que a função estiver publicada e o Administrador principal entrar no app, somente `deltacronograma@gmail.com` poderá criar, redefinir ou excluir acessos em **Utilizadores**. Ele escolhe Editor ou Administrador e define uma senha temporária forte; os demais Administradores operam a produção, mas não gerem contas. A senha não é guardada pelo app. Os quatro perfis já estão em `public.delta_user_roles`.
+8. Depois que a função estiver publicada, todos os Administradores podem criar, redefinir senha e excluir contas Editor em **Utilizadores**. Somente `deltacronograma@gmail.com` pode promover, rebaixar ou gerir outros Administradores. A senha temporária é enviada à função segura e não é guardada no app. Os perfis estão em `public.delta_user_roles`.
 
 ## Segurança e dados
 
 - Desative **Anonymous Sign-Ins** em **Authentication > Providers**. Visitantes continuam com leitura pública do cronograma; apenas usuários autenticados com perfil Editor ou Administrador podem escrever.
-- `delta_user_roles` só permite ao usuário consultar o próprio perfil; o administrador pode consultar a lista. A Edge Function valida a sessão e o perfil Admin antes de criar, redefinir ou excluir contas.
+- `delta_user_roles` só permite ao usuário consultar o próprio perfil; administradores podem consultar a lista. A Edge Function valida a sessão, permite a todos os Admins gerir Editores e reserva mudanças de contas Admin ao principal.
 - O bucket `delta-pdfs` permanece privado. Apenas perfis autenticados podem obter ou enviar PDFs.
 - `delta_app_state` continua legível sem login para exibir o cronograma público. Se nomes de clientes ou cronogramas forem confidenciais, remova a policy `delta app state public read` e exija login também para leitura antes de divulgar o app.
 - Configure backups automáticos no plano disponível e teste uma restauração periódica. Guarde uma cópia JSON exportada fora do dispositivo que opera o app.
