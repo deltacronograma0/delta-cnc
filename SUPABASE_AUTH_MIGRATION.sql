@@ -88,6 +88,10 @@ where payload ? 'pass';
 alter table public.delta_app_state drop column if exists users;
 revoke all on table public.delta_machines, public.delta_teams, public.delta_users from anon, authenticated, public;
 
+insert into storage.buckets (id, name, public)
+values ('delta-pdfs', 'delta-pdfs', false)
+on conflict (id) do update set public = false;
+
 drop policy if exists "delta pdf authenticated access" on storage.objects;
 drop policy if exists "delta pdf editor access" on storage.objects;
 create policy "delta pdf editor access"

@@ -99,6 +99,17 @@ async function idbBuscarPdf(id) {
   }
 }
 
+async function idbRemoverPdf(id) {
+  if (!id) return;
+  const db = await idbAbrir();
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction([IDB_STORE], 'readwrite');
+    const request = tx.objectStore(IDB_STORE).delete(String(id));
+    request.onsuccess = () => resolve();
+    request.onerror = event => reject(event.target.error);
+  });
+}
+
 function dataUrlToBlob(dataUrl) {
   const [header, base64] = dataUrl.split(',');
   const mime = header.match(/:(.*?);/)?.[1] || 'application/pdf';
@@ -1729,6 +1740,7 @@ function toggleSelectAllPreview(masterCheckbox) {
 }
 
 async function saveImportedRows() {
+  if (!requireEditor()) return;
   const selectedRows = currentPreviewRows.filter(r => r.selected);
   if (selectedRows.length === 0) {
     alert('Nenhum registo selecionado para salvar.');
@@ -1744,7 +1756,6 @@ async function saveImportedRows() {
   const dateRule = document.getElementById('importStartDateRule').value;
   const todayStr = new Date().toISOString().split('T')[0];
   let savedCount = 0;
-  let localOnlyPdfCount = 0;
   const skippedFiles = [];
 
   for (const row of selectedRows) {
@@ -1771,13 +1782,20 @@ async function saveImportedRows() {
       continue;
     }
 
-    if (supabaseClient) {
+    try {
+      pdfPath = await supabaseSalvarPdf(newId, pdfData);
+      if (!pdfPath) throw new Error('O Supabase não retornou o caminho do PDF.');
+    } catch (storageError) {
       try {
-        pdfPath = await supabaseSalvarPdf(newId, pdfData) || '';
-      } catch (storageError) {
-        localOnlyPdfCount++;
-        console.warn(`PDF da OS ${row.os || newId} mantido localmente; upload ao Storage falhou:`, storageError);
+        await idbRemoverPdf(newId);
+      } catch (cleanupError) {
+        console.warn('Não foi possível remover o PDF local de uma OS não importada:', cleanupError);
       }
+      row.status = 'Falha no envio ao Supabase';
+      row.selected = false;
+      skippedFiles.push(row.fileName || row.os || newId);
+      console.error(`A OS ${row.os || newId} não foi importada porque o PDF não ficou disponível no Supabase:`, storageError);
+      continue;
     }
 
     const newMach = {
@@ -1805,7 +1823,10 @@ async function saveImportedRows() {
   if (savedCount === 0) {
     saveButton.disabled = false;
     saveButton.innerHTML = originalSaveLabel;
-    showToast('Nenhuma OS foi importada: não foi possível guardar os PDFs localmente.', 'error');
+    showToast('Nenhuma OS foi importada: o upload dos PDFs não foi confirmado.', 'error');
+    if (skippedFiles.length > 0) {
+      alert(`Nenhuma OS foi importada. O upload dos PDFs falhou para:\n\n${skippedFiles.join('\n')}\n\nVerifique a conexão e tente novamente.`);
+    }
     renderImportProgress(currentPreviewRows.length);
     return;
   }
@@ -1824,11 +1845,9 @@ async function saveImportedRows() {
   saveButton.innerHTML = originalSaveLabel;
   if (!saved) {
     showToast(`${savedCount} OS importadas neste dispositivo, mas a sincronização não foi confirmada.`, 'error');
-  } else if (localOnlyPdfCount > 0 || skippedFiles.length > 0) {
-    const details = [];
-    if (localOnlyPdfCount > 0) details.push(`${localOnlyPdfCount} PDF(s) ficaram só neste dispositivo`);
-    if (skippedFiles.length > 0) details.push(`${skippedFiles.length} arquivo(s) não puderam ser anexados`);
-    showToast(`${savedCount} OS importadas. ${details.join('; ')}.`, 'error');
+  } else if (skippedFiles.length > 0) {
+    showToast(`${savedCount} OS importadas com PDF. ${skippedFiles.length} não foram importadas porque o upload falhou.`, 'error');
+    alert(`Estas OS não foram importadas porque o PDF não foi confirmado no Supabase:\n\n${skippedFiles.join('\n')}\n\nVerifique a conexão e tente novamente.`);
   } else {
     showToast(`${savedCount} OS importadas com PDFs anexados.`);
   }
