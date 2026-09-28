@@ -543,8 +543,6 @@ async function initSupabaseSync() {
     if (error) throw error;
     if (data) {
       applySharedState(data);
-    } else {
-      await saveSharedState();
     }
     syncReady = true;
 
