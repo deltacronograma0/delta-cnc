@@ -1,4 +1,4 @@
-const CACHE_NAME = 'delta-cnc-v32';
+const CACHE_NAME = 'delta-cnc-v33';
 const APP_SHELL = [
   './',
   './index.html',
@@ -35,7 +35,10 @@ self.addEventListener('activate', (event) => {
 self.addEventListener('fetch', (event) => {
   if (event.request.method !== 'GET') return;
 
-  const requestPath = new URL(event.request.url).pathname;
+  const requestUrl = new URL(event.request.url);
+  if (requestUrl.origin !== self.location.origin) return;
+
+  const requestPath = requestUrl.pathname;
   const isNetworkFirst = NETWORK_FIRST_PATHS.some(path => {
     const fileName = path.replace('./', '');
     return fileName ? requestPath.endsWith(fileName) : requestPath.endsWith('/');
