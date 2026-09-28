@@ -216,7 +216,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
-      navigator.serviceWorker.register('./sw.js?v=38').catch((error) => {
+      navigator.serviceWorker.register('./sw.js?v=40').catch((error) => {
         console.warn('Service worker não registrado:', error);
       });
     });
@@ -976,6 +976,7 @@ async function saveObservation() {
 
 function populateTeamFilters() {
   const machSelect = document.getElementById('machTeam');
+  const selectedMachineTeam = machSelect?.value || '';
   machSelect.innerHTML = '<option value="—">Sem equipe definida (—)</option>';
 
   const teamMenu = document.getElementById('filterTeamMenu');
@@ -991,6 +992,13 @@ function populateTeamFilters() {
     teamOption.textContent = t.name;
     machSelect.appendChild(teamOption);
   });
+
+  if (selectedMachineTeam && selectedMachineTeam !== '—' && ![...machSelect.options].some(option => option.value === selectedMachineTeam)) {
+    machSelect.add(new Option(`${selectedMachineTeam} (histórica)`, selectedMachineTeam));
+  }
+  if (selectedMachineTeam && [...machSelect.options].some(option => option.value === selectedMachineTeam)) {
+    machSelect.value = selectedMachineTeam;
+  }
 
   if (teamMenu) {
     teamMenu.innerHTML = appTeams.map(team => `
