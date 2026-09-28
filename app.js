@@ -206,7 +206,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
-      navigator.serviceWorker.register('./sw.js?v=36').catch((error) => {
+      navigator.serviceWorker.register('./sw.js?v=37').catch((error) => {
         console.warn('Service worker não registrado:', error);
       });
     });
@@ -2123,7 +2123,7 @@ async function saveUserAccess() {
     return;
   }
   if (!email || password.length < 12) {
-    showToast('Informe um e-mail válido e uma senha temporária com pelo menos 12 caracteres.', 'error');
+    showToast('Informe um e-mail válido e uma senha com pelo menos 12 caracteres.', 'error');
     return;
   }
 
@@ -2141,7 +2141,7 @@ async function saveUserAccess() {
     appUsers = roles || [];
     closeUserModal();
     renderUsers();
-    showToast('Acesso salvo no Supabase Auth. Entregue a senha temporária diretamente ao usuário.');
+    showToast('Acesso salvo. A senha fica ativa até ser redefinida por um Administrador.');
   } catch (error) {
     console.error('Erro ao gerir acesso:', error);
     showToast(error.message || 'Não foi possível salvar o acesso.', 'error');

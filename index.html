@@ -437,7 +437,7 @@
         <button class="btn-delta btn-indigo admin-only" onclick="openUserModal()">Adicionar Editor</button>
       </div>
 
-      <p class="settings-description admin-only">Administradores podem cadastrar, redefinir senha e excluir Editores pelo app. Use uma senha temporária forte e entregue-a diretamente ao usuário.</p>
+      <p class="settings-description admin-only">Administradores podem cadastrar, redefinir senha e excluir Editores pelo app. A senha definida fica ativa até ser redefinida por um Administrador.</p>
       <p class="settings-description admin-only primary-admin-only">Somente o Administrador principal pode promover ou rebaixar outros Administradores.</p>
 
       <div class="table-card user-access-card" style="max-width:850px;">
@@ -470,7 +470,7 @@
             <input type="email" id="managedUserEmail" class="input-delta" autocomplete="email" placeholder="nome@deltacnc.pt" required>
           </div>
           <div class="form-group" style="margin-bottom:1rem;">
-            <label for="managedUserPassword">Senha temporária</label>
+            <label for="managedUserPassword">Senha de acesso</label>
             <input type="password" id="managedUserPassword" class="input-delta" autocomplete="new-password" minlength="12" placeholder="Mínimo de 12 caracteres" required>
           </div>
           <div class="form-group">
@@ -874,6 +874,6 @@
     <span id="appToastMessage">Ordens atualizadas com sucesso!</span>
   </div>
 
-  <script src="app.js?v=20260928-inapp-user-admin-v3"></script>
+  <script src="app.js?v=20260928-persistent-passwords"></script>
 </body>
 </html>

@@ -75,7 +75,7 @@ Deno.serve(async (request) => {
     const password = String(body.password || '');
     const role = body.role;
     if (password.length < 12 || new TextEncoder().encode(password).length > 72) {
-      return jsonResponse({ error: 'A senha temporária deve ter entre 12 e 72 bytes.' }, 400);
+      return jsonResponse({ error: 'A senha deve ter entre 12 e 72 bytes.' }, 400);
     }
     if (role !== 'Editor' && role !== 'Administrador') {
       return jsonResponse({ error: 'Perfil inválido.' }, 400);

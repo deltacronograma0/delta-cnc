@@ -11,7 +11,7 @@ O app usa `delta_app_state` para máquinas e equipes, Supabase Auth para autenti
 5. O e-mail `deltacronograma@gmail.com` é o Administrador principal. Use o convite já enviado para essa conta e defina uma senha nova; depois entre no app.
 6. Publique a função `supabase/functions/admin-users/index.ts` com `supabase functions deploy admin-users --project-ref eqeiwhdrreahuwigvkpt` ou pelo editor de Edge Functions do Dashboard.
 7. Em **Edge Functions > Secrets**, configure `SUPABASE_SERVICE_ROLE_KEY` usando a chave `service_role` do projeto se o ambiente não a fornecer automaticamente. Essa chave fica somente no servidor e nunca no JavaScript do app.
-8. Depois que a função estiver publicada, todos os Administradores podem criar, redefinir senha e excluir contas Editor em **Utilizadores**. Somente `deltacronograma@gmail.com` pode promover, rebaixar ou gerir outros Administradores. A senha temporária é enviada à função segura e não é guardada no app. Os perfis estão em `public.delta_user_roles`.
+8. Depois que a função estiver publicada, todos os Administradores podem criar, redefinir senha e excluir contas Editor em **Utilizadores**. Somente `deltacronograma@gmail.com` pode promover, rebaixar ou gerir outros Administradores. A senha definida fica ativa até um Administrador redefini-la; ela é enviada à função segura e não é guardada no app. Os perfis estão em `public.delta_user_roles`.
 
 ## Segurança e dados
 
