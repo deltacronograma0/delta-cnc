@@ -380,26 +380,28 @@
         <!-- Rendered via JS -->
       </div>
 
-      <div class="table-card" style="max-width:900px; margin:2rem auto 0;">
+      <div class="table-card highlights-table-card" style="max-width:900px; margin:2rem auto 0;">
         <div style="padding:1.15rem 1.35rem; border-bottom:1px solid var(--border); background:rgba(17, 24, 39, 0.95);">
           <h3 style="margin:0; font-size:1rem; color:#ffffff; font-weight:700;">Quadro Geral de Desempenho</h3>
         </div>
-        <table class="delta-table highlights-table">
-          <thead>
-            <tr>
-              <th>Posição</th>
-              <th>Equipe</th>
-              <th>Máquinas Entregues</th>
-              <th>Em Andamento</th>
-              <th>Em Atraso</th>
-              <th>Eficiência</th>
-              <th>Pontuação</th>
-            </tr>
-          </thead>
-          <tbody id="podiumTableBody">
-            <!-- JS -->
-          </tbody>
-        </table>
+        <div class="highlights-table-scroll" role="region" aria-label="Quadro geral de desempenho; deslize horizontalmente para ver todas as colunas" tabindex="0">
+          <table class="delta-table highlights-table">
+            <thead>
+              <tr>
+                <th>Posição</th>
+                <th>Equipe</th>
+                <th>Máquinas Entregues</th>
+                <th>Em Andamento</th>
+                <th>Em Atraso</th>
+                <th>Eficiência</th>
+                <th>Pontuação</th>
+              </tr>
+            </thead>
+            <tbody id="podiumTableBody">
+              <!-- JS -->
+            </tbody>
+          </table>
+        </div>
       </div>
 
       <div class="highlights-analysis-grid" id="highlightsAnalysis"></div>

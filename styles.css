@@ -1934,6 +1934,18 @@ body::before {
 .highlights-table tbody tr:nth-child(2) td:first-child strong { color: #cbd5e1 !important; }
 .highlights-table tbody tr:nth-child(3) td:first-child strong { color: #fb923c !important; }
 .highlights-table tbody tr:hover { background: rgba(37, 99, 235, 0.1); }
+.highlights-table-card { width: 100%; min-width: 0; }
+.highlights-table-scroll {
+  width: 100%;
+  max-width: 100%;
+  overflow-x: auto;
+  overflow-y: hidden;
+  overscroll-behavior-x: contain;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: thin;
+  touch-action: pan-x pan-y;
+}
+.highlights-table { min-width: 760px; }
 .podium-step {
   text-align: center;
   width: 220px;
