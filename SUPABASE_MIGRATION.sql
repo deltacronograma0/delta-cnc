@@ -52,8 +52,8 @@ with seed_machines(payload) as (
   ) merged
 ), seed_users(payload) as (
   select jsonb_array_elements($users$[
-    {"email":"deltacronograma@gmail.com","pass":"delta2026","role":"Administrador"},
-    {"email":"producao@deltacnc.pt","pass":"delta123","role":"Editor"}
+    {"email":"deltacronograma@gmail.com","role":"Administrador"},
+    {"email":"producao@deltacnc.pt","role":"Editor"}
   ]$users$::jsonb)
 ), user_candidates(payload, priority) as (
   select payload, 10 from seed_users

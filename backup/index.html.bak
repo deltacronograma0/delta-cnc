@@ -346,9 +346,6 @@
           <label>Palavra-passe</label>
           <input type="password" id="loginPassword" class="input-delta" placeholder="••••••••">
         </div>
-        <div style="font-size:0.78rem; color:var(--text-muted); background:rgba(99, 102, 241, 0.08); padding:0.85rem; border-radius:8px; border:1px solid rgba(99, 102, 241, 0.2);">
-          💡 Administrador padrão: <strong style="color:#ffffff;">deltacronograma@gmail.com</strong> / Palavra-passe: <strong style="color:#ffffff;">delta2026</strong>
-        </div>
       </div>
       <div class="modal-footer">
         <button class="btn-delta btn-slate" onclick="closeAuthModal()">Cancelar</button>

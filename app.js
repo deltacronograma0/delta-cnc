@@ -1,10 +1,7 @@
 const STORAGE_KEYS = {
   MACHINES: 'DELTA_MACHINES_DATA',
   TEAMS: 'DELTA_TEAMS_DATA',
-  USERS: 'DELTA_USERS_DATA',
   GEMINI_KEY: 'DELTA_GEMINI_KEY',
-  CURRENT_USER: 'DELTA_CURRENT_USER',
-  AUTH_SESSION_VERSION: 'DELTA_AUTH_SESSION_VERSION',
   STATE_UPDATED_AT: 'DELTA_STATE_UPDATED_AT',
   LAST_CONFIRMED_STATE: 'DELTA_LAST_CONFIRMED_STATE',
   SUPABASE_URL: 'DELTA_SUPABASE_URL',
@@ -35,11 +32,6 @@ const DEFAULT_SEED_TEAMS = [
   { id: 'EQ-004', name: 'Carlos e Renato', tags: ['Linha Intermediária', 'Routers Madeira', 'Sistemas Vácuo'] }
 ];
 
-const DEFAULT_SEED_USERS = [
-  { email: 'deltacronograma@gmail.com', pass: 'delta2026', role: 'Administrador' },
-  { email: 'producao@deltacnc.pt', pass: 'delta123', role: 'Editor' }
-];
-
 let appMachines = [];
 let appData = appMachines;
 let appTeams = [];
@@ -54,6 +46,7 @@ let currentAiAbortController = null;
 let currentAiIndex = null;
 let supabaseClient = null;
 let supabaseChannel = null;
+let authSubscription = null;
 let isApplyingRemoteState = false;
 let syncReady = false;
 let draftSaveTimer = null;
@@ -213,7 +206,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
-      navigator.serviceWorker.register('./sw.js?v=33').catch((error) => {
+      navigator.serviceWorker.register('./sw.js?v=34').catch((error) => {
         console.warn('Service worker não registrado:', error);
       });
     });
@@ -319,8 +312,7 @@ function loadStorage() {
     const t = localStorage.getItem(STORAGE_KEYS.TEAMS);
     appTeams = t ? JSON.parse(t) : [...DEFAULT_SEED_TEAMS];
 
-    const u = localStorage.getItem(STORAGE_KEYS.USERS);
-    appUsers = u ? JSON.parse(u) : [...DEFAULT_SEED_USERS];
+    appUsers = [];
 
     const normalizeTeamName = (name) => String(name || '').replace(/^Equipa\b/, 'Equipe');
     appMachines = appMachines.map(machine => ({ ...machine, equipe: normalizeTeamName(machine.equipe) }));
@@ -333,15 +325,11 @@ function loadStorage() {
 
     geminiApiKey = localStorage.getItem(STORAGE_KEYS.GEMINI_KEY) || '';
 
-    const cur = localStorage.getItem(STORAGE_KEYS.CURRENT_USER);
-    const sessionVersion = localStorage.getItem(STORAGE_KEYS.AUTH_SESSION_VERSION);
-    if (cur && sessionVersion === '2') {
-      currentUser = JSON.parse(cur);
-    } else {
-      currentUser = null;
-      localStorage.removeItem(STORAGE_KEYS.CURRENT_USER);
-      localStorage.setItem(STORAGE_KEYS.AUTH_SESSION_VERSION, '2');
-    }
+    currentUser = null;
+    localStorage.removeItem('DELTA_USERS_DATA');
+    localStorage.removeItem('DELTA_CURRENT_USER');
+    localStorage.removeItem('DELTA_AUTH_SESSION_VERSION');
+    localStorage.removeItem(STORAGE_KEYS.LAST_CONFIRMED_STATE);
 
     const configuredSupabase = localStorage.getItem(STORAGE_KEYS.SUPABASE_URL) && localStorage.getItem(STORAGE_KEYS.SUPABASE_KEY);
     if (configuredSupabase) {
@@ -356,10 +344,12 @@ function loadStorage() {
     appMachines = [...DEFAULT_SEED_MACHINES];
     appData = appMachines;
     appTeams = [...DEFAULT_SEED_TEAMS];
-    appUsers = [...DEFAULT_SEED_USERS];
+    appUsers = [];
     currentUser = null;
-    localStorage.removeItem(STORAGE_KEYS.CURRENT_USER);
-    localStorage.setItem(STORAGE_KEYS.AUTH_SESSION_VERSION, '2');
+    localStorage.removeItem('DELTA_USERS_DATA');
+    localStorage.removeItem('DELTA_CURRENT_USER');
+    localStorage.removeItem('DELTA_AUTH_SESSION_VERSION');
+    localStorage.removeItem(STORAGE_KEYS.LAST_CONFIRMED_STATE);
   }
 }
 
@@ -368,14 +358,7 @@ async function saveData() {
     const updatedAt = Date.now();
     localStorage.setItem(STORAGE_KEYS.MACHINES, JSON.stringify(appMachines));
     localStorage.setItem(STORAGE_KEYS.TEAMS, JSON.stringify(appTeams));
-    localStorage.setItem(STORAGE_KEYS.USERS, JSON.stringify(appUsers));
     localStorage.setItem(STORAGE_KEYS.STATE_UPDATED_AT, String(updatedAt));
-    if (currentUser) {
-      localStorage.setItem(STORAGE_KEYS.CURRENT_USER, JSON.stringify(currentUser));
-      localStorage.setItem(STORAGE_KEYS.AUTH_SESSION_VERSION, '2');
-    } else {
-      localStorage.removeItem(STORAGE_KEYS.CURRENT_USER);
-    }
 
     if (supabaseClient && !isApplyingRemoteState && (remoteWriteRequested || pendingDraftSave)) {
       remoteWriteRequested = false;
@@ -400,7 +383,6 @@ async function saveData() {
     try {
       localStorage.setItem(STORAGE_KEYS.MACHINES, JSON.stringify(appMachines));
       localStorage.setItem(STORAGE_KEYS.TEAMS, JSON.stringify(appTeams));
-      localStorage.setItem(STORAGE_KEYS.USERS, JSON.stringify(appUsers));
       return false;
     } catch (retryErr) {
       console.error('Ainda sem quota após limpeza:', retryErr);
@@ -499,14 +481,13 @@ function setSupabaseSyncStatus(message, connected = false) {
   status.textContent = message;
   status.classList.toggle('is-connected', connected);
   if (indicator) {
-    const isSaving = /salvando/i.test(message);
-    const stateClass = connected ? 'sync-online' : (isSaving ? 'sync-saving' : (currentUser ? 'sync-error' : 'sync-local'));
+    const stateClass = connected ? 'sync-online' : 'sync-error';
     indicator.classList.remove('sync-online', 'sync-saving', 'sync-error', 'sync-local');
     indicator.classList.add(stateClass);
-    indicator.title = connected ? 'Dados sincronizados' : (currentUser ? message : 'Visualização disponível sem conexão');
+    indicator.title = connected ? 'Conectado ao Supabase' : 'Sem conexão com o Supabase';
   }
   if (indicatorLabel) {
-    indicatorLabel.textContent = connected ? 'Sincronizado' : (/salvando/i.test(message) ? 'Salvando' : (currentUser ? 'Sem conexão' : 'Modo leitura'));
+    indicatorLabel.textContent = connected ? 'Sincronizado' : 'Sem conexão';
   }
 }
 
@@ -521,7 +502,7 @@ async function initSupabaseSync() {
   const config = getSupabaseConfig();
   if (!config.url || !config.key || !window.supabase?.createClient) {
     syncReady = true;
-    setSupabaseSyncStatus('Modo local');
+    setSupabaseSyncStatus('Sem conexão');
     return;
   }
 
@@ -530,13 +511,14 @@ async function initSupabaseSync() {
     supabaseClient = window.supabase.createClient(config.url, config.key);
     const { data: sessionData, error: sessionError } = await supabaseClient.auth.getSession();
     if (sessionError) throw sessionError;
-    if (!sessionData.session) {
-      const { error: authError } = await supabaseClient.auth.signInAnonymously();
-      if (authError) throw authError;
+    if (sessionData.session?.user?.is_anonymous) {
+      await supabaseClient.auth.signOut();
+    } else if (sessionData.session?.user) {
+      await loadAuthenticatedUser(sessionData.session.user);
     }
     const { data, error } = await supabaseClient
       .from('delta_app_state')
-      .select('machines, teams, users, updated_at')
+      .select('machines, teams, updated_at')
       .eq('id', 'main')
       .maybeSingle();
 
@@ -545,6 +527,26 @@ async function initSupabaseSync() {
       applySharedState(data);
     }
     syncReady = true;
+
+    const { data: authListener } = supabaseClient.auth.onAuthStateChange((event, session) => {
+      setTimeout(async () => {
+        if (event === 'SIGNED_OUT' || !session?.user || session.user.is_anonymous) {
+          currentUser = null;
+          appUsers = [];
+          setupPermissions();
+          renderUsers();
+          return;
+        }
+        try {
+          await loadAuthenticatedUser(session.user);
+        } catch (authError) {
+          console.error('Erro ao carregar perfil de acesso:', authError);
+          currentUser = null;
+          setupPermissions();
+        }
+      }, 0);
+    });
+    authSubscription = authListener.subscription;
 
     supabaseChannel = supabaseClient
       .channel('delta-app-state-changes')
@@ -575,11 +577,10 @@ function applySharedState(data) {
     appMachines = Array.isArray(data.machines) ? data.machines : [];
     appData = appMachines;
     appTeams = Array.isArray(data.teams) ? data.teams : [];
-    appUsers = Array.isArray(data.users) ? data.users : [];
     if (remoteUpdatedAt) {
       localStorage.setItem(STORAGE_KEYS.STATE_UPDATED_AT, String(remoteUpdatedAt));
     }
-    setLastConfirmedState({ machines: appMachines, teams: appTeams, users: appUsers });
+    setLastConfirmedState({ machines: appMachines, teams: appTeams });
     populateTeamFilters();
     renderTable();
     updateDashboard();
@@ -593,24 +594,23 @@ function applySharedState(data) {
 
 async function saveSharedState() {
   if (!supabaseClient) return;
-  const currentState = { machines: appMachines, teams: appTeams, users: appUsers };
+  const currentState = { machines: appMachines, teams: appTeams };
   const confirmedState = getLastConfirmedState();
   if (JSON.stringify(currentState) === JSON.stringify(confirmedState)) {
     setSupabaseSyncStatus('Sincronizado automaticamente', true);
     return;
   }
-  setSupabaseSyncStatus('Salvando automaticamente...', false);
+  setSupabaseSyncStatus('Salvando automaticamente...', true);
   showToast('Aguardando confirmação do Supabase...');
   const { error } = await supabaseClient.from('delta_app_state').upsert({
     id: 'main',
     machines: appMachines,
     teams: appTeams,
-    users: appUsers,
     updated_at: new Date().toISOString()
   });
   if (error) {
     console.error('Erro ao sincronizar dados:', error);
-    setSupabaseSyncStatus('Erro ao salvar');
+    setSupabaseSyncStatus('Erro ao salvar', true);
     showToast('Não foi possível confirmar a alteração.', 'error');
     throw error;
   }
@@ -658,6 +658,44 @@ function updateClock() {
   if (el) el.innerHTML = `⏱️ ${dateStr} ${timeStr}`;
 }
 
+async function loadAuthenticatedUser(authUser) {
+  if (!authUser?.email || authUser.is_anonymous || !supabaseClient) {
+    currentUser = null;
+    appUsers = [];
+    return;
+  }
+
+  const email = authUser.email.toLowerCase();
+  const { data: profile, error } = await supabaseClient
+    .from('delta_user_roles')
+    .select('email, role')
+    .eq('email', email)
+    .maybeSingle();
+
+  if (error) {
+    await supabaseClient.auth.signOut();
+    throw error;
+  }
+  if (!profile) {
+    await supabaseClient.auth.signOut();
+    throw new Error('Esta conta ainda não recebeu um perfil de acesso.');
+  }
+
+  currentUser = { id: authUser.id, email: profile.email, role: profile.role };
+  if (profile.role === 'Administrador') {
+    const { data: roles, error: rolesError } = await supabaseClient
+      .from('delta_user_roles')
+      .select('email, role')
+      .order('email');
+    if (rolesError) throw rolesError;
+    appUsers = roles || [];
+  } else {
+    appUsers = [profile];
+  }
+  setupPermissions();
+  renderUsers();
+}
+
 function setupPermissions() {
   const userLabel = document.getElementById('currentUserLabel');
   const authBtn = document.getElementById('authBtn');
@@ -671,7 +709,7 @@ function setupPermissions() {
     editorEls.forEach(el => el.style.display = supabaseClient ? '' : 'none');
     adminEls.forEach(el => el.style.display = currentUser.role === 'Administrador' && supabaseClient ? '' : 'none');
   } else {
-    userLabel.textContent = 'Visitante (Leitura)';
+    userLabel.textContent = 'Visitante';
     authBtn.textContent = 'Entrar';
     authBtn.className = 'btn-delta btn-slate btn-sm';
     editorEls.forEach(el => el.style.display = 'none');
@@ -716,9 +754,10 @@ function closeLogoutModal() {
   document.getElementById('logoutModal').classList.remove('open');
 }
 
-function confirmLogout() {
+async function confirmLogout() {
+  if (supabaseClient) await supabaseClient.auth.signOut();
   currentUser = null;
-  localStorage.removeItem(STORAGE_KEYS.CURRENT_USER);
+  appUsers = [];
   setupPermissions();
   renderTable();
   renderUsers();
@@ -735,31 +774,31 @@ async function handleLoginSubmit() {
   const email = document.getElementById('loginEmail').value.trim();
   const pass = document.getElementById('loginPassword').value;
 
-  if (getSupabaseConfig().url && getSupabaseConfig().key && !syncReady) {
-    showToast('Aguarde a conexão com o Supabase terminar antes de entrar.', 'error');
+  if (!supabaseClient || !syncReady) {
+    showToast('Conecte o Supabase antes de iniciar sessão.', 'error');
     return;
   }
 
-  const user = appUsers.find(u => u.email.toLowerCase() === email.toLowerCase() && u.pass === pass);
-  if (user) {
-    if (submitButton) {
-      submitButton.disabled = true;
-      submitButton.textContent = 'A entrar...';
-      submitButton.classList.add('is-loading');
-    }
-    currentUser = user;
-    localStorage.setItem(STORAGE_KEYS.CURRENT_USER, JSON.stringify(currentUser));
-    localStorage.setItem(STORAGE_KEYS.AUTH_SESSION_VERSION, '2');
-    setupPermissions();
+  if (submitButton) {
+    submitButton.disabled = true;
+    submitButton.textContent = 'A entrar...';
+    submitButton.classList.add('is-loading');
+  }
+  try {
+    const { data, error } = await supabaseClient.auth.signInWithPassword({ email, password: pass });
+    if (error) throw error;
+    await loadAuthenticatedUser(data.user);
     closeAuthModal();
-    showToast(`Sessão iniciada com sucesso. Bem-vindo, ${user.role}!`);
+    showToast(`Sessão iniciada com sucesso. Bem-vindo, ${currentUser.role}!`);
+  } catch (error) {
+    console.error('Erro de autenticação:', error);
+    showToast(error.message || 'Não foi possível iniciar sessão. Verifique os dados.', 'error');
+  } finally {
     if (submitButton) {
       submitButton.disabled = false;
       submitButton.textContent = 'Entrar no Sistema';
       submitButton.classList.remove('is-loading');
     }
-  } else {
-    showToast('Não foi possível iniciar sessão. Verifique os dados.', 'error');
   }
 }
 
@@ -1756,7 +1795,7 @@ function openConfigModal() {
   const config = getSupabaseConfig();
   document.getElementById('supabaseUrlInput').value = config.url;
   document.getElementById('supabaseKeyInput').value = config.key;
-  setSupabaseSyncStatus(supabaseClient ? 'Sincronização online' : (config.url && config.key ? 'Pronto para conectar' : 'Modo local'), Boolean(supabaseClient));
+  setSupabaseSyncStatus(supabaseClient ? 'Sincronização online' : 'Sem conexão', Boolean(supabaseClient));
   document.getElementById('configModal').classList.add('open');
 }
 
@@ -1777,21 +1816,25 @@ async function saveSupabaseConfig() {
   const url = document.getElementById('supabaseUrlInput').value.trim().replace(/\/$/, '');
   const key = document.getElementById('supabaseKeyInput').value.trim();
   if (!url || !key) {
-    alert('Informe a URL e a Anon Key do Supabase.');
+    alert('Informe a Project URL e a chave publicável do Supabase.');
     return;
   }
 
   localStorage.setItem(STORAGE_KEYS.SUPABASE_URL, url);
   localStorage.setItem(STORAGE_KEYS.SUPABASE_KEY, key);
   if (supabaseChannel && supabaseClient) await supabaseClient.removeChannel(supabaseChannel);
+  authSubscription?.unsubscribe();
+  authSubscription = null;
   supabaseChannel = null;
   supabaseClient = null;
+  currentUser = null;
+  appUsers = [];
   setSupabaseSyncStatus('Conectando...');
   await initSupabaseSync();
   if (supabaseClient) {
     alert('Supabase conectado. As alterações serão compartilhadas em tempo real.');
   } else {
-    alert('Não foi possível conectar. Verifique a Project URL e a chave anon/publishable. Se aparecer erro de acesso anônimo, ative Authentication > Providers > Anonymous Sign-Ins no Supabase.');
+    alert('Não foi possível conectar. Verifique a Project URL e a chave publicável do Supabase.');
   }
 }
 
@@ -1806,11 +1849,15 @@ async function disconnectSupabase() {
   if (supabaseChannel && supabaseClient) {
     await supabaseClient.removeChannel(supabaseChannel);
   }
+  authSubscription?.unsubscribe();
+  authSubscription = null;
   if (supabaseClient) {
     await supabaseClient.auth.signOut().catch(() => {});
   }
   supabaseChannel = null;
   supabaseClient = null;
+  currentUser = null;
+  appUsers = [];
   localStorage.removeItem(STORAGE_KEYS.SUPABASE_URL);
   localStorage.removeItem(STORAGE_KEYS.SUPABASE_KEY);
   document.getElementById('supabaseUrlInput').value = '';
@@ -1833,8 +1880,7 @@ function exportBackup() {
     version: '1.0',
     exportDate: new Date().toISOString(),
     machines: appMachines,
-    teams: appTeams,
-    users: appUsers
+    teams: appTeams
   };
   const blob = new Blob([JSON.stringify(backupObj, null, 2)], { type: 'application/json' });
   const url = URL.createObjectURL(blob);
@@ -1846,6 +1892,7 @@ function exportBackup() {
 }
 
 async function importBackup(e) {
+  if (!requireEditor()) return;
   const file = e.target.files[0];
   if (!file) return;
   const reader = new FileReader();
@@ -1855,7 +1902,6 @@ async function importBackup(e) {
       if (data && Array.isArray(data.machines)) {
         appMachines = data.machines;
         if (Array.isArray(data.teams)) appTeams = data.teams;
-        if (Array.isArray(data.users)) appUsers = data.users;
         requestRemoteWrite();
         const saved = await saveData();
         renderTable();
@@ -2019,76 +2065,15 @@ function renderUsers() {
     return;
   }
 
-  tbody.innerHTML = appUsers.map((u, idx) => `
+  tbody.innerHTML = appUsers.map(user => `
     <tr>
-      <td><strong style="color:#ffffff;">${escapeHtml(u.email)}</strong></td>
-      <td><span class="badge-status status-andamento">${escapeHtml(u.role)}</span></td>
-      <td style="text-align:right;">
-        <div class="user-actions">
-          <button class="btn-delta btn-slate btn-sm admin-only" onclick="openUserModal(${idx})">✏️ Editar</button>
-          ${idx > 0 ? `<button class="btn-delta btn-danger btn-sm admin-only" onclick="deleteUser(${idx})">🗑️ Excluir</button>` : '<span class="text-muted" style="font-size:0.75rem;">Sistema (Protegido)</span>'}
-        </div>
-      </td>
+      <td><strong style="color:#ffffff;">${escapeHtml(user.email)}</strong></td>
+      <td><span class="badge-status status-andamento">${escapeHtml(user.role)}</span></td>
+      <td>Conta gerida no Supabase Auth</td>
     </tr>
   `).join('');
 
   setupPermissions();
-}
-
-function openUserModal(idx = -1) {
-  if (!requireAdmin()) return;
-  document.getElementById('userEditIndex').value = idx;
-  document.getElementById('userModalTitle').textContent = idx >= 0 ? 'Editar Utilizador' : 'Registar Novo Editor';
-  document.getElementById('userModalSaveButton').textContent = idx >= 0 ? 'Guardar alterações' : 'Criar Acesso';
-  document.getElementById('newEditorEmail').value = idx >= 0 ? appUsers[idx]?.email || '' : '';
-  document.getElementById('newEditorPass').value = '';
-  document.getElementById('userModal').classList.add('open');
-}
-
-function closeUserModal() {
-  document.getElementById('userModal').classList.remove('open');
-}
-
-function saveNewUserSubmit() {
-  if (!requireAdmin()) return;
-  const email = document.getElementById('newEditorEmail').value.trim();
-  const pass = document.getElementById('newEditorPass').value;
-  const idx = parseInt(document.getElementById('userEditIndex').value, 10);
-  if (!email || (idx < 0 && !pass)) {
-    alert(idx >= 0 ? 'Preencha o e-mail.' : 'Preencha o e-mail e a palavra-passe.');
-    return;
-  }
-
-  const duplicateEmail = appUsers.some((user, userIndex) => userIndex !== idx && user.email.toLowerCase() === email.toLowerCase());
-  if (duplicateEmail) {
-    alert('Já existe um utilizador com esse e-mail.');
-    return;
-  }
-
-  if (idx >= 0 && appUsers[idx]) {
-    appUsers[idx] = { ...appUsers[idx], email, pass: pass || appUsers[idx].pass };
-  } else {
-    appUsers.push({ email, pass, role: 'Editor' });
-  }
-  requestRemoteWrite();
-  saveData();
-  closeUserModal();
-  renderUsers();
-  alert(idx >= 0 ? 'Utilizador atualizado com sucesso!' : 'Utilizador criado com sucesso!');
-}
-
-function deleteUser(idx) {
-  if (!requireAdmin()) return;
-  if (idx === 0) {
-    alert('Não é possível excluir o Administrador principal.');
-    return;
-  }
-  if (confirm(`Deseja excluir o acesso de ${appUsers[idx].email}?`)) {
-    appUsers.splice(idx, 1);
-    requestRemoteWrite();
-    saveData();
-    renderUsers();
-  }
 }
 
 function updateDashboard() {

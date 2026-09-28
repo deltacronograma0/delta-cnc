@@ -44,15 +44,15 @@
             <div class="meta-tag meta-status" id="refMonthBadge">
               <span style="color:#818cf8;">📅</span> <strong id="lblRefMonth">Setembro/2026</strong>
             </div>
-            <div id="supabaseIndicator" class="sync-indicator sync-local" title="Modo leitura">
+            <div id="supabaseIndicator" class="sync-indicator sync-error" title="Sem conexão com o Supabase">
               <span class="sync-indicator-dot"></span>
-              <span id="supabaseIndicatorLabel">Modo leitura</span>
+              <span id="supabaseIndicatorLabel">Sem conexão</span>
             </div>
             <div class="meta-tag meta-status" id="clockEl">
               ⏱️ 00:00:00
             </div>
             <div class="meta-tag meta-status user-status">
-              👤 <span id="currentUserLabel" style="font-weight:600; color: #c7d2fe;">Visitante (Leitura)</span>
+              👤 <span id="currentUserLabel" style="font-weight:600; color: #c7d2fe;">Visitante</span>
             </div>
             <button id="authBtn" class="btn-delta btn-slate btn-sm" onclick="toggleAuthModal()">
               Entrar
@@ -434,10 +434,10 @@
     <section id="tab-usuarios" class="hidden">
       <div class="action-bar">
         <h2 style="font-size:1.2rem; margin:0; color:#ffffff; font-weight:700;">Gestão de Acessos &amp; Utilizadores</h2>
-        <button class="btn-delta btn-indigo admin-only" onclick="openUserModal()">
-          ➕ Registar Novo Editor
-        </button>
+        <a class="btn-delta btn-indigo admin-only" href="https://supabase.com/dashboard/project/eqeiwhdrreahuwigvkpt/auth/users" target="_blank" rel="noopener noreferrer">Gerir convites no Supabase Auth</a>
       </div>
+
+      <p class="settings-description admin-only">Convide utilizadores no Supabase Auth. Depois, atribua o perfil Editor ou Administrador à tabela delta_user_roles pelo SQL Editor. Senhas não são guardadas neste app.</p>
 
       <div class="table-card user-access-card" style="max-width:850px;">
         <div class="table-scroll user-access-scroll">
@@ -446,7 +446,7 @@
             <tr>
               <th>E-mail</th>
               <th>Perfil de Permissões</th>
-              <th style="text-align:right;">Ações</th>
+              <th>Gestão de conta</th>
             </tr>
           </thead>
           <tbody id="usersTableBody">
@@ -498,12 +498,13 @@
         <p class="auth-modal-intro">Aceda ao controle de produção da fábrica.</p>
         <div class="form-group" style="margin-bottom:1.15rem;">
           <label>E-mail Corporativo</label>
-          <input type="email" id="loginEmail" class="input-delta" placeholder="deltacronograma@gmail.com">
+          <input type="email" id="loginEmail" class="input-delta" placeholder="nome@deltacnc.pt">
         </div>
         <div class="form-group" style="margin-bottom:1rem;">
           <label>Palavra-passe</label>
           <input type="password" id="loginPassword" class="input-delta" placeholder="••••••••">
         </div>
+        <p class="settings-description">Entre com a conta convidada pelo Supabase Auth. As senhas anteriores do app não são mais válidas.</p>
       </div>
       <div class="modal-footer">
         <button class="btn-delta btn-slate" onclick="closeAuthModal()">Cancelar</button>
@@ -779,13 +780,13 @@
             <input type="url" id="supabaseUrlInput" class="input-delta" placeholder="https://seu-projeto.supabase.co">
           </div>
           <div class="form-group" style="margin-bottom:0.75rem;">
-            <label>Supabase Anon Key</label>
+            <label>Supabase Publishable Key</label>
             <input type="password" id="supabaseKeyInput" class="input-delta" placeholder="eyJhbGciOiJIUzI1NiIs...">
           </div>
           <div class="sync-config-actions">
             <button class="btn-delta btn-indigo" onclick="saveSupabaseConfig()">🔗 Conectar e sincronizar</button>
             <button class="btn-delta btn-danger" onclick="disconnectSupabase()">Desconectar</button>
-            <span id="supabaseSyncStatus" class="sync-status">Modo local</span>
+            <span id="supabaseSyncStatus" class="sync-status">Sem conexão</span>
           </div>
         </div>
 
@@ -837,36 +838,11 @@
     </div>
   </div>
 
-  <!-- MODAL: NOVO UTILIZADOR -->
-  <div id="userModal" class="modal-overlay">
-    <div class="modal-dialog">
-      <div class="modal-header">
-        <h3 id="userModalTitle">Registar Novo Editor</h3>
-        <button class="modal-close" onclick="closeUserModal()">&times;</button>
-      </div>
-      <div class="modal-body">
-        <input type="hidden" id="userEditIndex" value="-1">
-        <div class="form-group" style="margin-bottom:1.15rem;">
-          <label>E-mail do Utilizador</label>
-          <input type="email" id="newEditorEmail" class="input-delta" placeholder="tecnico@deltacnc.pt" required>
-        </div>
-        <div class="form-group" style="margin-bottom:1.15rem;">
-          <label>Palavra-passe de Acesso</label>
-          <input type="password" id="newEditorPass" class="input-delta" placeholder="••••••••" required>
-        </div>
-      </div>
-      <div class="modal-footer">
-        <button class="btn-delta btn-slate" onclick="closeUserModal()">Cancelar</button>
-        <button id="userModalSaveButton" class="btn-delta btn-indigo" onclick="saveNewUserSubmit()">Criar Acesso</button>
-      </div>
-    </div>
-  </div>
-
   <div id="appToast" class="app-toast" role="status" aria-live="polite">
     <span class="app-toast-icon">✓</span>
     <span id="appToastMessage">Ordens atualizadas com sucesso!</span>
   </div>
 
-  <script src="app.js?v=20260928-sync-fix"></script>
+  <script src="app.js?v=20260928-auth-roles-v2"></script>
 </body>
 </html>

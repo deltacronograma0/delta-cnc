@@ -30,10 +30,7 @@ const DEFAULT_SEED_TEAMS = [
   { name: 'Carlos e Renato', tags: ['Linha Intermediária', 'Routers Madeira', 'Sistemas Vácuo'] }
 ];
 
-const DEFAULT_SEED_USERS = [
-  { email: 'deltacronograma@gmail.com', pass: 'delta2026', role: 'Administrador' },
-  { email: 'producao@deltacnc.pt', pass: 'delta123', role: 'Editor' }
-];
+const DEFAULT_SEED_USERS = [];
 
 let appMachines = [];
 let appData = appMachines;
