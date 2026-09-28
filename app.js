@@ -36,6 +36,7 @@ let appMachines = [];
 let appData = appMachines;
 let appTeams = [];
 let appUsers = [];
+let selectedTeamFilterValues = new Set();
 let currentUser = null;
 let geminiApiKey = '';
 let selectedMachineIds = new Set();
@@ -610,7 +611,6 @@ async function saveSharedState() {
     return;
   }
   setSupabaseSyncStatus('Salvando automaticamente...', true);
-  showToast('Aguardando confirmação do Supabase...');
   const { error } = await supabaseClient.from('delta_app_state').upsert({
     id: 'main',
     machines: appMachines,
@@ -625,7 +625,6 @@ async function saveSharedState() {
   }
   setLastConfirmedState(currentState);
   setSupabaseSyncStatus('Sincronizado automaticamente', true);
-  showToast('Alteração sincronizada com sucesso!');
 }
 
 function getLastConfirmedState() {
@@ -980,9 +979,11 @@ function populateTeamFilters() {
   machSelect.innerHTML = '<option value="—">Sem equipe definida (—)</option>';
 
   const teamMenu = document.getElementById('filterTeamMenu');
-  const selectedTeams = teamMenu
-    ? [...teamMenu.querySelectorAll('input:checked')].map(input => input.value)
-    : [];
+  const selectedTeams = new Set(selectedTeamFilterValues);
+  teamMenu?.querySelectorAll('input:checked').forEach(input => selectedTeams.add(input.value));
+  for (const teamName of selectedTeams) {
+    if (!appTeams.some(team => team.name === teamName)) selectedTeams.delete(teamName);
+  }
 
   appTeams.forEach(t => {
     const teamOption = document.createElement('option');
@@ -993,9 +994,10 @@ function populateTeamFilters() {
 
   if (teamMenu) {
     teamMenu.innerHTML = appTeams.map(team => `
-      <label><input type="checkbox" value="${escapeHtml(team.name)}" ${selectedTeams.includes(team.name) ? 'checked' : ''} onchange="updateMultiFilter('team')"> ${escapeHtml(team.name)}</label>
+      <label><input type="checkbox" value="${escapeHtml(team.name)}" ${selectedTeams.has(team.name) ? 'checked' : ''} onchange="updateMultiFilter('team')"> ${escapeHtml(team.name)}</label>
     `).join('') || '<span class="multi-filter-empty">Nenhuma equipe cadastrada</span>';
   }
+  selectedTeamFilterValues = selectedTeams;
   updateMultiFilter('team', false);
 }
 
@@ -1012,6 +1014,7 @@ function getFilterValues(group) {
 
 function updateMultiFilter(group, shouldRender = true) {
   const values = getFilterValues(group);
+  if (group === 'team') selectedTeamFilterValues = new Set(values);
   const triggerId = group === 'line' ? 'filterLineTrigger' : `filter${group.charAt(0).toUpperCase() + group.slice(1)}Trigger`;
   const trigger = document.getElementById(triggerId);
   if (trigger) {
@@ -1029,6 +1032,7 @@ function clearFilters() {
   document.querySelectorAll('#filterStatusMenu input, #filterTeamMenu input, #filterLineMenu input').forEach(input => {
     input.checked = false;
   });
+  selectedTeamFilterValues.clear();
   updateMultiFilter('status', false);
   updateMultiFilter('team', false);
   updateMultiFilter('line', false);
@@ -1797,9 +1801,13 @@ function showToast(message, type = 'success') {
   if (!toast || !messageEl) return;
   messageEl.textContent = message;
   toast.classList.toggle('toast-error', type === 'error');
+  toast.setAttribute('aria-live', 'polite');
   toast.classList.add('show');
   clearTimeout(toastTimeout);
-  toastTimeout = setTimeout(() => toast.classList.remove('show'), 4200);
+  toastTimeout = setTimeout(() => {
+    toast.classList.remove('show');
+    toast.setAttribute('aria-live', 'off');
+  }, type === 'error' ? 3200 : 1700);
 }
 
 function openConfigModal() {
