@@ -216,7 +216,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
-      navigator.serviceWorker.register('./sw.js?v=40').catch((error) => {
+      navigator.serviceWorker.register('./sw.js?v=41').catch((error) => {
         console.warn('Service worker não registrado:', error);
       });
     });
@@ -1743,6 +1743,9 @@ async function saveImportedRows() {
 
   const dateRule = document.getElementById('importStartDateRule').value;
   const todayStr = new Date().toISOString().split('T')[0];
+  let savedCount = 0;
+  let localOnlyPdfCount = 0;
+  const skippedFiles = [];
 
   for (const row of selectedRows) {
     let finalInicio = row.inicio;
@@ -1755,13 +1758,25 @@ async function saveImportedRows() {
     const newId = 'M_' + Date.now() + '_' + Math.floor(Math.random() * 10000);
     let hasPdf = false;
     let pdfPath = '';
-    if (row.base64) {
+    let pdfData = row.base64 || '';
+    try {
+      if (!pdfData && row.file) pdfData = await fileToDataUrl(row.file);
+      if (!pdfData) throw new Error('O PDF não foi carregado para esta ordem.');
+      await idbSalvarPdf(newId, pdfData);
+      hasPdf = true;
+    } catch (idbErr) {
+      console.error(`Não foi possível manter o PDF de ${row.fileName} neste dispositivo:`, idbErr);
+      row.status = 'Falha ao guardar PDF';
+      skippedFiles.push(row.fileName || row.os || newId);
+      continue;
+    }
+
+    if (supabaseClient) {
       try {
-        await idbSalvarPdf(newId, row.base64);
-        pdfPath = await supabaseSalvarPdf(newId, row.base64) || '';
-        hasPdf = true;
-      } catch (idbErr) {
-        console.warn('Erro ao salvar PDF em lote no IndexedDB:', idbErr);
+        pdfPath = await supabaseSalvarPdf(newId, pdfData) || '';
+      } catch (storageError) {
+        localOnlyPdfCount++;
+        console.warn(`PDF da OS ${row.os || newId} mantido localmente; upload ao Storage falhou:`, storageError);
       }
     }
 
@@ -1784,10 +1799,19 @@ async function saveImportedRows() {
     };
 
     appMachines.unshift(newMach);
+    savedCount++;
+  }
+
+  if (savedCount === 0) {
+    saveButton.disabled = false;
+    saveButton.innerHTML = originalSaveLabel;
+    showToast('Nenhuma OS foi importada: não foi possível guardar os PDFs localmente.', 'error');
+    renderImportProgress(currentPreviewRows.length);
+    return;
   }
 
   requestRemoteWrite();
-  await saveData();
+  const saved = await saveData();
   const elapsed = Date.now() - saveStartedAt;
   const minimumFeedbackTime = 900;
   if (elapsed < minimumFeedbackTime) {
@@ -1798,7 +1822,16 @@ async function saveImportedRows() {
   updateDashboard();
   updatePodio();
   saveButton.innerHTML = originalSaveLabel;
-  showToast('Ordens atualizadas com sucesso!');
+  if (!saved) {
+    showToast(`${savedCount} OS importadas neste dispositivo, mas a sincronização não foi confirmada.`, 'error');
+  } else if (localOnlyPdfCount > 0 || skippedFiles.length > 0) {
+    const details = [];
+    if (localOnlyPdfCount > 0) details.push(`${localOnlyPdfCount} PDF(s) ficaram só neste dispositivo`);
+    if (skippedFiles.length > 0) details.push(`${skippedFiles.length} arquivo(s) não puderam ser anexados`);
+    showToast(`${savedCount} OS importadas. ${details.join('; ')}.`, 'error');
+  } else {
+    showToast(`${savedCount} OS importadas com PDFs anexados.`);
+  }
 }
 
 let toastTimeout = null;
