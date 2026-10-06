@@ -227,7 +227,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
-      navigator.serviceWorker.register('./sw.js?v=42').catch((error) => {
+      navigator.serviceWorker.register('./sw.js?v=43').catch((error) => {
         console.warn('Service worker não registrado:', error);
       });
     });
@@ -263,7 +263,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   const currentDate = new Date();
   const currentMonth = `${currentDate.getFullYear()}-${String(currentDate.getMonth() + 1).padStart(2, '0')}`;
-  ['filterPeriod', 'deliveryPeriod', 'dashboardPeriod'].forEach(id => {
+  ['filterPeriod', 'deliveryPeriod', 'dashboardPeriod', 'highlightsMonth'].forEach(id => {
     const periodInput = document.getElementById(id);
     if (periodInput) periodInput.value = currentMonth;
   });
@@ -2472,7 +2472,7 @@ function updateDashboard() {
 
   const emAndamento = monthlyMachines.filter(machine => getMachineStatus(machine) === 'Em andamento').length;
   document.getElementById('kpiAndamento').textContent = emAndamento;
-  const waitingCount = monthlyMachines.filter(machine => getMachineStatus(machine) === 'Aguardando produção').length;
+  const waitingCount = appMachines.filter(machine => getMachineStatus(machine) === 'Aguardando produção').length;
   document.getElementById('kpiAguardando').textContent = waitingCount;
   const overdueCount = monthlyMachines.filter(machine => getMachineStatus(machine) === 'Atrasado').length;
   document.getElementById('kpiAtrasadas').textContent = overdueCount;
@@ -2823,44 +2823,56 @@ function updatePodio() {
 
   const podiumWrapper = document.getElementById('podiumWrapper');
   if (podiumWrapper) {
-    const top3 = [teamScores[1], teamScores[0], teamScores[2]].filter(Boolean);
-    const stepsConfig = [
-      { pos: 2, label: '2º Lugar', medal: '🥈', stepClass: 'step-2' },
-      { pos: 1, label: '1º Lugar', medal: '🥇', stepClass: 'step-1' },
-      { pos: 3, label: '3º Lugar', medal: '🥉', stepClass: 'step-3' }
+    const normalizeLine = line => String(line || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLocaleLowerCase('pt-BR');
+    const podiumCategories = [
+      { key: 'light', title: 'Linha Leve', lines: ['leve'] },
+      { key: 'intermediate', title: 'Linha Intermediária', lines: ['intermediaria'] },
+      { key: 'heavy', title: 'Linha Pesada', lines: ['pesada'] },
+      { key: 'combined', title: 'Intermediária + Pesada', lines: ['intermediaria', 'pesada'] }
+    ];
+    const namedTeams = teamNames.filter(teamName => teamName && teamName !== '—');
+    const slots = [
+      { index: 1, label: '2º Lugar', medal: '🥈', stepClass: 'step-2' },
+      { index: 0, label: '1º Lugar', medal: '🥇', stepClass: 'step-1' },
+      { index: 2, label: '3º Lugar', medal: '🥉', stepClass: 'step-3' }
     ];
 
-    podiumWrapper.innerHTML = stepsConfig.map(cfg => {
-      const item = top3.find(t => {
-        if (cfg.pos === 1) return t === teamScores[0];
-        if (cfg.pos === 2) return t === teamScores[1];
-        return t === teamScores[2];
-      });
+    podiumWrapper.innerHTML = podiumCategories.map(category => `
+      <article class="highlight-podium-panel">
+        <h3>${category.title}</h3>
+        <div class="podium-container category-podium" id="podium-${category.key}"></div>
+      </article>
+    `).join('');
 
-      if (!item) {
-        return `
-          <div class="podium-step ${cfg.stepClass}">
-            <div class="podium-pillar">
-              <div class="medal-icon">${cfg.medal}</div>
-              <div style="font-weight:700; color:var(--text-muted); font-size:0.85rem;">—</div>
-              <div style="font-size:0.75rem; color:var(--text-muted);">0 entregues</div>
-            </div>
-            <div style="margin-top:0.6rem; font-size:0.8rem; font-weight:700; color:var(--text-muted);">${cfg.label}</div>
-          </div>
-        `;
+    podiumCategories.forEach(category => {
+      const categoryScores = namedTeams.map(teamName => {
+        const categoryMachines = appMachines.filter(machine => machine.equipe === teamName
+          && category.lines.includes(normalizeLine(machine.linha)));
+        const periodMachines = categoryMachines.filter(machine => [machine.inicio, machine.previsao, machine.entregaReal]
+          .some(date => date && date.startsWith(mesRefStr)));
+        const delivered = categoryMachines.filter(machine => getMachineStatus(machine) === 'Entregue'
+          && machine.entregaReal?.startsWith(mesRefStr)).length;
+        const active = periodMachines.filter(machine => getMachineStatus(machine) === 'Em andamento').length;
+        const score = (delivered * 10) + active;
+        return { name: teamName, delivered, score, hasPeriodMachines: periodMachines.length > 0 };
+      }).filter(team => team.hasPeriodMachines)
+        .sort((first, second) => second.score - first.score || second.delivered - first.delivered || first.name.localeCompare(second.name, 'pt-BR'));
+
+      const categoryPodium = document.getElementById(`podium-${category.key}`);
+      if (!categoryPodium) return;
+      if (!categoryScores.length) {
+        categoryPodium.innerHTML = '<p class="podium-empty">Sem máquinas desta categoria no mês selecionado.</p>';
+        return;
       }
 
-      return `
-        <div class="podium-step ${cfg.stepClass}">
-          <div class="podium-pillar">
-            <div class="medal-icon">${cfg.medal}</div>
-            <div style="font-weight:700; color:#ffffff; font-size:0.92rem; margin-bottom:0.2rem;">${escapeHtml(item.name)}</div>
-            <div style="font-size:0.76rem; color:#34d399; font-weight:600;">${item.delivered} máquina(s) · ${item.score} pts</div>
-          </div>
-          <div style="margin-top:0.6rem; font-size:0.85rem; font-weight:700; color:#818cf8;">${cfg.label}</div>
-        </div>
-      `;
-    }).join('');
+      categoryPodium.innerHTML = slots.map(slot => {
+        const item = categoryScores[slot.index];
+        if (!item) {
+          return `<div class="podium-step ${slot.stepClass}"><div class="podium-pillar"><div class="medal-icon">${slot.medal}</div><div style="font-weight:700;color:var(--text-muted);font-size:0.85rem;">—</div><div style="font-size:0.75rem;color:var(--text-muted);">Sem colocação</div></div><div class="podium-place-label">${slot.label}</div></div>`;
+        }
+        return `<div class="podium-step ${slot.stepClass}"><div class="podium-pillar"><div class="medal-icon">${slot.medal}</div><div class="podium-team-name">${escapeHtml(item.name)}</div><div class="podium-team-score">${item.delivered} entregue(s) · ${item.score} pts</div></div><div class="podium-place-label">${slot.label}</div></div>`;
+      }).join('');
+    });
   }
 
   const podiumTableBody = document.getElementById('podiumTableBody');
