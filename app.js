@@ -227,7 +227,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
-      navigator.serviceWorker.register('./sw.js?v=41').catch((error) => {
+      navigator.serviceWorker.register('./sw.js?v=42').catch((error) => {
         console.warn('Service worker não registrado:', error);
       });
     });
@@ -260,6 +260,13 @@ document.addEventListener('DOMContentLoaded', async () => {
       setTimeout(() => brandSplash.remove(), 500);
     }
   }, 3000);
+
+  const currentDate = new Date();
+  const currentMonth = `${currentDate.getFullYear()}-${String(currentDate.getMonth() + 1).padStart(2, '0')}`;
+  ['filterPeriod', 'deliveryPeriod', 'dashboardPeriod'].forEach(id => {
+    const periodInput = document.getElementById(id);
+    if (periodInput) periodInput.value = currentMonth;
+  });
 
   loadStorage();
   await initSupabaseSync();
@@ -825,7 +832,7 @@ async function handleLoginSubmit() {
 }
 
 function switchTab(tabId) {
-  const tabs = ['acompanhamento', 'dashboard', 'destaques', 'equipas', 'usuarios'];
+  const tabs = ['acompanhamento', 'entregas', 'dashboard', 'destaques', 'equipas', 'usuarios'];
   if (tabId === 'usuarios' && !requireAdmin()) return;
   tabs.forEach(t => {
     const sec = document.getElementById(`tab-${t}`);
@@ -846,6 +853,7 @@ function switchTab(tabId) {
   const activeSec = document.getElementById(`tab-${tabId}`);
   if (activeSec) activeSec.classList.remove('hidden');
 
+  if (tabId === 'entregas') renderDeliverySequence();
   if (tabId === 'dashboard') updateDashboard();
   if (tabId === 'destaques') updatePodio();
   if (tabId === 'equipas') renderTeams();
@@ -1046,7 +1054,8 @@ function updateMultiFilter(group, shouldRender = true) {
 }
 
 function clearFilters() {
-  document.getElementById('filterPeriod').value = '';
+  const currentDate = new Date();
+  document.getElementById('filterPeriod').value = `${currentDate.getFullYear()}-${String(currentDate.getMonth() + 1).padStart(2, '0')}`;
   document.getElementById('filterSearch').value = '';
   document.querySelectorAll('#filterStatusMenu input, #filterTeamMenu input, #filterLineMenu input').forEach(input => {
     input.checked = false;
@@ -1060,6 +1069,7 @@ function clearFilters() {
 
 function renderTable() {
   const tbody = document.getElementById('machinesTableBody');
+  renderDeliverySequence();
   const activeCount = appMachines.filter(m => getMachineStatus(m) === 'Em andamento').length;
   const deliveredCount = appMachines.filter(m => getMachineStatus(m) === 'Entregue').length;
 
@@ -1074,6 +1084,12 @@ function renderTable() {
   const teamFilter = getFilterValues('team');
   const linhaFilter = getFilterValues('line');
 
+  const statusPriority = {
+    'Atrasado': 0,
+    'Em andamento': 1,
+    'Aguardando produção': 2,
+    'Entregue': 3
+  };
   const filtered = appMachines.filter(item => {
     const computedStatus = getMachineStatus(item);
 
@@ -1094,7 +1110,7 @@ function renderTable() {
     }
 
     return true;
-  });
+  }).sort((first, second) => statusPriority[getMachineStatus(first)] - statusPriority[getMachineStatus(second)]);
 
   document.getElementById('countShowing').textContent = `Mostrando ${filtered.length} de ${appMachines.length} máquinas`;
   document.getElementById('countTotalBadge').textContent = `Total: ${appMachines.length} registos`;
@@ -1117,7 +1133,7 @@ function renderTable() {
 
     let osHtml = '<span class="text-muted" style="color:#4b5563;">—</span>';
     if ((item.pdfData && item.pdfData.trim()) || item.hasPdf) {
-      osHtml = `<button type="button" class="btn-delta btn-indigo btn-sm" onclick="verPdfOs('${item.id}')" title="Ver PDF da Ordem de Serviço em nova aba" style="padding:0.3rem 0.6rem; font-size:0.75rem; gap:0.35rem;">
+      osHtml = `<button type="button" class="btn-delta btn-indigo btn-sm os-pdf-button" onclick="verPdfOs('${item.id}')" title="Ver PDF da Ordem de Serviço em nova aba">
         📄 Ver OS
       </button>`;
     }
@@ -1161,6 +1177,121 @@ function renderTable() {
   }).join('');
 
   setupPermissions();
+}
+
+function renderDeliverySequence() {
+  const tbody = document.getElementById('deliverySequenceBody');
+  if (!tbody) return;
+
+  const allPendingMachines = appMachines
+    .filter(item => getMachineStatus(item) !== 'Entregue')
+    .sort((first, second) => {
+      const firstDate = first.previsao || '9999-12-31';
+      const secondDate = second.previsao || '9999-12-31';
+      return firstDate.localeCompare(secondDate)
+        || String(first.maquina || '').localeCompare(String(second.maquina || ''), 'pt-BR');
+    });
+
+  const overdueCount = allPendingMachines.filter(item => getMachineStatus(item) === 'Atrasado').length;
+  const unscheduledCount = allPendingMachines.filter(item => !item.previsao).length;
+  document.getElementById('deliveryPendingCount').textContent = allPendingMachines.length;
+  document.getElementById('deliveryOverdueCount').textContent = overdueCount;
+  document.getElementById('deliveryUnscheduledCount').textContent = unscheduledCount;
+
+  const teamMenu = document.getElementById('deliveryTeamMenu');
+  const selectedTeams = new Set([...teamMenu?.querySelectorAll('input:checked') || []].map(input => input.value));
+  const teamNames = [...new Set(allPendingMachines
+    .map(item => item.equipe && item.equipe !== '—' ? item.equipe : '')
+    .filter(Boolean))]
+    .sort((first, second) => first.localeCompare(second, 'pt-BR'));
+
+  if (teamMenu) {
+    teamMenu.innerHTML = '<label><input type="checkbox" value="__no_team__" onchange="renderDeliverySequence()"> Sem equipe</label>'
+      + teamNames.map(name => `<label><input type="checkbox" value="${escapeHtml(name)}" onchange="renderDeliverySequence()"> ${escapeHtml(name)}</label>`).join('');
+    teamMenu.querySelectorAll('input').forEach(input => {
+      input.checked = selectedTeams.has(input.value);
+    });
+  }
+
+  const selectedLineMenu = document.getElementById('deliveryLineMenu');
+  const selectedLines = [...selectedLineMenu?.querySelectorAll('input:checked') || []].map(input => input.value);
+  const selectedMonth = document.getElementById('deliveryPeriod')?.value || '';
+  const search = (document.getElementById('deliverySearch')?.value || '').trim();
+  const normalizeSearch = value => String(value || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLocaleLowerCase('pt-BR');
+  const normalizedSearch = normalizeSearch(search);
+
+  const teamTrigger = document.getElementById('deliveryTeamTrigger');
+  if (teamTrigger) teamTrigger.innerHTML = selectedTeams.size ? `${selectedTeams.size} equipe${selectedTeams.size > 1 ? 's selecionadas' : ' selecionada'} <span>⌄</span>` : 'Todas as equipes <span>⌄</span>';
+  const lineTrigger = document.getElementById('deliveryLineTrigger');
+  if (lineTrigger) lineTrigger.innerHTML = selectedLines.length ? `${selectedLines.length} linha${selectedLines.length > 1 ? 's selecionadas' : ' selecionada'} <span>⌄</span>` : 'Todas as linhas <span>⌄</span>';
+
+  const filteredMachines = allPendingMachines.filter(item => {
+    if (selectedMonth && item.previsao) {
+      const isInSelectedMonth = item.previsao.startsWith(selectedMonth);
+      const isOverdueBacklog = item.previsao < `${selectedMonth}-01` && getMachineStatus(item) === 'Atrasado';
+      if (!isInSelectedMonth && !isOverdueBacklog) return false;
+    }
+
+    const noTeam = !item.equipe || item.equipe === '—';
+    const teamMatches = selectedTeams.size === 0
+      || (noTeam && selectedTeams.has('__no_team__'))
+      || selectedTeams.has(item.equipe);
+    if (!teamMatches) return false;
+    if (selectedLines.length && !selectedLines.some(line => normalizeSearch(item.linha) === normalizeSearch(line))) return false;
+
+    const searchableText = normalizeSearch(`${item.maquina || ''} ${item.cliente || ''} ${item.os || ''} ${item.equipe || ''} ${item.linha || ''} ${item.obs || ''}`);
+    return !normalizedSearch || searchableText.includes(normalizedSearch);
+  });
+
+  document.getElementById('deliveryResultCount').textContent = `Mostrando ${filteredMachines.length} de ${allPendingMachines.length} máquinas pendentes`;
+
+  if (filteredMachines.length === 0) {
+    const message = allPendingMachines.length === 0
+      ? 'Nenhuma entrega pendente.'
+      : 'Nenhuma máquina corresponde aos filtros selecionados.';
+    tbody.innerHTML = `<tr><td colspan="10" style="text-align:center; padding:3rem; color:var(--text-muted);">${message}</td></tr>`;
+    return;
+  }
+
+  tbody.innerHTML = filteredMachines.map((item, index) => {
+    const team = item.equipe && item.equipe !== '—' ? item.equipe : 'Sem equipe';
+    const hasPdf = Boolean((item.pdfData && item.pdfData.trim()) || item.hasPdf || item.pdfPath);
+    const osContent = hasPdf
+      ? `<button type="button" class="btn-delta btn-indigo btn-sm os-pdf-button" onclick="verPdfOs('${item.id}')" title="Abrir PDF da Ordem de Serviço">📄 Ver OS</button>`
+      : '<span class="text-muted">—</span>';
+    const obsText = item.obs ? (item.obs.length > 30 ? `${item.obs.substring(0, 30)}...` : item.obs) : 'Adicionar nota';
+    const obsClass = item.obs ? 'observation-chip has-note' : 'observation-chip empty-note';
+    const lineClass = item.linha === 'Pesada' ? 'pill-linha pesada' : 'pill-linha';
+    return `
+      <tr>
+        <td><strong>${index + 1}</strong></td>
+        <td>${item.previsao ? formatDateDisplay(item.previsao) : '<span class="text-amber">Sem previsão</span>'}</td>
+        <td>${escapeHtml(team)}</td>
+        <td>${escapeHtml(item.cliente || '—')}</td>
+        <td><strong>${escapeHtml(item.maquina || '—')}</strong></td>
+        <td><span class="${lineClass}">${escapeHtml(item.linha || '—')}</span></td>
+        <td><button type="button" class="${obsClass}" onclick="abrirObservacao('${item.id}')" title="Abrir as observações desta máquina"><span class="observation-chip-icon">${item.obs ? '✎' : '+'}</span>${escapeHtml(obsText)}</button></td>
+        <td>${getStatusBadge(getMachineStatus(item))}</td>
+        <td style="text-align:center;">${osContent}</td>
+        <td style="text-align:right; white-space:nowrap;"><button type="button" class="btn-delta btn-slate btn-sm editor-only" onclick="editMachine('${item.id}')" title="Editar máquina">✏️</button></td>
+      </tr>
+    `;
+  }).join('');
+}
+
+function toggleDeliveryFilterMenu(group) {
+  const menuId = group === 'team' ? 'deliveryTeamMenu' : 'deliveryLineMenu';
+  document.getElementById(menuId)?.classList.toggle('open');
+}
+
+function clearDeliveryFilters() {
+  document.getElementById('deliveryPeriod').value = '';
+  document.getElementById('deliverySearch').value = '';
+  document.querySelectorAll('#deliveryTeamMenu input, #deliveryLineMenu input').forEach(input => {
+    input.checked = false;
+  });
+  document.querySelectorAll('#deliveryTeamMenu, #deliveryLineMenu').forEach(menu => menu.classList.remove('open'));
+  renderDeliverySequence();
 }
 
 function toggleSelectMachine(id, checkbox) {
@@ -2367,7 +2498,7 @@ function updateDashboard() {
         const hasPdf = Boolean((machine.pdfData && machine.pdfData.trim()) || machine.hasPdf);
         const status = getMachineStatus(machine);
         const osAction = hasPdf
-          ? `<button class="btn-delta btn-indigo btn-sm dashboard-os-button" onclick="verPdfOs('${machine.id}')" title="Abrir ordem de serviço">📄 Abrir OS</button>`
+          ? `<button class="btn-delta btn-indigo btn-sm os-pdf-button" onclick="verPdfOs('${machine.id}')" title="Abrir ordem de serviço">📄 Ver OS</button>`
           : `<span class="dash-os-number">OS ${escapeHtml(machine.os || 'não definida')}</span>`;
 
         return `

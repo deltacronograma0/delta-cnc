@@ -14,7 +14,7 @@
   <link rel="apple-touch-icon" href="logo.png">
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/basecoat-css@1.0.2/dist/basecoat.cdn.min.css">
-  <link rel="stylesheet" href="styles.css?v=20260925-login-ready">
+  <link rel="stylesheet" href="styles.css?v=20261006-os-button-size">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body>
@@ -63,6 +63,9 @@
           <button class="sidebar-link active" data-tab="acompanhamento" onclick="switchTab('acompanhamento')">
             <span>📋</span> Produção
           </button>
+          <button class="sidebar-link" data-tab="entregas" onclick="switchTab('entregas')">
+            <span>📅</span> Entregas
+          </button>
           <button class="sidebar-link" data-tab="dashboard" onclick="switchTab('dashboard')">
             <span>📊</span> Dashboard
           </button>
@@ -93,7 +96,7 @@
       <div class="filters-box">
         <div class="form-group">
           <label>Período (Mês / Ano)</label>
-          <input type="month" id="filterPeriod" class="input-delta" value="2026-09" onchange="renderTable()">
+          <input type="month" id="filterPeriod" class="input-delta" onchange="renderTable()">
         </div>
         <div class="form-group">
           <label>Pesquisar Máquina / Cliente / OS</label>
@@ -202,6 +205,95 @@
       </div>
     </section>
 
+    <!-- TAB: FILA DE ENTREGAS -->
+    <section id="tab-entregas" class="hidden">
+      <div class="dashboard-heading">
+        <div>
+          <span class="section-kicker">Planejamento de expedição</span>
+          <h2>Sequência de entregas</h2>
+          <p>Máquinas pendentes ordenadas pela data prevista de entrega.</p>
+        </div>
+      </div>
+
+      <div class="kpi-grid">
+        <div class="kpi-card blue">
+          <div class="kpi-title">Entregas pendentes</div>
+          <div class="kpi-num" id="deliveryPendingCount">0</div>
+          <div class="kpi-sub">Máquinas ainda não entregues</div>
+        </div>
+        <div class="kpi-card red">
+          <div class="kpi-title">Atrasadas</div>
+          <div class="kpi-num text-rose" id="deliveryOverdueCount">0</div>
+          <div class="kpi-sub">Previsão vencida</div>
+        </div>
+        <div class="kpi-card amber">
+          <div class="kpi-title">Sem previsão</div>
+          <div class="kpi-num text-amber" id="deliveryUnscheduledCount">0</div>
+          <div class="kpi-sub">Precisam de uma data de entrega</div>
+        </div>
+      </div>
+
+      <div class="filters-box delivery-filters">
+        <div class="form-group">
+          <label for="deliveryPeriod">Mês e ano de entrega</label>
+          <input type="month" id="deliveryPeriod" class="input-delta" onchange="renderDeliverySequence()">
+        </div>
+        <div class="form-group">
+          <label for="deliverySearch">Pesquisar máquina, cliente ou OS</label>
+          <input type="search" id="deliverySearch" class="input-delta" placeholder="Digite para localizar..." oninput="renderDeliverySequence()">
+        </div>
+        <div class="form-group">
+          <label>Equipe</label>
+          <div class="multi-filter" data-filter-group="delivery-team">
+            <button type="button" class="multi-filter-trigger" onclick="toggleDeliveryFilterMenu('team')" id="deliveryTeamTrigger">Todas as equipes <span>⌄</span></button>
+            <div class="multi-filter-menu" id="deliveryTeamMenu"></div>
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Linha de produção</label>
+          <div class="multi-filter" data-filter-group="delivery-line">
+            <button type="button" class="multi-filter-trigger" onclick="toggleDeliveryFilterMenu('line')" id="deliveryLineTrigger">Todas as linhas <span>⌄</span></button>
+            <div class="multi-filter-menu" id="deliveryLineMenu">
+              <label><input type="checkbox" value="Leve" onchange="renderDeliverySequence()"> Leve</label>
+              <label><input type="checkbox" value="Intermediária" onchange="renderDeliverySequence()"> Intermediária</label>
+              <label><input type="checkbox" value="Pesada" onchange="renderDeliverySequence()"> Pesada</label>
+            </div>
+          </div>
+        </div>
+        <div class="form-group">
+          <button type="button" class="btn-delta btn-slate" onclick="clearDeliveryFilters()" style="width:100%;">
+            🧹 Limpar Filtros
+          </button>
+        </div>
+      </div>
+
+      <div class="table-info-bar">
+        <span class="meta-tag" id="deliveryResultCount">Mostrando 0 máquinas</span>
+      </div>
+
+      <div class="table-card">
+        <div class="table-scroll">
+          <table class="delta-table">
+            <thead>
+              <tr>
+                <th style="width: 56px;">Ordem</th>
+                <th>Data prevista</th>
+                <th>Equipe</th>
+                <th>Cliente</th>
+                <th>Máquina CNC</th>
+                <th>Linha</th>
+                <th>Observações</th>
+                <th>Estado</th>
+                <th style="text-align:center;">OS</th>
+                <th style="text-align:right;">Ações</th>
+              </tr>
+            </thead>
+            <tbody id="deliverySequenceBody"></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
     <!-- TAB 2: DASHBOARD -->
     <section id="tab-dashboard" class="hidden">
       <div class="dashboard-heading">
@@ -213,7 +305,7 @@
         <div class="dashboard-heading-actions">
           <div class="dashboard-period-control">
             <label for="dashboardPeriod">Período de análise</label>
-            <input type="month" id="dashboardPeriod" class="input-delta" value="2026-09" onchange="updateDashboard()">
+            <input type="month" id="dashboardPeriod" class="input-delta" onchange="updateDashboard()">
           </div>
         </div>
       </div>
@@ -876,6 +968,6 @@
     <span id="appToastMessage"></span>
   </div>
 
-  <script src="app.js?v=20260928-bulk-pdf-attach"></script>
+  <script src="app.js?v=20261006-delivery-edit-action"></script>
 </body>
 </html>

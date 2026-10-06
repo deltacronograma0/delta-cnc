@@ -1437,6 +1437,19 @@ body::before {
   border-radius: 7px;
 }
 
+.os-pdf-button {
+  box-sizing: border-box;
+  width: 78px;
+  min-width: 78px;
+  height: 30px;
+  padding: 0.3rem 0.35rem;
+  justify-content: center;
+  gap: 0.25rem;
+  flex: 0 0 auto;
+  font-size: 0.72rem;
+  white-space: nowrap;
+}
+
 .filters-box {
   background: var(--card-bg);
   border: 1px solid var(--card-border);
