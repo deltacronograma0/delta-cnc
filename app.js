@@ -1054,8 +1054,7 @@ function updateMultiFilter(group, shouldRender = true) {
 }
 
 function clearFilters() {
-  const currentDate = new Date();
-  document.getElementById('filterPeriod').value = `${currentDate.getFullYear()}-${String(currentDate.getMonth() + 1).padStart(2, '0')}`;
+  document.getElementById('filterPeriod').value = '';
   document.getElementById('filterSearch').value = '';
   document.querySelectorAll('#filterStatusMenu input, #filterTeamMenu input, #filterLineMenu input').forEach(input => {
     input.checked = false;
@@ -1188,7 +1187,9 @@ function renderDeliverySequence() {
     .sort((first, second) => {
       const firstDate = first.previsao || '9999-12-31';
       const secondDate = second.previsao || '9999-12-31';
+      const rank = item => getMachineStatus(item) === 'Aguardando produção' ? 1 : 0;
       return firstDate.localeCompare(secondDate)
+        || rank(first) - rank(second)
         || String(first.maquina || '').localeCompare(String(second.maquina || ''), 'pt-BR');
     });
 
@@ -1215,6 +1216,9 @@ function renderDeliverySequence() {
 
   const selectedLineMenu = document.getElementById('deliveryLineMenu');
   const selectedLines = [...selectedLineMenu?.querySelectorAll('input:checked') || []].map(input => input.value);
+  const selectedStatuses = [...document.querySelectorAll('#deliveryStatusMenu input:checked')].map(input => input.value);
+  const statusTrigger = document.getElementById('deliveryStatusTrigger');
+  if (statusTrigger) statusTrigger.innerHTML = selectedStatuses.length ? `${selectedStatuses.length} selecionado${selectedStatuses.length > 1 ? 's' : ''} <span>⌄</span>` : 'Todos os estados <span>⌄</span>';
   const selectedMonth = document.getElementById('deliveryPeriod')?.value || '';
   const search = (document.getElementById('deliverySearch')?.value || '').trim();
   const normalizeSearch = value => String(value || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLocaleLowerCase('pt-BR');
@@ -1226,6 +1230,10 @@ function renderDeliverySequence() {
   if (lineTrigger) lineTrigger.innerHTML = selectedLines.length ? `${selectedLines.length} linha${selectedLines.length > 1 ? 's selecionadas' : ' selecionada'} <span>⌄</span>` : 'Todas as linhas <span>⌄</span>';
 
   const filteredMachines = allPendingMachines.filter(item => {
+    if (selectedStatuses.length) {
+      const key = getMachineStatus(item) === 'Aguardando produção' ? 'aguardando' : 'producao';
+      if (!selectedStatuses.includes(key)) return false;
+    }
     if (selectedMonth && item.previsao) {
       const isInSelectedMonth = item.previsao.startsWith(selectedMonth);
       const isOverdueBacklog = item.previsao < `${selectedMonth}-01` && getMachineStatus(item) === 'Atrasado';
@@ -1280,17 +1288,17 @@ function renderDeliverySequence() {
 }
 
 function toggleDeliveryFilterMenu(group) {
-  const menuId = group === 'team' ? 'deliveryTeamMenu' : 'deliveryLineMenu';
+  const menuId = { team: 'deliveryTeamMenu', line: 'deliveryLineMenu', status: 'deliveryStatusMenu' }[group];
   document.getElementById(menuId)?.classList.toggle('open');
 }
 
 function clearDeliveryFilters() {
   document.getElementById('deliveryPeriod').value = '';
   document.getElementById('deliverySearch').value = '';
-  document.querySelectorAll('#deliveryTeamMenu input, #deliveryLineMenu input').forEach(input => {
+  document.querySelectorAll('#deliveryStatusMenu input, #deliveryTeamMenu input, #deliveryLineMenu input').forEach(input => {
     input.checked = false;
   });
-  document.querySelectorAll('#deliveryTeamMenu, #deliveryLineMenu').forEach(menu => menu.classList.remove('open'));
+  document.querySelectorAll('#deliveryStatusMenu, #deliveryTeamMenu, #deliveryLineMenu').forEach(menu => menu.classList.remove('open'));
   renderDeliverySequence();
 }
 

@@ -243,6 +243,16 @@
           <input type="search" id="deliverySearch" class="input-delta" placeholder="Digite para localizar..." oninput="renderDeliverySequence()">
         </div>
         <div class="form-group">
+          <label>Estado</label>
+          <div class="multi-filter" data-filter-group="delivery-status">
+            <button type="button" class="multi-filter-trigger" onclick="toggleDeliveryFilterMenu('status')" id="deliveryStatusTrigger">Todos os estados <span>⌄</span></button>
+            <div class="multi-filter-menu" id="deliveryStatusMenu">
+              <label><input type="checkbox" value="aguardando" onchange="renderDeliverySequence()"> Aguardando produção</label>
+              <label><input type="checkbox" value="producao" onchange="renderDeliverySequence()"> Em produção</label>
+            </div>
+          </div>
+        </div>
+        <div class="form-group">
           <label>Equipe</label>
           <div class="multi-filter" data-filter-group="delivery-team">
             <button type="button" class="multi-filter-trigger" onclick="toggleDeliveryFilterMenu('team')" id="deliveryTeamTrigger">Todas as equipes <span>⌄</span></button>
