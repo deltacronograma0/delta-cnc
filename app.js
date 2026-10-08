@@ -34,6 +34,7 @@ const DEFAULT_SEED_TEAMS = [
 
 let appMachines = [];
 let appData = appMachines;
+const TEAM_NO_ID = 'SEM ID';
 let appTeams = [];
 let appUsers = [];
 let selectedTeamFilterValues = new Set();
@@ -488,7 +489,7 @@ function saveTeamDraft() {
   appTeams[index] = {
     ...appTeams[index],
     name: document.getElementById('teamNameInput')?.value.trim() || '',
-    id: document.getElementById('teamIdInput')?.value.trim().toUpperCase() || ''
+    id: document.getElementById('teamNoIdInput')?.checked ? TEAM_NO_ID : (document.getElementById('teamIdInput')?.value.trim().toUpperCase() || '')
   };
   return true;
 }
@@ -2261,13 +2262,25 @@ function openTeamModal(idx = -1) {
   if (idx >= 0 && appTeams[idx]) {
     document.getElementById('teamModalTitle').textContent = 'Editar Equipe';
     document.getElementById('teamNameInput').value = appTeams[idx].name || '';
-    document.getElementById('teamIdInput').value = appTeams[idx].id || '';
+    const noId = appTeams[idx].id === TEAM_NO_ID;
+    document.getElementById('teamIdInput').value = noId ? '' : (appTeams[idx].id || '');
+    document.getElementById('teamNoIdInput').checked = noId;
   } else {
     document.getElementById('teamModalTitle').textContent = 'Registar Nova Equipe';
     document.getElementById('teamNameInput').value = '';
     document.getElementById('teamIdInput').value = '';
+    document.getElementById('teamNoIdInput').checked = false;
   }
+  toggleTeamNoId();
   document.getElementById('teamModal').classList.add('open');
+}
+
+function toggleTeamNoId() {
+  const noId = document.getElementById('teamNoIdInput').checked;
+  const input = document.getElementById('teamIdInput');
+  input.disabled = noId;
+  input.required = !noId;
+  if (noId) input.value = '';
 }
 
 function closeTeamModal() {
@@ -2278,19 +2291,20 @@ async function saveTeamSubmit() {
   if (!requireEditor()) return;
   const idx = parseInt(document.getElementById('teamEditIndex').value, 10);
   const name = document.getElementById('teamNameInput').value.trim();
-  const id = document.getElementById('teamIdInput').value.trim().toUpperCase();
+  const noId = document.getElementById('teamNoIdInput').checked;
+  const id = noId ? TEAM_NO_ID : document.getElementById('teamIdInput').value.trim().toUpperCase();
 
   if (!name) {
     alert('Insira o nome da equipe.');
     return;
   }
 
-  if (!/^[A-Z]-\d{3}$/.test(id)) {
-    alert('Insira o código da equipe no formato A-583.');
+  if (!noId && !/^[A-Z]-\d{3}$/.test(id)) {
+    alert('Insira o código da equipe no formato A-583 ou marque SEM ID.');
     return;
   }
 
-  const duplicateId = appTeams.some((team, teamIndex) => teamIndex !== idx && String(team.id || '').toUpperCase() === id);
+  const duplicateId = !noId && appTeams.some((team, teamIndex) => teamIndex !== idx && String(team.id || '').toUpperCase() === id);
   if (duplicateId) {
     alert('Já existe uma equipe com esse código ID.');
     return;

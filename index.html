@@ -963,7 +963,10 @@
         <div class="form-group" style="margin-bottom:1.15rem;">
           <label>Código ID da equipe</label>
           <input type="text" id="teamIdInput" class="input-delta" placeholder="Ex.: A-583" maxlength="5" required>
-          <small style="display:block; margin-top:0.4rem; color:var(--text-muted);">Use uma letra e os 3 últimos dígitos do CPF, por exemplo A-583.</small>
+          <label style="display:flex; align-items:center; gap:0.5rem; margin-top:0.6rem; cursor:pointer;">
+            <input type="checkbox" id="teamNoIdInput" onchange="toggleTeamNoId()"> SEM ID
+          </label>
+          <small style="display:block; margin-top:0.4rem; color:var(--text-muted);">Use uma letra e os 3 últimos dígitos do CPF, por exemplo A-583, ou marque SEM ID.</small>
         </div>
       </div>
       <div class="modal-footer">
