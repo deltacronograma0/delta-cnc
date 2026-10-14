@@ -2510,6 +2510,14 @@ function updateDashboard() {
   const eficiencia = prevMesCount > 0 ? Math.round((entreguesMes / prevMesCount) * 100) : (entreguesMes > 0 ? 100 : 0);
   document.getElementById('kpiEficiencia').textContent = `${eficiencia}%`;
 
+  const deliveredByLine = { Leve: 0, 'Intermediária': 0, Pesada: 0 };
+  appMachines.forEach(m => {
+    if (getMachineStatus(m) === 'Entregue' && m.entregaReal && m.entregaReal.startsWith(mesRefStr) && m.linha in deliveredByLine) deliveredByLine[m.linha]++;
+  });
+  document.getElementById('kpiEntLeve').textContent = deliveredByLine.Leve;
+  document.getElementById('kpiEntIntermediaria').textContent = deliveredByLine['Intermediária'];
+  document.getElementById('kpiEntPesada').textContent = deliveredByLine.Pesada;
+
   const dashTeamsList = document.getElementById('dashTeamsList');
   if (dashTeamsList) {
     if (appTeams.length === 0) {

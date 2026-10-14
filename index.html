@@ -14,7 +14,7 @@
   <link rel="apple-touch-icon" href="logo.png">
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/basecoat-css@1.0.2/dist/basecoat.cdn.min.css">
-  <link rel="stylesheet" href="styles.css?v=20261006-line-podiums">
+  <link rel="stylesheet" href="styles.css?v=20261014-line-kpis">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body>
@@ -351,6 +351,21 @@
           <div class="kpi-title">Taxa de Eficiência — <span class="dashMonthName">Setembro/2026</span></div>
           <div class="kpi-num text-amber" id="kpiEficiencia">0%</div>
           <div class="kpi-sub">Entregues vs previstos no mês</div>
+        </div>
+        <div class="kpi-card green">
+          <div class="kpi-title">Leves Entregues — <span class="dashMonthName">Setembro/2026</span></div>
+          <div class="kpi-num text-emerald" id="kpiEntLeve">0</div>
+          <div class="kpi-sub">Máquinas da linha Leve</div>
+        </div>
+        <div class="kpi-card green">
+          <div class="kpi-title">Intermediárias Entregues — <span class="dashMonthName">Setembro/2026</span></div>
+          <div class="kpi-num text-emerald" id="kpiEntIntermediaria">0</div>
+          <div class="kpi-sub">Máquinas da linha Intermediária</div>
+        </div>
+        <div class="kpi-card green">
+          <div class="kpi-title">Pesadas Entregues — <span class="dashMonthName">Setembro/2026</span></div>
+          <div class="kpi-num text-emerald" id="kpiEntPesada">0</div>
+          <div class="kpi-sub">Máquinas da linha Pesada</div>
         </div>
       </div>
 
@@ -981,6 +996,6 @@
     <span id="appToastMessage"></span>
   </div>
 
-  <script src="app.js?v=20261006-line-podiums"></script>
+  <script src="app.js?v=20261014-line-kpis"></script>
 </body>
 </html>
